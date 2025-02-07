@@ -15,7 +15,7 @@ public class DoctorPublicController {
     private final DoctorServiceImpl doctorService;
 
     @GetMapping
-    public String abag(){
+    public String abg(){
         return "dfdfdfs";
     }
 
