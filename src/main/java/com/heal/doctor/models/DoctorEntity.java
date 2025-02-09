@@ -2,6 +2,7 @@ package com.heal.doctor.models;
 
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.GenderEnum;
+import com.heal.doctor.models.enums.RolesEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +28,7 @@ public class DoctorEntity {
 
     @Indexed(unique = true)
     private String email;
+    private RolesEnum roles=RolesEnum.DOCTOR;
 
     private String firstName;
     private String lastName;
@@ -48,4 +50,6 @@ public class DoctorEntity {
     private GenderEnum gender;
 
     private String password;
+
+    private RolesEnum rolesEnum;
 }

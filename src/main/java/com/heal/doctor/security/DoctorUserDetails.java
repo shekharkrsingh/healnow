@@ -1,32 +1,39 @@
 package com.heal.doctor.security;
 
 import com.heal.doctor.models.DoctorEntity;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
 
-@RequiredArgsConstructor
+@Getter
 public class DoctorUserDetails implements UserDetails {
 
     private final DoctorEntity doctor;
 
+    public DoctorUserDetails(DoctorEntity doctor) {
+        this.doctor = doctor;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList(); // No roles/authorities for now
+        return Collections.emptyList();
     }
 
     @Override
     public String getPassword() {
-        return doctor.getPassword(); // Return the hashed password
+        return doctor.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return doctor.getEmail(); // Use email as username
+        return doctor.getEmail();
+    }
+
+    public String getDoctorId() {
+        return doctor.getDoctorId();
     }
 
     @Override

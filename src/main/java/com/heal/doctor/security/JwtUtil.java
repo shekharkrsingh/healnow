@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -24,11 +25,12 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, String doctorId) {
         long expirationTime = 1000L * 60 * 60 * EXPIRY_HOUR;
 
         return Jwts.builder()
-                .subject(username)
+                .subject(username) // Store email as subject
+                .claims(Map.of("doctorId", doctorId)) // Add doctorId in claims
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSecretKey())
@@ -36,7 +38,11 @@ public class JwtUtil {
     }
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return extractClaim(token, Claims::getSubject); // Extracts email
+    }
+
+    public String extractDoctorId(String token) {
+        return extractClaim(token, claims -> claims.get("doctorId", String.class)); // Extract doctorId
     }
 
     public Date extractExpiration(String token) {
