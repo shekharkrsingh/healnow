@@ -1,6 +1,6 @@
 package com.heal.doctor.controllers;
 
-import com.heal.doctor.ApiResponse;
+import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.services.impl.DoctorServiceImpl;
 import lombok.RequiredArgsConstructor;

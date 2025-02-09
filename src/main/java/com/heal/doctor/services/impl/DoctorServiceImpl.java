@@ -3,8 +3,10 @@ package com.heal.doctor.services.impl;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
 import com.heal.doctor.services.IDoctorService;
+import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.EmailValidatorUtil;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -34,6 +36,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final CurrentUserName currentUserName;
 
     @Override
     public DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
@@ -60,10 +63,11 @@ public class DoctorServiceImpl implements IDoctorService {
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        DoctorUserDetails userDetails = (DoctorUserDetails) userDetailsService.loadUserByUsername(username);
 
-        return jwtUtil.generateToken(userDetails.getUsername());
+        return jwtUtil.generateToken(userDetails.getUsername(), userDetails.getDoctorId());
     }
+
 
     @Override
     public DoctorDTO getDoctorById(String doctorId) {
@@ -74,7 +78,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public DoctorDTO getDoctorProfile(){
-        DoctorEntity doctor = doctorRepository.findByEmail(getCurrentUsername())
+        DoctorEntity doctor = doctorRepository.findByEmail(currentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Your profile not found"));
         return modelMapper.map(doctor, DoctorDTO.class);
     }
@@ -88,7 +92,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public DoctorDTO updateDoctor( DoctorDTO doctorDTO) {
-        String username=getCurrentUsername();
+        String username= currentUserName.getCurrentUsername();
         DoctorEntity existingDoctor = doctorRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
@@ -110,7 +114,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public void changePassword(ChangePasswordDTO changePasswordDTO) {
-        DoctorEntity doctor = doctorRepository.findByEmail(getCurrentUsername())
+        DoctorEntity doctor = doctorRepository.findByEmail(currentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), doctor.getPassword())) {
@@ -123,7 +127,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public void updateEmail(UpdateEmailDTO updateEmailDTO) {
-        DoctorEntity doctor = doctorRepository.findByEmail(getCurrentUsername())
+        DoctorEntity doctor = doctorRepository.findByEmail(currentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         if (!passwordEncoder.matches(updateEmailDTO.getPassword(), doctor.getPassword())) {
@@ -159,13 +163,7 @@ public class DoctorServiceImpl implements IDoctorService {
         return String.format("%s-%s-%s", prefix, timestamp, randomNumber);
     }
 
-    public String getCurrentUsername() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication.getPrincipal() instanceof String username) {
-            return username;
-        }
-        return null;
-    }
+
 
 }
 

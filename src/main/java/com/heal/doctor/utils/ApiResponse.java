@@ -1,4 +1,4 @@
-package com.heal.doctor;
+package com.heal.doctor.utils;
 
 
 import lombok.AllArgsConstructor;

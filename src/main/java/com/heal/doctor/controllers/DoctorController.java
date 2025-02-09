@@ -1,7 +1,7 @@
 package com.heal.doctor.controllers;
 
 
-import com.heal.doctor.ApiResponse;
+import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.services.IDoctorService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/doctors")
+
 public class DoctorController {
 
 

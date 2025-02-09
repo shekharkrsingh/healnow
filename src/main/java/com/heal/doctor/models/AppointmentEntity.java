@@ -16,7 +16,7 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 @Document(collection = "appointments")
-public class Appointment {
+public class AppointmentEntity {
 
     @Id
     private String id;
@@ -27,11 +27,11 @@ public class Appointment {
     private String description;
     private Date appointmentDateTime;
     private Date bookingDateTime;
-    private Boolean availableAtClinic; //dd
-    private Boolean treated; //dd
+    private Boolean availableAtClinic;
+    private Boolean treated;
     private Date treatedDateTime;
-    private AppointmentStatus status; //dd
+    private AppointmentStatus status;
     private AppointmentType appointmentType;
-    private Boolean paymentStatus; //dd
+    private Boolean paymentStatus;
 }
 
