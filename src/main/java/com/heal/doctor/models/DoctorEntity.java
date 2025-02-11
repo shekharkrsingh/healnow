@@ -28,7 +28,6 @@ public class DoctorEntity {
 
     @Indexed(unique = true)
     private String email;
-    private RolesEnum roles=RolesEnum.DOCTOR;
 
     private String firstName;
     private String lastName;

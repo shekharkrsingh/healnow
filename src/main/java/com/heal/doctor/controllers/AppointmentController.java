@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -43,17 +45,22 @@ public class AppointmentController {
                 .build());
     }
 
-//    @GetMapping("/by-doctor")
-//    public ResponseEntity<ApiResponse<List<AppointmentDTO>>> getAppointmentsByDoctorAndDate(@RequestParam String date){
-//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-//        System.out.println(sdf);
-//        List<AppointmentDTO> appointments = appointmentService.getAppointmentsByDoctorAndDate(new Date());
-//        return ResponseEntity.ok(ApiResponse.<List<AppointmentDTO>>builder()
-//                .success(true)
-//                .message("Appointments fetched successfully")
-//                .data(appointments)
-//                .build());
-//    }
+    @GetMapping("/by-doctor")
+    public ResponseEntity<ApiResponse<List<AppointmentDTO>>> getAppointmentsByDoctorAndDate(@RequestParam(value = "date", required = false) String date){
+        List<AppointmentDTO> appointments;
+        if(date==null || date.trim().isEmpty()){
+            appointments = appointmentService
+                    .getAppointmentsByBookingDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        }
+        else{
+            appointments = appointmentService.getAppointmentsByBookingDate(date);
+        }
+        return ResponseEntity.ok(ApiResponse.<List<AppointmentDTO>>builder()
+                .success(true)
+                .message("Appointments fetched successfully")
+                .data(appointments)
+                .build());
+    }
 
     @PutMapping("/update/{appointmentId}")
     public ResponseEntity<ApiResponse<AppointmentDTO>> updateAppointment(

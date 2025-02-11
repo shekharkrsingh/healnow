@@ -2,6 +2,7 @@ package com.heal.doctor.utils;
 
 import org.springframework.stereotype.Component;
 
+import javax.naming.AuthenticationException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -9,7 +10,7 @@ import java.util.Date;
 @Component
 public class AppointmentId {
 
-    public String generateAppointmentId(String doctorId) {
+    public static String generateAppointmentId(String doctorId) {
         String doctorIdWithoutPrefix = doctorId.replace("DOC-", "");
 
         long timestamp = System.currentTimeMillis();
@@ -24,7 +25,7 @@ public class AppointmentId {
         return doctorIdWithoutPrefix + "-" + formattedDate + "-" + randomSuffix;
     }
 
-    public String[] retrieveAppointmentDetails(String appointmentId) {
+    public static String[] retrieveAppointmentDetails(String appointmentId) {
         String[] parts = appointmentId.split("-");
 
         if (parts.length == 5) {
@@ -32,7 +33,7 @@ public class AppointmentId {
             String appointmentDate = parts[3] + " " + parts[4];
             return new String[]{doctorId, appointmentDate};
         } else {
-            return null;
+            throw new RuntimeException("Try again");
         }
     }
 }

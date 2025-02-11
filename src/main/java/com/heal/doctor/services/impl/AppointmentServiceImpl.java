@@ -9,6 +9,7 @@ import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.utils.AppointmentId;
 import com.heal.doctor.utils.CurrentUserName;
+import com.heal.doctor.utils.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -23,18 +24,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
-    private final AppointmentId appointmentId;
-    private final CurrentUserName currentUserName;
 
     public AppointmentServiceImpl(AppointmentRepository appointmentRepository,
-                                  ModelMapper modelMapper,
-                                  AppointmentId appointmentId,
-                                  CurrentUserName currentUserName)
+                                  ModelMapper modelMapper)
     {
         this.appointmentRepository = appointmentRepository;
         this.modelMapper = modelMapper;
-        this.appointmentId = appointmentId;
-        this.currentUserName = currentUserName;
     }
 
     @Override
@@ -60,12 +55,18 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
 
-        String doctorId = currentUserName.getCurrentDoctorId();
+        String doctorId = CurrentUserName.getCurrentDoctorId();
 
         Date appointmentDate = requestDTO.getBookingDateTime() != null ? requestDTO.getBookingDateTime() : new Date();
         Date onlyDate = removeTime(appointmentDate);
 
-        boolean exists = appointmentRepository.existsByDoctorIdAndAppointmentDateTime(doctorId, onlyDate);
+        Date[] date=DateUtils.getStartAndEndOfDay(new Date());
+        boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndBookingDateTimeBetween(
+                doctorId,
+                requestDTO.getPatientName(),
+                requestDTO.getContact(),
+                date[0],
+                date[1]);
         if (exists) {
             throw new RuntimeException("An appointment for this doctor already exists on the selected date.");
         }
@@ -73,8 +74,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
         appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
         appointmentEntity.setAppointmentDateTime(appointmentDate);
+        appointmentEntity.setBookingDateTime(appointmentDate);
         appointmentEntity.setDoctorId(doctorId);
-        appointmentEntity.setAppointmentId(appointmentId.generateAppointmentId(doctorId));
+        appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
 
@@ -91,35 +93,32 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(()->new RuntimeException("Appointment not found"));
         String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(currentUserName.getCurrentDoctorId())){
+        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
         return  modelMapper.map(appointmentEntity, AppointmentDTO.class);
     }
 
-//    @Override
-//    public List<AppointmentDTO> getAppointmentsByDoctorAndDate(Date date) {
-//        String currentDoctor = currentUserName.getCurrentDoctorId();
-//
-//        if (date == null) {
-//            date = removeTime(new Date());
-//        } else {
-//            date = removeTime(date);
-//        }
-//        List<AppointmentEntity> appointments = appointmentRepository.findByDoctorIdAndAppointmentDateTime(currentDoctor, date);
-//
-//        return appointments
-//                .stream()
-//                .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-//                .toList();
-//    }
+    @Override
+    public List<AppointmentDTO> getAppointmentsByBookingDate(String date) {
+        String currentDoctor = CurrentUserName.getCurrentDoctorId();
+
+        Date[] startAndEnd = DateUtils.getStartAndEndOfDay(date);
+        List<AppointmentEntity> appointments = appointmentRepository.
+                findByDoctorIdAndBookingDateTimeBetween(currentDoctor, startAndEnd[0], startAndEnd[1]);
+
+        return appointments
+                .stream()
+                .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
+                .toList();
+    }
 
     @Override
     public AppointmentDTO updateAppointmentStatus(String appointmentId, AppointmentStatus status) {
         AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(()->new RuntimeException("Appointment not found"));
         String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(currentUserName.getCurrentDoctorId())){
+        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
             throw new SecurityException("Access denied: You are not authorized to update this appointment.");
         }
         appointmentEntity.setStatus(status);
@@ -131,7 +130,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(()->new RuntimeException("Appointment not found"));
         String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(currentUserName.getCurrentDoctorId())){
+        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
             throw new SecurityException("Access denied: You are not authorized to update this appointment.");
         }
 
@@ -155,7 +154,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
         String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(currentUserName.getCurrentDoctorId())){
+        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
 
@@ -184,7 +183,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .orElseThrow(()->new RuntimeException("Appointment not found"));
 
         String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(currentUserName.getCurrentDoctorId())){
+        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
 
