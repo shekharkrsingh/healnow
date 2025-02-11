@@ -7,19 +7,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class CurrentUserName {
 
-    public String getCurrentUsername() {
+    public static String getCurrentUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
             return userDetails.getUsername();
         }
-        return null;
+        throw new RuntimeException("No authenticated user found or username is missing.");
     }
 
-    public String getCurrentDoctorId() {
+    public static String getCurrentDoctorId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getCredentials() instanceof String doctorId) {
             return doctorId;
         }
-        return null;
+        throw new RuntimeException("No authenticated user found or doctor ID is missing.");
     }
 }

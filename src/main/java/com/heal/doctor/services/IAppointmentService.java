@@ -13,7 +13,7 @@ public interface IAppointmentService {
     AppointmentDTO bookAppointment(AppointmentRequestDTO requestDTO);
     AppointmentDTO getAppointmentById(String appointmentId);
 
-//    List<AppointmentDTO> getAppointmentsByDoctorAndDate(Date date);
+    List<AppointmentDTO> getAppointmentsByBookingDate(String date);
 
     AppointmentDTO updateAppointmentStatus(String appointmentId, AppointmentStatus status);
     AppointmentDTO updatePaymentStatus(String appointmentId, Boolean paymentStatus);
