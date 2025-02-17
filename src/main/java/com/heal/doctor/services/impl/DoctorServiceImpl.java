@@ -36,7 +36,6 @@ public class DoctorServiceImpl implements IDoctorService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
-    private final CurrentUserName currentUserName;
 
     @Override
     public DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
@@ -52,6 +51,8 @@ public class DoctorServiceImpl implements IDoctorService {
 
         DoctorEntity doctor = modelMapper.map(doctorRegistrationDTO, DoctorEntity.class);
         doctor.setPassword(passwordEncoder.encode(doctorRegistrationDTO.getPassword()));
+        doctor.setCreatedAt(new Date());
+        doctor.setUpdatedAt(new Date());
         doctor.setDoctorId(generateDoctorId());
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
         return modelMapper.map(savedDoctor, DoctorDTO.class);
@@ -60,6 +61,7 @@ public class DoctorServiceImpl implements IDoctorService {
     public String loginDoctor(String username, String password) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(username, password);
+        System.out.println(authenticationToken.toString());
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
@@ -78,7 +80,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public DoctorDTO getDoctorProfile(){
-        DoctorEntity doctor = doctorRepository.findByEmail(currentUserName.getCurrentUsername())
+        DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Your profile not found"));
         return modelMapper.map(doctor, DoctorDTO.class);
     }
@@ -92,12 +94,12 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public DoctorDTO updateDoctor( DoctorDTO doctorDTO) {
-        String username= currentUserName.getCurrentUsername();
+        String username= CurrentUserName.getCurrentUsername();
         DoctorEntity existingDoctor = doctorRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         modelMapper.map(doctorDTO, existingDoctor);
-
+        existingDoctor.setUpdatedAt(new Date());
         DoctorEntity updatedDoctor = doctorRepository.save(existingDoctor);
         return modelMapper.map(updatedDoctor, DoctorDTO.class);
     }
@@ -114,20 +116,20 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public void changePassword(ChangePasswordDTO changePasswordDTO) {
-        DoctorEntity doctor = doctorRepository.findByEmail(currentUserName.getCurrentUsername())
+        DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), doctor.getPassword())) {
             throw new IllegalArgumentException("Invalid old password");
         }
-
+        doctor.setUpdatedAt(new Date());
         doctor.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
         doctorRepository.save(doctor);
     }
 
     @Override
     public void updateEmail(UpdateEmailDTO updateEmailDTO) {
-        DoctorEntity doctor = doctorRepository.findByEmail(currentUserName.getCurrentUsername())
+        DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         if (!passwordEncoder.matches(updateEmailDTO.getPassword(), doctor.getPassword())) {
@@ -137,8 +139,8 @@ public class DoctorServiceImpl implements IDoctorService {
 //        if (!otpService.verifyOTP(updateEmailDTO.getNewEmail(), updateEmailDTO.getOtp())) {
 //            throw new IllegalArgumentException("Invalid OTP");
 //        }
-
         doctor.setEmail(updateEmailDTO.getNewEmail());
+        doctor.setUpdatedAt(new Date());
         doctorRepository.save(doctor);
     }
 
@@ -152,6 +154,7 @@ public class DoctorServiceImpl implements IDoctorService {
 //        }
 
         doctor.setPassword(passwordEncoder.encode(forgotPasswordDTO.getNewPassword()));
+        doctor.setUpdatedAt(new Date());
         doctorRepository.save(doctor);
     }
 
