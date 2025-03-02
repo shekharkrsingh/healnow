@@ -1,5 +1,6 @@
 package com.heal.doctor.controllers;
 
+import com.heal.doctor.services.impl.OtpServiceImpl;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.services.impl.DoctorServiceImpl;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class DoctorPublicController {
 
     private final DoctorServiceImpl doctorService;
+    private final OtpServiceImpl otpService;
 
     @GetMapping
     public String abg(){
@@ -43,5 +45,11 @@ public class DoctorPublicController {
         String token = doctorService.loginDoctor(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
         LoginResponseDTO loginResponseDTO = new LoginResponseDTO(token);
         return ResponseEntity.ok(new ApiResponse<>(true, "login successfully", loginResponseDTO));
+    }
+
+    @PostMapping("/send-otp")
+    public ResponseEntity<ApiResponse<OtpResponseDTO>> sendOtp(@RequestBody OtpRequestDTO otpRequestDTO){
+        OtpResponseDTO otpResponseDTO= otpService.generateOtp(otpRequestDTO);
+        return ResponseEntity.ok(new ApiResponse<>(true, "OTP is generated successfully", otpResponseDTO));
     }
 }
