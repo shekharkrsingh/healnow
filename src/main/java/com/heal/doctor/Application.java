@@ -1,5 +1,6 @@
 package com.heal.doctor;
 
+import com.heal.doctor.dto.AppointmentDTO;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

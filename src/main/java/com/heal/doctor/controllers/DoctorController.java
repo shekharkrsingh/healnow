@@ -33,11 +33,15 @@ public class DoctorController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor updated successfully", savedDoctorDTO));
     }
 
-    @DeleteMapping("/{doctorId}")
-    public ResponseEntity<ApiResponse<Void>> deleteDoctor(@PathVariable String doctorId) {
-        doctorService.deleteDoctor(doctorId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Doctor deleted successfully", null));
-    }
+
+//Delete service is not available for use
+
+
+//    @DeleteMapping("/{doctorId}")
+//    public ResponseEntity<ApiResponse<Void>> deleteDoctor(@PathVariable String doctorId) {
+//        doctorService.deleteDoctor(doctorId);
+//        return ResponseEntity.ok(new ApiResponse<>(true, "Doctor deleted successfully", null));
+//    }
 
 
     @PostMapping("/update-email")

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -36,6 +37,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final OtpServiceImpl otpService;
 
     @Override
     public DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
@@ -48,6 +50,11 @@ public class DoctorServiceImpl implements IDoctorService {
         if(doctorRegistrationDTO.getFirstName()==null || doctorRegistrationDTO.getPassword()==null){
             throw new IllegalArgumentException("First Name and Password are required");
         }
+        if(doctorRegistrationDTO.getOtp()==null){
+            throw new IllegalArgumentException("OTP is required");
+        }
+
+        otpService.validateOtp(doctorRegistrationDTO.getEmail(), doctorRegistrationDTO.getOtp());
 
         DoctorEntity doctor = modelMapper.map(doctorRegistrationDTO, DoctorEntity.class);
         doctor.setPassword(passwordEncoder.encode(doctorRegistrationDTO.getPassword()));
@@ -57,6 +64,7 @@ public class DoctorServiceImpl implements IDoctorService {
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
         return modelMapper.map(savedDoctor, DoctorDTO.class);
     }
+
 
     public String loginDoctor(String username, String password) {
         UsernamePasswordAuthenticationToken authenticationToken =
@@ -136,9 +144,9 @@ public class DoctorServiceImpl implements IDoctorService {
             throw new IllegalArgumentException("Invalid password");
         }
 
-//        if (!otpService.verifyOTP(updateEmailDTO.getNewEmail(), updateEmailDTO.getOtp())) {
-//            throw new IllegalArgumentException("Invalid OTP");
-//        }
+        if (!otpService.validateOtp(updateEmailDTO.getNewEmail(), updateEmailDTO.getOtp())) {
+            throw new IllegalArgumentException("Invalid OTP");
+        }
         doctor.setEmail(updateEmailDTO.getNewEmail());
         doctor.setUpdatedAt(new Date());
         doctorRepository.save(doctor);
@@ -149,9 +157,9 @@ public class DoctorServiceImpl implements IDoctorService {
         DoctorEntity doctor = doctorRepository.findByEmail(forgotPasswordDTO.getEmail())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-//        if (!otpService.verifyOTP(forgotPasswordDTO.getEmail(), forgotPasswordDTO.getOtp())) {
-//            throw new IllegalArgumentException("Invalid OTP");
-//        }
+        if (!otpService.validateOtp(forgotPasswordDTO.getEmail(), forgotPasswordDTO.getOtp())) {
+            throw new IllegalArgumentException("Invalid OTP");
+        }
 
         doctor.setPassword(passwordEncoder.encode(forgotPasswordDTO.getNewPassword()));
         doctor.setUpdatedAt(new Date());
