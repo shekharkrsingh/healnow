@@ -14,5 +14,5 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
 
     List<AppointmentEntity> findByDoctorIdAndBookingDateTimeBetween(String doctorId, Date startDate, Date endDate);
 
-    boolean existsByDoctorIdAndPatientNameAndContactAndBookingDateTimeBetween(String doctorId, String patientName, String contact, Date startDate, Date endDate); // Change to appointmentDateTime
+    boolean existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetween(String doctorId, String patientName, String contact, Date startDate, Date endDate); // Change to appointmentDateTime
 }

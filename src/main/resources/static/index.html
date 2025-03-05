@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        #login-form, #dashboard {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input, button {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        #dashboard {
+            display: none;
+        }
+        #messages {
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<div id="login-form">
+    <h2>Doctor Login</h2>
+    <input type="email" id="email" placeholder="Enter Email" value="shekharkrsingh@gmail.com">
+    <input type="password" id="password" placeholder="Enter Password" value="Shekhar@123">
+    <button onclick="login()">Login</button>
+</div>
+
+<div id="dashboard">
+    <h2>WebSocket Dashboard</h2>
+    <button onclick="connectWebSocket()">Connect to WebSocket</button>
+    <div id="messages"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
