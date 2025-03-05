@@ -15,7 +15,7 @@ public class AppointmentRequestDTO {
     private String patientName;
     private String contact;
     private String description;
-    private Date bookingDateTime;
+    private Date appointmentDateTime;
     private Boolean availableAtClinic;
     private Boolean paymentStatus;
 }

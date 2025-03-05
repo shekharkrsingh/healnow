@@ -31,7 +31,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/public/**").permitAll()
-                        .requestMatchers("/ws/**", "/topic/**", "/app/**", "/index.html", "/styles.css", "/script.js").permitAll() // Allow WebSocket connections
+                        .requestMatchers("/ws/**").permitAll()        // Allow WebSocket handshake
+                        .requestMatchers("/topic/**").permitAll()     // Allow WebSocket subscriptions
+                        .requestMatchers("/app/**").permitAll()
+                        .requestMatchers("/ws/**", "/topic/**", "/app/**", "/index.html", "/login.html", "/dashboard.html", "/styles.css", "/script.js").permitAll() // Allow WebSocket connections
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

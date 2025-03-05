@@ -40,6 +40,7 @@ public class OtpServiceImpl implements IOtpService {
         Date expirationTime = new Date(System.currentTimeMillis() + (long) otpExpirationMinutes * 60 * 1000);
 
         OtpEntity otpEntity=new OtpEntity(otpRequestDTO.getEmail(), otp, expirationTime);
+        otpRepository.deleteByIdentifier(otpRequestDTO.getEmail());
         otpRepository.save(otpEntity);
         emailService.sendHtmlEmail(
                 otpRequestDTO.getEmail(),
@@ -47,7 +48,6 @@ public class OtpServiceImpl implements IOtpService {
                 "email.template",
                 Map.of("name", "Shekhar", "otp", otp, "message", "Use this OTP to proceed. It expires in " + otpExpirationMinutes + " minutes.")
         );
-        otpRepository.deleteByIdentifier(otpRequestDTO.getEmail());
         return new OtpResponseDTO(otpRequestDTO.getEmail(), otp);
     }
 
