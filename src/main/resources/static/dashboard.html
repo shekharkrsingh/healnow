@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Doctor Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        function getCookie(name) {
+            const cookies = document.cookie.split("; ");
+            for (const cookie of cookies) {
+                const [key, value] = cookie.split("=");
+                if (key === name) return value;
+            }
+            return null;
+        }
+
+        let stompClient = null;
+
+        function connectWebSocket() {
+            const authToken = getCookie("authToken");
+            if (!authToken) {
+                alert("You are not logged in. Redirecting to login...");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const socket = new SockJS("http://localhost:8080/ws"); // WebSocket endpoint
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({ Authorization: "Bearer " + authToken }, function () {
+                console.log("✅ Connected to WebSocket");
+
+                // Subscribe to the authenticated doctor's appointment updates
+                stompClient.subscribe("/user/queue/appointments", function (message) {
+                    const appointment = JSON.parse(message.body);
+                    console.log("📩 New appointment update received:", appointment);
+                    displayAppointment(appointment);
+                });
+            }, function (error) {
+                console.error("❌ WebSocket connection error:", error);
+                setTimeout(connectWebSocket, 5000); // Auto-reconnect after 5 seconds
+            });
+        }
+
+        function displayAppointment(appointment) {
+            const appointmentsList = document.getElementById("appointments");
+            const li = document.createElement("li");
+            li.innerText = `📅 Appointment: ${appointment.patientName} at ${appointment.appointmentDateTime}`;
+            appointmentsList.appendChild(li);
+        }
+
+        window.onload = connectWebSocket;
+    </script>
+</head>
+<body>
+<h2>Doctor Dashboard</h2>
+<h3>Upcoming Appointments:</h3>
+<ul id="appointments"></ul>
+</body>
+</html>

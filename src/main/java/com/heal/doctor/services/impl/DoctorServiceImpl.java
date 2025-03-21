@@ -13,16 +13,14 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -39,6 +37,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private final UserDetailsService userDetailsService;
     private final OtpServiceImpl otpService;
 
+    @Transactional
     @Override
     public DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
         if (!EmailValidatorUtil.isValidEmail(doctorRegistrationDTO.getEmail())) {
@@ -69,7 +68,6 @@ public class DoctorServiceImpl implements IDoctorService {
     public String loginDoctor(String username, String password) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(username, password);
-        System.out.println(authenticationToken.toString());
 
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
@@ -101,12 +99,12 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
-    public DoctorDTO updateDoctor( DoctorDTO doctorDTO) {
+    public DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
         String username= CurrentUserName.getCurrentUsername();
         DoctorEntity existingDoctor = doctorRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        modelMapper.map(doctorDTO, existingDoctor);
+        modelMapper.map(updateDoctorDetailsDTO, existingDoctor);
         existingDoctor.setUpdatedAt(new Date());
         DoctorEntity updatedDoctor = doctorRepository.save(existingDoctor);
         return modelMapper.map(updatedDoctor, DoctorDTO.class);

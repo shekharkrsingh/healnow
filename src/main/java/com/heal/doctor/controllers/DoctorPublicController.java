@@ -1,5 +1,9 @@
 package com.heal.doctor.controllers;
 
+import com.heal.doctor.services.IDoctorService;
+import com.heal.doctor.services.IDoctorStatisticsService;
+import com.heal.doctor.services.IOtpService;
+import com.heal.doctor.services.impl.DoctorStatisticsServiceImpl;
 import com.heal.doctor.services.impl.OtpServiceImpl;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
@@ -13,12 +17,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DoctorPublicController {
 
-    private final DoctorServiceImpl doctorService;
-    private final OtpServiceImpl otpService;
+    private final IDoctorService doctorService;
+    private final IOtpService otpService;
+    private final IDoctorStatisticsService appointmentStatisticsService;
 
     @GetMapping
-    public String abg(){
-        return "dfdfdfs";
+    public String test(){
+        return "Server is Up!";
     }
 
 

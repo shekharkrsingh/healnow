@@ -7,5 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class OtpResponseDTO {
     private String email;
-    private String otp;
+//    private String otp;
 }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Doctor Login</title>
+    <script>
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            if (!username || !password) {
+                alert("Username and Password are required.");
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:8080/api/v1/public/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success && result.data.token) {
+                    setCookie("authToken", result.data.token, 1); // Store JWT token in cookie (expires in 1 day)
+                    window.location.href = "dashboard.html"; // Redirect to dashboard
+                } else {
+                    alert(result.message || "Login failed");
+                }
+            } catch (error) {
+                console.error("Error during login:", error);
+                alert("An error occurred. Please try again.");
+            }
+        }
+    </script>
+</head>
+<body>
+<h2>Doctor Login</h2>
+<input type="email" id="username" placeholder="Enter Email" required />
+<input type="password" id="password" placeholder="Enter Password" required />
+<button onclick="login()">Login</button>
+</body>
+</html>
