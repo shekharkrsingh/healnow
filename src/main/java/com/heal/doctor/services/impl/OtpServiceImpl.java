@@ -24,6 +24,9 @@ public class OtpServiceImpl implements IOtpService {
     @Value("${otp.length}")
     private int otpLength;
 
+    @Value("${company.name}")
+    private String companyName;
+
     @Value("${otp.expiration.minutes}")
     private int otpExpirationMinutes;
 
@@ -44,11 +47,17 @@ public class OtpServiceImpl implements IOtpService {
         otpRepository.save(otpEntity);
         emailService.sendHtmlEmail(
                 otpRequestDTO.getEmail(),
-                "Test HTML Email",
+                "Your One-Time Password (OTP)",
                 "email.template",
-                Map.of("name", "Shekhar", "otp", otp, "message", "Use this OTP to proceed. It expires in " + otpExpirationMinutes + " minutes.")
+                Map.of(
+                        "companyName", companyName,
+                        "otp", otp,
+                        "message", "Use the OTP below to complete your verification. This OTP will expire in "
+                                + otpExpirationMinutes + " minutes. Please do not share it with anyone."
+                )
         );
-        return new OtpResponseDTO(otpRequestDTO.getEmail(), otp);
+
+        return new OtpResponseDTO(otpRequestDTO.getEmail());
     }
 
     @Override

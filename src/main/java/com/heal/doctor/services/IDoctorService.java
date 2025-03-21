@@ -9,7 +9,9 @@ public interface IDoctorService {
     DoctorDTO getDoctorById(String doctorId);
     DoctorDTO getDoctorProfile();
     List<DoctorDTO> getAllDoctors();
-    DoctorDTO updateDoctor( DoctorDTO doctorDTO);
+
+    DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
+
     void deleteDoctor(String doctorId);
     void forgotPassword(ForgotPasswordDTO forgotPasswordDTO);
     void updateEmail( UpdateEmailDTO updateEmailDTO);

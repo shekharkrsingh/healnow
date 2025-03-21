@@ -1,7 +1,5 @@
 package com.heal.doctor.services.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentRequestDTO;
 import com.heal.doctor.models.AppointmentEntity;
@@ -12,37 +10,25 @@ import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.utils.AppointmentId;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.DateUtils;
-import com.heal.doctor.websocket.AppointmentWebSocketHandler;
+import com.heal.doctor.websocket.WebSocketController;
+import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+@AllArgsConstructor
 @Service
 public class AppointmentServiceImpl implements IAppointmentService {
 
 
     private final AppointmentRepository appointmentRepository;
-    private final AppointmentWebSocketHandler webSocketHandler;
     private final ModelMapper modelMapper;
-    private final SimpMessagingTemplate messagingTemplate;
-    private final ObjectMapper objectMapper;
+    private final WebSocketController webSocketController;
 
-    public AppointmentServiceImpl(AppointmentRepository appointmentRepository,
-                                  AppointmentWebSocketHandler webSocketHandler,
-                                  ModelMapper modelMapper, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper)
-    {
-        this.appointmentRepository = appointmentRepository;
-        this.webSocketHandler = webSocketHandler;
-        this.modelMapper = modelMapper;
-        this.messagingTemplate = messagingTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     @Transactional
     @Override
@@ -68,10 +54,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
         String doctorId = CurrentUserName.getCurrentDoctorId();
-        Date appointmentDate = requestDTO.getBookingDateTime() != null ? requestDTO.getBookingDateTime() : new Date();
+        Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();
         Date[] date = DateUtils.getStartAndEndOfDay(new Date());
 
-        boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndBookingDateTimeBetween(
+        boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetween(
                 doctorId,
                 requestDTO.getPatientName(),
                 requestDTO.getContact(),
@@ -85,7 +71,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
         appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
         appointmentEntity.setAppointmentDateTime(appointmentDate);
-        appointmentEntity.setBookingDateTime(appointmentDate);
+        appointmentEntity.setBookingDateTime(new Date());
         appointmentEntity.setDoctorId(doctorId);
         appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setTreated(false);
@@ -94,12 +80,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
         System.out.println("Sending WebSocket update for appointment: " + savedAppointment.getAppointmentId());
 
-        // **Send Real-Time WebSocket Update**
-        messagingTemplate.convertAndSend("/topic/appointments", modelMapper.map(savedAppointment, AppointmentDTO.class));
+        AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
 
-
-        System.out.println(savedAppointment);
-        return modelMapper.map(savedAppointment, AppointmentDTO.class);
+        if (removeTime(appointmentDate).equals(removeTime(new Date()))) {
+            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+        }
+        return appointmentDTO;
     }
 
 
@@ -131,6 +117,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .toList();
     }
 
+    @Transactional
     @Override
     public AppointmentDTO updateAppointmentStatus(String appointmentId, AppointmentStatus status) {
         AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
@@ -141,14 +128,17 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
         appointmentEntity.setStatus(status);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
+        AppointmentDTO appointmentDTO=modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         // 🔴 WebSocket update added (Status Change)
-        messagingTemplate.convertAndSend("/topic/appointments", modelMapper.map(updatedAppointment, AppointmentDTO.class));
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+        }
 
-        return modelMapper.map(updatedAppointment, AppointmentDTO.class);
+        return appointmentDTO;
     }
 
-
+    @Transactional
     @Override
     public AppointmentDTO updatePaymentStatus(String appointmentId, Boolean paymentStatus) {
         AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
@@ -166,16 +156,19 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new RuntimeException("Cannot mark as paid: Appointment is not marked as accepted");
             }
         appointmentEntity.setPaymentStatus(paymentStatus);
-        AppointmentEntity updatedAppointement=appointmentRepository.save(appointmentEntity);
+        AppointmentEntity updatedAppointment=appointmentRepository.save(appointmentEntity);
 
-            messagingTemplate.convertAndSend("/topic/appointments", modelMapper.map(updatedAppointement, AppointmentDTO.class));
+        AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
-        return modelMapper.map(appointmentRepository.save(appointmentEntity),AppointmentDTO.class);
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+        }
+        return appointmentDTO;
     }
 
 
 
-
+    @Transactional
     @Override
     public AppointmentDTO updateTreatedStatus(String appointmentId, Boolean treatedStatus) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
@@ -203,13 +196,15 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
 
-        // 🔴 WebSocket update added (Treated Status Change)
-        messagingTemplate.convertAndSend("/topic/appointments", modelMapper.map(updatedAppointment, AppointmentDTO.class));
+        AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+        }
 
-        return modelMapper.map(appointmentRepository.save(appointmentEntity), AppointmentDTO.class);
+        return appointmentDTO;
     }
 
-
+    @Transactional
     @Override
     public AppointmentDTO updateAvailableAtClinic(String appointmentId, Boolean availableAtClinicStatus) {
         AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
@@ -232,11 +227,14 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
 
-        // 🔴 WebSocket update added (Clinic Availability Change)
-        messagingTemplate.convertAndSend("/topic/appointments", modelMapper.map(updatedAppointment, AppointmentDTO.class));
+        AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
+
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+        }
 
 
-        return modelMapper.map(appointmentRepository.save(appointmentEntity),AppointmentDTO.class);
+        return appointmentDTO;
     }
 
 

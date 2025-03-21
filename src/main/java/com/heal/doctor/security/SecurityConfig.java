@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()        // Allow WebSocket handshake
                         .requestMatchers("/topic/**").permitAll()     // Allow WebSocket subscriptions
                         .requestMatchers("/app/**").permitAll()
-                        .requestMatchers("/ws/**", "/topic/**", "/app/**", "/index.html", "/login.html", "/dashboard.html", "/styles.css", "/script.js").permitAll() // Allow WebSocket connections
+                        .requestMatchers("/ws/**", "/topic/**", "/app/**", "/index.html", "/script.js").permitAll() // Allow WebSocket connections
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
