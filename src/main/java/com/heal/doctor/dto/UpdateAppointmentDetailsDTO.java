@@ -8,5 +8,5 @@ public class UpdateAppointmentDetailsDTO {
     private AppointmentStatus appointmentStatus;
     private Boolean paymentStatus;
     private Boolean availableAtClinic;
-    private Boolean treatedStatus;
+    private Boolean treated;
 }

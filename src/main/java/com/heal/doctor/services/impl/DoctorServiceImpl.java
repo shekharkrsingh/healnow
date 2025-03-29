@@ -61,6 +61,7 @@ public class DoctorServiceImpl implements IDoctorService {
         doctor.setUpdatedAt(new Date());
         doctor.setDoctorId(generateDoctorId());
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
+        
         return modelMapper.map(savedDoctor, DoctorDTO.class);
     }
 

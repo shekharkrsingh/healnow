@@ -25,5 +25,7 @@ public class UpdateDoctorDetailsDTO {
     private String bio;
     private Integer yearsOfExperience;
     private GenderEnum gender;
+    private String coverPicture;
+    private String profilePicture;
 
 }

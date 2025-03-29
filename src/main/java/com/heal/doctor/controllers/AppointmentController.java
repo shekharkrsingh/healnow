@@ -75,8 +75,8 @@ public class AppointmentController {
         if (updateDTO.getPaymentStatus() != null) {
             appointment = appointmentService.updatePaymentStatus(appointmentId, updateDTO.getPaymentStatus());
         }
-        if (updateDTO.getTreatedStatus() != null) {
-            appointment = appointmentService.updateTreatedStatus(appointmentId, updateDTO.getTreatedStatus());
+        if (updateDTO.getTreated() != null) {
+            appointment = appointmentService.updateTreatedStatus(appointmentId, updateDTO.getTreated());
         }
         if (updateDTO.getAvailableAtClinic() != null) {
             appointment = appointmentService.updateAvailableAtClinic(appointmentId, updateDTO.getAvailableAtClinic());
