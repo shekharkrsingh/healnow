@@ -24,6 +24,7 @@ public class AppointmentEntity {
     private String doctorId;
     private String patientName;
     private String contact;
+    private String email;
     private String description;
     private Date appointmentDateTime;
     private Date bookingDateTime;
