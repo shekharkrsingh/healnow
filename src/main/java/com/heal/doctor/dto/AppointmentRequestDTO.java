@@ -14,6 +14,7 @@ import java.util.Date;
 public class AppointmentRequestDTO {
     private String patientName;
     private String contact;
+    private String email;
     private String description;
     private Date appointmentDateTime;
     private Boolean availableAtClinic;
