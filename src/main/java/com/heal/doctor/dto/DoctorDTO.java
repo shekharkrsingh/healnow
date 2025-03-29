@@ -32,7 +32,8 @@ public class DoctorDTO {
     private String about;
     private String bio;
     private Integer yearsOfExperience;
-    private GenderEnum gender;
+    private String coverPicture;
+    private String profilePicture;
     private Date createdAt;
     private Date updatedAt;
 }

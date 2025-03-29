@@ -53,6 +53,9 @@ public class DoctorEntity {
 
     private RolesEnum rolesEnum;
 
+    private String coverPicture;
+    private String profilePicture;
+
     private Date createdAt;
     private Date updatedAt;
 }
