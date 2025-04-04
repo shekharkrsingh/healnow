@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DoctorStatisticsRepository extends MongoRepository<AppointmentEntity, String> {
@@ -43,4 +44,24 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
             "{ $sort: { date: 1 } }"
     })
     List<DailyTreatedPatients> getDailyTreatedPatientsLastWeek(Date startOfWeek, Date endOfYesterday, String doctorId);
+
+    @Aggregation(pipeline = {
+            "{ $match: { doctorId: ?0, appointmentDateTime: { $gte: ?1, $lt: ?2 } } }",
+            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, count: { $sum: 1 } } }",
+            "{ $sort: { _id: -1 } }", // Get the latest active day
+            "{ $limit: 1 }",
+            "{ $project: { _id: 0, count: 1 } }"
+    })
+    Optional<Integer> getLastActiveDayAppointments(String doctorId, Date startOfLast7Days, Date endOfYesterday);
+
+    @Aggregation(pipeline = {
+            "{ $match: { doctorId: ?0, treated: true, appointmentDateTime: { $gte: ?1, $lt: ?2 } } }",
+            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, count: { $sum: 1 } } }",
+            "{ $sort: { _id: -1 } }", // Get the latest active day
+            "{ $limit: 1 }",
+            "{ $project: { _id: 0, count: 1 } }"
+    })
+    Optional<Integer> getLastActiveDayTreatedAppointments(String doctorId, Date startOfLast7Days, Date endOfYesterday);
+
+
 }

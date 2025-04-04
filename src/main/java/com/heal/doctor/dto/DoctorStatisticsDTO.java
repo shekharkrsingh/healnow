@@ -7,9 +7,12 @@ import java.util.List;
 
 @Data
 public class DoctorStatisticsDTO {
-    Integer totalAppointment;
-    Integer totalUntreatedAppointment;
-    Integer totalTreatedAppointment;
-    Integer totalAvailableAtClinic;
-    List<DailyTreatedPatients> lastWeekTreatedData;
+    private Integer totalAppointment;
+    private Integer totalUntreatedAppointment;
+    private Integer totalTreatedAppointment;
+    private Integer totalAvailableAtClinic;
+    private List<DailyTreatedPatients> lastWeekTreatedData;
+    private Integer lastActiveDayAppointments;
+    private Integer lastActiveDayTreatedAppointments;
+
 }
