@@ -26,8 +26,7 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
         Date startOfWeek = getStartOfLast7Days();
         Date endOfYesterday = getEndOfYesterday();
 
-
-        String doctorId= CurrentUserName.getCurrentDoctorId();
+        String doctorId = CurrentUserName.getCurrentDoctorId();
 
         Integer totalAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
         Integer totalUntreatedAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalUntreatedAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
@@ -35,13 +34,18 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
         Integer totalAvailableAtClinic = Objects.requireNonNullElse(statisticsRepository.getTotalAvailableAtClinicToday(startOfDay, endOfDay, doctorId), 0);
         List<DailyTreatedPatients> dailyTreatedPatientsLastWeek = getProcessedDailyTreatedPatients(startOfWeek, endOfYesterday, doctorId);
 
+        Integer lastActiveDayAppointments = statisticsRepository.getLastActiveDayAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0);
+        Integer lastActiveDayTreatedAppointments = statisticsRepository.getLastActiveDayTreatedAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0);
 
-        DoctorStatisticsDTO doctorStatisticsDTO= new DoctorStatisticsDTO();
+        DoctorStatisticsDTO doctorStatisticsDTO = new DoctorStatisticsDTO();
         doctorStatisticsDTO.setTotalAppointment(totalAppointmentsToday);
         doctorStatisticsDTO.setTotalUntreatedAppointment(totalUntreatedAppointmentsToday);
         doctorStatisticsDTO.setTotalTreatedAppointment(totalTreatedAppointmentsToday);
         doctorStatisticsDTO.setTotalAvailableAtClinic(totalAvailableAtClinic);
         doctorStatisticsDTO.setLastWeekTreatedData(dailyTreatedPatientsLastWeek);
+        doctorStatisticsDTO.setLastActiveDayAppointments(lastActiveDayAppointments);
+        doctorStatisticsDTO.setLastActiveDayTreatedAppointments(lastActiveDayTreatedAppointments);
+
         return doctorStatisticsDTO;
     }
 
