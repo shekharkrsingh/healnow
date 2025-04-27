@@ -29,7 +29,7 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
         String doctorId = CurrentUserName.getCurrentDoctorId();
 
         Integer totalAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
-        Integer totalUntreatedAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalUntreatedAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
+        Integer totalUntreatedAppointmentsTodayAndNotAvailable = Objects.requireNonNullElse(statisticsRepository.getTotalUntreatedAppointmentsTodayAndNotAvailable(startOfDay, endOfDay, doctorId), 0);
         Integer totalTreatedAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalTreatedAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
         Integer totalAvailableAtClinic = Objects.requireNonNullElse(statisticsRepository.getTotalAvailableAtClinicToday(startOfDay, endOfDay, doctorId), 0);
         List<DailyTreatedPatients> dailyTreatedPatientsLastWeek = getProcessedDailyTreatedPatients(startOfWeek, endOfYesterday, doctorId);
@@ -39,12 +39,15 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
 
         DoctorStatisticsDTO doctorStatisticsDTO = new DoctorStatisticsDTO();
         doctorStatisticsDTO.setTotalAppointment(totalAppointmentsToday);
-        doctorStatisticsDTO.setTotalUntreatedAppointment(totalUntreatedAppointmentsToday);
+        doctorStatisticsDTO.setTotalUntreatedAppointmentAndNotAvailable(totalUntreatedAppointmentsTodayAndNotAvailable);
         doctorStatisticsDTO.setTotalTreatedAppointment(totalTreatedAppointmentsToday);
         doctorStatisticsDTO.setTotalAvailableAtClinic(totalAvailableAtClinic);
         doctorStatisticsDTO.setLastWeekTreatedData(dailyTreatedPatientsLastWeek);
         doctorStatisticsDTO.setLastActiveDayAppointments(lastActiveDayAppointments);
         doctorStatisticsDTO.setLastActiveDayTreatedAppointments(lastActiveDayTreatedAppointments);
+        doctorStatisticsDTO.setLastActiveDayPercentageTreatedAppointments(
+                ((double)doctorStatisticsDTO.getLastActiveDayTreatedAppointments()/doctorStatisticsDTO.getLastActiveDayAppointments())*100
+                );
 
         return doctorStatisticsDTO;
     }
