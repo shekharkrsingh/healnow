@@ -20,10 +20,10 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
     Integer getTotalAppointmentsToday(Date startOfDay, Date endOfDay, String doctorId);
 
     @Aggregation(pipeline = {
-            "{ $match: { doctorId: ?2, appointmentDateTime: { $gte: ?0, $lt: ?1 }, treated: false } }",
+            "{ $match: { doctorId: ?2, appointmentDateTime: { $gte: ?0, $lt: ?1 }, availableAtClinic: false, treated: false } }",
             "{ $count: 'count' }"
     })
-    Integer getTotalUntreatedAppointmentsToday(Date startOfDay, Date endOfDay, String doctorId);
+    Integer getTotalUntreatedAppointmentsTodayAndNotAvailable(Date startOfDay, Date endOfDay, String doctorId);
 
     @Aggregation(pipeline = {
             "{ $match: { doctorId: ?2, appointmentDateTime: { $gte: ?0, $lt: ?1 }, treated: true } }",
@@ -32,7 +32,7 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
     Integer getTotalTreatedAppointmentsToday(Date startOfDay, Date endOfDay, String doctorId);
 
     @Aggregation(pipeline = {
-            "{ $match: { doctorId: ?2, appointmentDateTime: { $gte: ?0, $lt: ?1 }, availableAtClinic: true } }",
+            "{ $match: { doctorId: ?2, appointmentDateTime: { $gte: ?0, $lt: ?1 }, availableAtClinic: true, treated: false } }",
             "{ $count: 'count' }"
     })
     Integer getTotalAvailableAtClinicToday(Date startOfDay, Date endOfDay, String doctorId);
@@ -57,7 +57,7 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
     @Aggregation(pipeline = {
             "{ $match: { doctorId: ?0, treated: true, appointmentDateTime: { $gte: ?1, $lt: ?2 } } }",
             "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, count: { $sum: 1 } } }",
-            "{ $sort: { _id: -1 } }", // Get the latest active day
+            "{ $sort: { _id: -1 } }",
             "{ $limit: 1 }",
             "{ $project: { _id: 0, count: 1 } }"
     })
