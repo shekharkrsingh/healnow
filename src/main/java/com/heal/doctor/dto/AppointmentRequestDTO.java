@@ -1,7 +1,5 @@
 package com.heal.doctor.dto;
 
-import com.heal.doctor.models.enums.AppointmentStatus;
-import com.heal.doctor.models.enums.AppointmentType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
