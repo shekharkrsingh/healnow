@@ -4,7 +4,6 @@ package com.heal.doctor.dto;
 import com.heal.doctor.models.Address;
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.TimeSlot;
-import com.heal.doctor.models.enums.GenderEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -6,7 +6,6 @@ import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.GenderEnum;
 import lombok.Data;
 
-import java.util.Date;
 import java.util.List;
 
 @Data
