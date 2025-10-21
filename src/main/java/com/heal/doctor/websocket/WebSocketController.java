@@ -1,8 +1,6 @@
 package com.heal.doctor.websocket;
 
 import com.heal.doctor.dto.AppointmentDTO;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -15,11 +13,22 @@ public class WebSocketController {
         this.messagingTemplate = messagingTemplate;
     }
 
-    // Method to send updates to a specific doctor
     public void sendAppointmentUpdate(String doctorId, AppointmentDTO appointment) {
-        String destination = "/topic/appointments/" + doctorId;
-        messagingTemplate.convertAndSend(destination, appointment);
+        try {
+            System.out.println("📢 Sending WebSocket message to doctor: " + doctorId);
+            System.out.println("📦 Message content: " + appointment.toString());
+
+            // Method 1: User-specific messaging (Primary)
+            messagingTemplate.convertAndSendToUser(doctorId, "/queue/appointments", appointment);
+
+            // Method 2: Also send to topic for testing
+            messagingTemplate.convertAndSend("/topic/appointments", appointment);
+
+            System.out.println("✅ WebSocket messages sent successfully");
+
+        } catch (Exception e) {
+            System.out.println("❌ Error sending WebSocket message: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
-
 }
-
