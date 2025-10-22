@@ -13,6 +13,7 @@ import com.heal.doctor.utils.DateUtils;
 import com.heal.doctor.websocket.WebSocketController;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +28,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
-    private final WebSocketController webSocketController;
+    private final SimpMessagingTemplate messagingTemplate;
 
 
     @Transactional
@@ -83,7 +84,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDate).equals(removeTime(new Date()))) {
-            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
         }
         return appointmentDTO;
     }
@@ -132,7 +133,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         // 🔴 WebSocket update added (Status Change)
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
         }
 
         return appointmentDTO;
@@ -161,7 +162,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
         }
         return appointmentDTO;
     }
@@ -198,7 +199,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
         }
 
         return appointmentDTO;
@@ -230,7 +231,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            webSocketController.sendAppointmentUpdate(appointmentDTO.getDoctorId(), appointmentDTO);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
         }
 
 
