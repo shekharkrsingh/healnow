@@ -161,7 +161,7 @@ public class DoctorServiceImpl implements IDoctorService {
         DoctorEntity updatedDoctor = doctorRepository.save(existingDoctor);
 
         DoctorDTO doctorDTO = new DoctorDTO();
-        modelMapper.map(existingDoctor, doctorDTO);
+        modelMapper.map(updatedDoctor, doctorDTO);
 
         return doctorDTO;
     }
