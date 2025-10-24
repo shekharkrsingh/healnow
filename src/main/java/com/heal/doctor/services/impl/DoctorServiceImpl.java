@@ -2,6 +2,7 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DoctorEntity;
+import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
@@ -101,15 +102,71 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Override
     public DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
-        String username= CurrentUserName.getCurrentUsername();
+        String username = CurrentUserName.getCurrentUsername();
         DoctorEntity existingDoctor = doctorRepository.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        modelMapper.map(updateDoctorDetailsDTO, existingDoctor);
+        if (updateDoctorDetailsDTO.getFirstName() != null && !updateDoctorDetailsDTO.getFirstName().isEmpty()) {
+            existingDoctor.setFirstName(updateDoctorDetailsDTO.getFirstName());
+        }
+        if (updateDoctorDetailsDTO.getLastName() != null && !updateDoctorDetailsDTO.getLastName().isEmpty()) {
+            existingDoctor.setLastName(updateDoctorDetailsDTO.getLastName());
+        }
+        if (updateDoctorDetailsDTO.getSpecialization() != null && !updateDoctorDetailsDTO.getSpecialization().isEmpty()) {
+            existingDoctor.setSpecialization(updateDoctorDetailsDTO.getSpecialization());
+        }
+        if (updateDoctorDetailsDTO.getPhoneNumber() != null && !updateDoctorDetailsDTO.getPhoneNumber().isEmpty()) {
+            existingDoctor.setPhoneNumber(updateDoctorDetailsDTO.getPhoneNumber());
+        }
+        if (updateDoctorDetailsDTO.getAvailableDays() != null) {
+            validateAvailableDays(updateDoctorDetailsDTO.getAvailableDays());
+            existingDoctor.setAvailableDays(updateDoctorDetailsDTO.getAvailableDays());
+        }
+        if (updateDoctorDetailsDTO.getAvailableTimeSlots() != null) {
+                existingDoctor.setAvailableTimeSlots(updateDoctorDetailsDTO.getAvailableTimeSlots());
+        }
+        if (updateDoctorDetailsDTO.getClinicAddress() != null && !updateDoctorDetailsDTO.getClinicAddress().isEmpty()) {
+            existingDoctor.setClinicAddress(updateDoctorDetailsDTO.getClinicAddress());
+        }
+        if (updateDoctorDetailsDTO.getAddress() != null) {
+            existingDoctor.setAddress(updateDoctorDetailsDTO.getAddress());
+        }
+        if (updateDoctorDetailsDTO.getEducation() != null) {
+            existingDoctor.setEducation(updateDoctorDetailsDTO.getEducation());
+        }
+        if (updateDoctorDetailsDTO.getAchievementsAndAwards() != null) {
+            existingDoctor.setAchievementsAndAwards(updateDoctorDetailsDTO.getAchievementsAndAwards());
+        }
+        if (updateDoctorDetailsDTO.getAbout() != null && !updateDoctorDetailsDTO.getAbout().isEmpty()) {
+            existingDoctor.setAbout(updateDoctorDetailsDTO.getAbout());
+        }
+        if (updateDoctorDetailsDTO.getBio() != null && !updateDoctorDetailsDTO.getBio().isEmpty()) {
+            existingDoctor.setBio(updateDoctorDetailsDTO.getBio());
+        }
+        if (updateDoctorDetailsDTO.getYearsOfExperience() != null) {
+            existingDoctor.setYearsOfExperience(updateDoctorDetailsDTO.getYearsOfExperience());
+        }
+        if (updateDoctorDetailsDTO.getGender() != null) {
+            existingDoctor.setGender(updateDoctorDetailsDTO.getGender());
+        }
+        if (updateDoctorDetailsDTO.getCoverPicture() != null && !updateDoctorDetailsDTO.getCoverPicture().isEmpty()) {
+            existingDoctor.setCoverPicture(updateDoctorDetailsDTO.getCoverPicture());
+        }
+        if (updateDoctorDetailsDTO.getProfilePicture() != null && !updateDoctorDetailsDTO.getProfilePicture().isEmpty()) {
+            existingDoctor.setProfilePicture(updateDoctorDetailsDTO.getProfilePicture());
+        }
+
         existingDoctor.setUpdatedAt(new Date());
+
         DoctorEntity updatedDoctor = doctorRepository.save(existingDoctor);
-        return modelMapper.map(updatedDoctor, DoctorDTO.class);
+
+        DoctorDTO doctorDTO = new DoctorDTO();
+        modelMapper.map(existingDoctor, doctorDTO);
+
+        return doctorDTO;
     }
+
+
 
 
 
@@ -173,7 +230,13 @@ public class DoctorServiceImpl implements IDoctorService {
         return String.format("%s-%s-%s", prefix, timestamp, randomNumber);
     }
 
-
+    private void validateAvailableDays(List<AvailableDayEnum> availableDays) {
+        for (AvailableDayEnum day : availableDays) {
+            if (day == null) {
+                throw new IllegalArgumentException("Invalid day in available days.");
+            }
+        }
+    }
 
 }
 
