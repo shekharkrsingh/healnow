@@ -1,25 +1,27 @@
-package com.heal.doctor.services.impl;
+package com.heal.doctor.Mail.impl;
 
+import com.heal.doctor.Mail.IDoctorAccountMailService;
 import com.heal.doctor.dto.OtpRequestDTO;
 import com.heal.doctor.dto.OtpResponseDTO;
 import com.heal.doctor.models.OtpEntity;
 import com.heal.doctor.repositories.OtpRepository;
-import com.heal.doctor.services.IOtpService;
-import org.modelmapper.ModelMapper;
+import com.heal.doctor.Mail.IOtpService;
+import com.heal.doctor.services.IEmailService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 
 
 @Service
+@AllArgsConstructor
 public class OtpServiceImpl implements IOtpService {
 
     private final OtpRepository otpRepository;
-    private final EmailServiceImpl emailService;
+    private final IEmailService emailService;
 
     @Value("${otp.length}")
     private int otpLength;
@@ -31,11 +33,6 @@ public class OtpServiceImpl implements IOtpService {
     private int otpExpirationMinutes;
 
     private  final SecureRandom secureRandom=new SecureRandom();
-
-    public OtpServiceImpl(OtpRepository otpRepository, EmailServiceImpl emailService) {
-        this.otpRepository = otpRepository;
-        this.emailService=emailService;
-    }
 
     @Override
     public OtpResponseDTO generateOtp(OtpRequestDTO otpRequestDTO) {

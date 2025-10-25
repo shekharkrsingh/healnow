@@ -1,4 +1,4 @@
-package com.heal.doctor.services;
+package com.heal.doctor.Mail;
 
 import com.heal.doctor.dto.OtpRequestDTO;
 import com.heal.doctor.dto.OtpResponseDTO;
