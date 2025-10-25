@@ -8,6 +8,7 @@ import com.heal.doctor.repositories.OtpRepository;
 import com.heal.doctor.Mail.IOtpService;
 import com.heal.doctor.services.IEmailService;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ import java.util.Map;
 
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class OtpServiceImpl implements IOtpService {
 
     private final OtpRepository otpRepository;
