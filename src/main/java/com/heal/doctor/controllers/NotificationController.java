@@ -1,7 +1,6 @@
 package com.heal.doctor.controllers;
 
 import com.heal.doctor.dto.NotificationResponseDTO;
-import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.services.INotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
