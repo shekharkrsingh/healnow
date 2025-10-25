@@ -2,11 +2,14 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DoctorEntity;
+import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AvailableDayEnum;
+import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
 import com.heal.doctor.services.IDoctorService;
+import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.EmailValidatorUtil;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final OtpServiceImpl otpService;
+    private final INotificationService notificationService;
 
     @Transactional
     @Override
@@ -62,6 +66,13 @@ public class DoctorServiceImpl implements IDoctorService {
         doctor.setUpdatedAt(new Date());
         doctor.setDoctorId(generateDoctorId());
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
+        NotificationEntity notification=NotificationEntity.builder().
+                doctorId(savedDoctor.getDoctorId()).
+                type(NotificationType.SYSTEM).
+                title("Welcome "+ savedDoctor.getFirstName()).
+                message("Your account has been successfully created. Complete your profile to start managing appointments and providing care.").
+                build();
+        notificationService.createNotification(notification);
         
         return modelMapper.map(savedDoctor, DoctorDTO.class);
     }
