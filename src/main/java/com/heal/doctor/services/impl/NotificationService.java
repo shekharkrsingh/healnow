@@ -6,10 +6,12 @@ import com.heal.doctor.repositories.NotificationRepository;
 import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.CurrentUserName;
 import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 
+@Service
 public class NotificationService implements INotificationService {
 
     private final NotificationRepository notificationRepository;
