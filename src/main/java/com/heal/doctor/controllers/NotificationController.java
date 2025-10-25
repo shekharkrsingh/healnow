@@ -2,6 +2,7 @@ package com.heal.doctor.controllers;
 
 import com.heal.doctor.dto.NotificationResponseDTO;
 import com.heal.doctor.services.INotificationService;
+import com.heal.doctor.utils.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,32 +17,46 @@ public class NotificationController {
     private final INotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<List<NotificationResponseDTO>> getAllNotifications() {
+    public ResponseEntity<ApiResponse<List<NotificationResponseDTO>>> getAllNotifications() {
         List<NotificationResponseDTO> notifications = notificationService.getAllNotificationsForCurrentDoctor();
-        return ResponseEntity.ok(notifications);
+        ApiResponse<List<NotificationResponseDTO>> response = ApiResponse.<List<NotificationResponseDTO>>builder()
+                .success(true)
+                .message("Fetched all notifications successfully.")
+                .data(notifications)
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/unread")
-    public ResponseEntity<List<NotificationResponseDTO>> getUnreadNotifications() {
+    public ResponseEntity<ApiResponse<List<NotificationResponseDTO>>> getUnreadNotifications() {
         List<NotificationResponseDTO> notifications = notificationService.getUnreadNotificationsForCurrentDoctor();
-        return ResponseEntity.ok(notifications);
+        ApiResponse<List<NotificationResponseDTO>> response = ApiResponse.<List<NotificationResponseDTO>>builder()
+                .success(true)
+                .message("Fetched unread notifications successfully.")
+                .data(notifications)
+                .build();
+        return ResponseEntity.ok(response);
     }
 
-//    @PostMapping
-//    public ResponseEntity<NotificationResponseDTO> createNotification(@RequestBody NotificationEntity request) {
-//        NotificationResponseDTO created = notificationService.createNotification(request);
-//        return ResponseEntity.ok(created);
-//    }
-
     @PatchMapping("/{id}/read")
-    public ResponseEntity<NotificationResponseDTO> markAsRead(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<NotificationResponseDTO>> markAsRead(@PathVariable String id) {
         NotificationResponseDTO updated = notificationService.markAsRead(id);
-        return ResponseEntity.ok(updated);
+        ApiResponse<NotificationResponseDTO> response = ApiResponse.<NotificationResponseDTO>builder()
+                .success(true)
+                .message("Notification marked as read successfully.")
+                .data(updated)
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/read-all")
-    public ResponseEntity<Void> markAllAsRead() {
-        notificationService.markAllAsReadForCurrentDoctor();
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<List<NotificationResponseDTO>>> markAllAsRead() {
+        List<NotificationResponseDTO> notifications= notificationService.markAllAsReadForCurrentDoctor();
+        ApiResponse<List<NotificationResponseDTO>> response = ApiResponse.<List<NotificationResponseDTO>>builder()
+                .success(true)
+                .message("All notifications marked as read successfully.")
+                .data(notifications)
+                .build();
+        return ResponseEntity.ok(response);
     }
 }
