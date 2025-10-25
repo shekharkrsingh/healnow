@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class NotificationService implements INotificationService {
@@ -32,7 +33,7 @@ public class NotificationService implements INotificationService {
     public List<NotificationResponseDTO> getAllNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         Instant now = Instant.now();
-        List<NotificationEntity> notifications= notificationRepository.findByDoctorIdOrDoctorIdIsNullAndExpiryDateAfterOrderByCreatedAtDesc(doctorId, now);
+        List<NotificationEntity> notifications= notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
         return notifications.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
@@ -42,7 +43,7 @@ public class NotificationService implements INotificationService {
     public List<NotificationResponseDTO> getUnreadNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         Instant now = Instant.now();
-        List<NotificationEntity> notifications= notificationRepository.findByIsReadFalseAndDoctorIdOrDoctorIdIsNullAndExpiryDateAfter(doctorId, now);
+        List<NotificationEntity> notifications= notificationRepository.findByIsReadFalseAndDoctorIdOrDoctorIdIsNull(doctorId);
         return notifications.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
@@ -50,17 +51,18 @@ public class NotificationService implements INotificationService {
 
     @Override
     public NotificationResponseDTO markAsRead(String notificationId) {
-        NotificationEntity notification = notificationRepository.findById(notificationId)
+        NotificationEntity notification = notificationRepository.findByIdAndDoctorId(notificationId, CurrentUserName.getCurrentDoctorId())
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
         notification.setIsRead(true);
-        return modelMapper.map(notification, NotificationResponseDTO.class);
+        NotificationEntity updatedNotification= notificationRepository.save(notification);
+        return modelMapper.map(updatedNotification, NotificationResponseDTO.class);
     }
 
     @Override
     public List<NotificationResponseDTO> markAllAsReadForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         List<NotificationEntity> notifications = notificationRepository
-                .findByIsReadFalseAndDoctorIdAndExpiryDateAfter(doctorId, Instant.now());
+                .findByIsReadFalseAndDoctorId(doctorId);
         notifications.forEach(n -> {
             n.setIsRead(true);
         });
