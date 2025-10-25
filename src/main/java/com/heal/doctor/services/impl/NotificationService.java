@@ -57,14 +57,17 @@ public class NotificationService implements INotificationService {
     }
 
     @Override
-    public void markAllAsReadForCurrentDoctor() {
+    public List<NotificationResponseDTO> markAllAsReadForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         List<NotificationEntity> notifications = notificationRepository
                 .findByIsReadFalseAndDoctorIdAndExpiryDateAfter(doctorId, Instant.now());
         notifications.forEach(n -> {
             n.setIsRead(true);
         });
-        notificationRepository.saveAll(notifications);
+        List<NotificationEntity> savedNotification= notificationRepository.saveAll(notifications);
+        return savedNotification.stream()
+                .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
+                .toList();
     }
 
 }

@@ -14,5 +14,5 @@ public interface INotificationService {
 
     NotificationResponseDTO markAsRead(String notificationId);
 
-    void markAllAsReadForCurrentDoctor();
+    List<NotificationResponseDTO> markAllAsReadForCurrentDoctor();
 }
