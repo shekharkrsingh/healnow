@@ -1,5 +1,7 @@
 package com.heal.doctor.services.impl;
 
+import com.heal.doctor.Mail.IDoctorAccountMailService;
+import com.heal.doctor.Mail.impl.OtpServiceImpl;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
@@ -41,6 +43,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private final UserDetailsService userDetailsService;
     private final OtpServiceImpl otpService;
     private final INotificationService notificationService;
+    private final IDoctorAccountMailService doctorAccountMailService;
 
     @Transactional
     @Override
@@ -73,6 +76,7 @@ public class DoctorServiceImpl implements IDoctorService {
                 message("Your account has been successfully created. Complete your profile to start managing appointments and providing care.").
                 build();
         notificationService.createNotification(notification);
+        doctorAccountMailService.doctorWelcomeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
         
         return modelMapper.map(savedDoctor, DoctorDTO.class);
     }
@@ -199,7 +203,14 @@ public class DoctorServiceImpl implements IDoctorService {
         }
         doctor.setUpdatedAt(new Date());
         doctor.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
-        doctorRepository.save(doctor);
+        DoctorEntity savedDoctor= doctorRepository.save(doctor);
+        NotificationEntity notification=NotificationEntity.builder()
+                .doctorId(savedDoctor.getDoctorId())
+                .type(NotificationType.INFO)
+                .title("Password Updated.")
+                .message("Your login credentials have been updated.")
+                .build();
+        doctorAccountMailService.doctorPasswordChangeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
     }
 
     @Override
@@ -214,9 +225,28 @@ public class DoctorServiceImpl implements IDoctorService {
         if (!otpService.validateOtp(updateEmailDTO.getNewEmail(), updateEmailDTO.getOtp())) {
             throw new IllegalArgumentException("Invalid OTP");
         }
+        String oldMail=doctor.getEmail();
         doctor.setEmail(updateEmailDTO.getNewEmail());
         doctor.setUpdatedAt(new Date());
-        doctorRepository.save(doctor);
+        DoctorEntity savedDoctor =doctorRepository.save(doctor);
+        NotificationEntity notification=NotificationEntity.builder()
+                .doctorId(savedDoctor.getDoctorId())
+                .type(NotificationType.INFO)
+                .title("Security Update")
+                .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
+                .build();
+        doctorAccountMailService.doctorLoginEmailChangedMail(
+                oldMail,
+                doctor.getFirstName(),
+                oldMail,
+                updateEmailDTO.getNewEmail()
+        );
+        doctorAccountMailService.doctorLoginEmailChangedMail(
+                updateEmailDTO.getNewEmail(),
+                doctor.getFirstName(),
+                oldMail,
+                updateEmailDTO.getNewEmail()
+        );
     }
 
     @Override
@@ -230,7 +260,17 @@ public class DoctorServiceImpl implements IDoctorService {
 
         doctor.setPassword(passwordEncoder.encode(forgotPasswordDTO.getNewPassword()));
         doctor.setUpdatedAt(new Date());
-        doctorRepository.save(doctor);
+        DoctorEntity savedDoctor= doctorRepository.save(doctor);
+        NotificationEntity notification=NotificationEntity.builder()
+                .doctorId(savedDoctor.getDoctorId())
+                .type(NotificationType.INFO)
+                .title("Password Updated.")
+                .message("Your login credentials have been updated.")
+                .build();
+        doctorAccountMailService.doctorPasswordChangeMail(
+                savedDoctor.getFirstName(),
+                savedDoctor.getEmail()
+        );
     }
 
 
