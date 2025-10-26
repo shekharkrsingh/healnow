@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTP Verification</title>
+    <title>Welcome Email</title>
     <style>
         :root {
             --primary: #007bff;
@@ -56,55 +56,11 @@
             line-height: 1.5;
         }
 
-        .otp-section {
-            margin: 30px 0;
+        .email-body {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.5;
             text-align: center;
-        }
-
-        .otp-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .otp-code {
-            font-size: 42px;
-            font-weight: 700;
-            color: var(--primary);
-            background: linear-gradient(135deg, #f0f8ff, #e3f2fd);
-            padding: 20px 30px;
-            display: inline-block;
-            border-radius: 12px;
-            margin: 15px 0;
-            letter-spacing: 8px;
-            border: 2px solid #e3f2fd;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
-        }
-
-        .otp-expiry {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 10px;
-            font-weight: 500;
-        }
-
-        .security-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 25px 0;
-            text-align: center;
-        }
-
-        .security-notice p {
-            font-size: 14px;
-            color: #856404;
-            margin: 0;
-            font-weight: 500;
         }
 
         .instructions {
@@ -146,6 +102,42 @@
             margin-right: 8px;
         }
 
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .security-notice p {
+            font-size: 14px;
+            color: #856404;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #ffffff;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+
         .email-footer {
             font-size: 14px;
             color: var(--text-secondary);
@@ -167,13 +159,6 @@
             margin: 15px 0;
         }
 
-        .email-body {
-            font-size: 16px;
-            margin-bottom: 20px;
-            line-height: 1.5;
-            text-align: center;
-        }
-
         /* Responsive Design */
         @media screen and (max-width: 600px) {
             body {
@@ -193,12 +178,6 @@
 
             .email-subheader {
                 font-size: 15px;
-            }
-
-            .otp-code {
-                font-size: 36px;
-                padding: 18px 25px;
-                letter-spacing: 6px;
             }
 
             .instructions {
@@ -226,36 +205,40 @@
 <body>
 
 <div class="email-container">
-    <div class="email-header">OTP Verification</div>
+    <div class="email-header">Welcome to <span th:text="${companyName}">Our Platform</span></div>
+
+    <div class="email-subheader">
+        We're excited to have you on board
+    </div>
 
     <div class="email-body">
-        <p>Your one-time password (OTP) is below. Use it to verify your account.</p>
-    </div>
-
-    <div class="otp-section">
-        <div class="otp-code">
-            <span th:text="${otp}">123456</span>
-        </div>
-        <div class="otp-expiry">⏰ This code expires in 10 minutes</div>
-    </div>
-
-    <div class="security-notice">
-        <p>🔒 For your security, never share this code with anyone</p>
+        <p>Hello <strong th:text="${userName}">User</strong>,</p>
+        <p>Thank you for joining <span th:text="${companyName}">Our Platform</span>.
+            Your account has been successfully created and you're now part of our community.</p>
     </div>
 
     <div class="instructions">
-        <h3>Important Instructions:</h3>
+        <h3>Complete Your Profile to Get Started:</h3>
         <ul>
-            <li>Enter this code in the verification page</li>
-            <li>Do not share this code with anyone</li>
-            <li>The code will expire after 10 minutes</li>
-            <li>If you didn't request this, please ignore this email</li>
+            <li>Verify your email address to secure your account</li>
+            <li>Add a profile picture for better recognition</li>
+            <li>Fill in your personal and professional information</li>
+            <li>Set your notification preferences</li>
+            <li>Explore platform features and settings</li>
         </ul>
     </div>
 
+    <div class="security-notice">
+        <p>🔒 Your account security is our priority. Keep your login details safe.</p>
+    </div>
+
+    <a th:href="${dashboardUrl}" class="cta-button">
+        Complete My Profile
+    </a>
+
     <div class="email-footer">
-        <p>If you did not request this OTP, please ignore this email.</p>
-        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span></p>
+        <p>If you need any assistance, our support team is here to help.</p>
+        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span> Team</p>
         <div class="support-info">
             © 2024 <span th:text="${companyName}">Company Name</span>. All rights reserved.
         </div>
