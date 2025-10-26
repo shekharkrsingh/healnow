@@ -2,12 +2,9 @@ package com.heal.doctor.controllers;
 
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IDoctorStatisticsService;
-import com.heal.doctor.services.IOtpService;
-import com.heal.doctor.services.impl.DoctorStatisticsServiceImpl;
-import com.heal.doctor.services.impl.OtpServiceImpl;
+import com.heal.doctor.Mail.IOtpService;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
-import com.heal.doctor.services.impl.DoctorServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
