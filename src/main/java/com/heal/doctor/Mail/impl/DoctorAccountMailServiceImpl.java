@@ -55,13 +55,13 @@ public class DoctorAccountMailServiceImpl implements IDoctorAccountMailService {
     }
 
     @Override
-    public void doctorLoginEmailChangedMail(String reciverMail, String doctorName, String doctorOldEmail, String doctorNewEmail) {
+    public void doctorLoginEmailChangedMail(String receiverMail, String doctorName, String doctorOldEmail, String doctorNewEmail) {
         LocalDateTime now = LocalDateTime.now();
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
 
         emailService.sendHtmlEmail(
-                reciverMail,
+                receiverMail,
                 "Account Email Updated - " + companyName,
                 "email-change.template.html",
                 Map.of(
