@@ -210,6 +210,7 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
+        notificationService.createNotification(notification);
         doctorAccountMailService.doctorPasswordChangeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
     }
 
@@ -235,6 +236,7 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Security Update")
                 .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
                 .build();
+        notificationService.createNotification(notification);
         doctorAccountMailService.doctorLoginEmailChangedMail(
                 oldMail,
                 doctor.getFirstName(),
@@ -267,6 +269,7 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
+        notificationService.createNotification(notification);
         doctorAccountMailService.doctorPasswordChangeMail(
                 savedDoctor.getFirstName(),
                 savedDoctor.getEmail()
