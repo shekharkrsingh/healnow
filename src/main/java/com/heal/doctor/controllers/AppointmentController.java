@@ -92,8 +92,16 @@ public class AppointmentController {
 
     @PatchMapping("/emergency/{appointmentId}")
     public ResponseEntity<ApiResponse<AppointmentDTO>> updateEmergencyStatus(
-        @PathVariable String appointmentId, 
-        ){
+            @PathVariable String appointmentId,
+            @RequestBody EmergencyStatusDTO isEmergency
+    ){
+        AppointmentDTO appointmentDTO= appointmentService.updateEmergencyStatus(appointmentId, isEmergency.getIsEmergency());
 
-        }
+
+        return ResponseEntity.ok(ApiResponse.<AppointmentDTO>builder()
+                .success(true)
+                .message("Appointment updated successfully")
+                .data(appointmentDTO)
+                .build());
+    }
 }
