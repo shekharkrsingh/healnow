@@ -19,4 +19,5 @@ public interface IAppointmentService {
     AppointmentDTO updatePaymentStatus(String appointmentId, Boolean paymentStatus);
     AppointmentDTO updateTreatedStatus(String appointmentId, Boolean treatedStatus);
     AppointmentDTO updateAvailableAtClinic(String appointmentId, Boolean availableAtClinicStatus);
+    AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency);
 }
