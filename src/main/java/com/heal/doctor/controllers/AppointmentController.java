@@ -88,4 +88,12 @@ public class AppointmentController {
                 .data(appointment)
                 .build());
     }
+
+
+    @PatchMapping("/emergency/{appointmentId}")
+    public ResponseEntity<ApiResponse<AppointmentDTO>> updateEmergencyStatus(
+        @PathVariable String appointmentId, 
+        ){
+
+        }
 }
