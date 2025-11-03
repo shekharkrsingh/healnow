@@ -34,5 +34,6 @@ public class AppointmentEntity {
     private AppointmentStatus status;
     private AppointmentType appointmentType;
     private Boolean paymentStatus;
+    private Boolean isEmergency;
 }
 
