@@ -3,14 +3,17 @@ package com.heal.doctor.services.impl;
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentRequestDTO;
 import com.heal.doctor.models.AppointmentEntity;
+import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
+import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.services.IAppointmentService;
+import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.AppointmentId;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.DateUtils;
-import com.heal.doctor.websocket.WebSocketController;
+
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -29,6 +32,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    private final INotificationService notificationService;
 
 
     @Transactional
@@ -80,7 +84,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setIsEmergency(false);
 
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
-        System.out.println("Sending WebSocket update for appointment: " + savedAppointment.getAppointmentId());
 
         AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
 
@@ -103,10 +106,19 @@ public class AppointmentServiceImpl implements IAppointmentService {
         if(!appointmentEntity.getIsEmergency().equals(isEmergency)){
             appointmentEntity.setIsEmergency(isEmergency);
             newAppointmentEntity=appointmentRepository.save(appointmentEntity);
+            if(newAppointmentEntity.getIsEmergency()) {
+                NotificationEntity notification = NotificationEntity.builder().
+                        doctorId(appointmentEntity.getDoctorId()).
+                        type(NotificationType.EMERGENCY).
+                        title("New Emergency Appointment Alert").
+                        message("A new emergency appointment has been registered. Please check and take immediate action.").
+                        build();
+                notificationService.createNotification(notification);
+            }
         }
         AppointmentDTO appointmentDTO=modelMapper.map(newAppointmentEntity, AppointmentDTO.class);
 
-        if (removeTime(appointmentDate).equals(removeTime(new Date()))) {
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
             messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
         }
         return appointmentDTO;
