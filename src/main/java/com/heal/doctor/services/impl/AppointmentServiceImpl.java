@@ -77,11 +77,34 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
+        appointmentEntity.setIsEmergency(false);
 
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
         System.out.println("Sending WebSocket update for appointment: " + savedAppointment.getAppointmentId());
 
         AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
+
+        if (removeTime(appointmentDate).equals(removeTime(new Date()))) {
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+        }
+        return appointmentDTO;
+    }
+
+    @Transactional
+    @Override
+    public AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency){
+        AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(()->new RuntimeException("Appointment not found"));
+        String currentDoctorId=appointmentEntity.getDoctorId();
+        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+        }
+        AppointmentEntity newAppointmentEntity=appointmentEntity;
+        if(!appointmentEntity.getIsEmergency().equals(isEmergency)){
+            appointmentEntity.setIsEmergency(isEmergency);
+            newAppointmentEntity=appointmentRepository.save(appointmentEntity);
+        }
+        AppointmentDTO appointmentDTO=modelMapper.map(newAppointmentEntity, AppointmentDTO.class);
 
         if (removeTime(appointmentDate).equals(removeTime(new Date()))) {
             messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
