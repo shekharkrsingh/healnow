@@ -2,6 +2,8 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentRequestDTO;
+import com.heal.doctor.dto.WebsocketResponseDTO;
+import com.heal.doctor.dto.WebSocketResponseType;
 import com.heal.doctor.models.AppointmentEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
@@ -119,7 +121,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO=modelMapper.map(newAppointmentEntity, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+            .type(WebSocketResponseType.APPOINTMENT)
+            .payload(appointmentDTO)
+            .build());
         }
         return appointmentDTO;
     }
@@ -168,7 +173,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         // 🔴 WebSocket update added (Status Change)
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+            .type(WebSocketResponseType.APPOINTMENT)
+            .payload(appointmentDTO)
+            .build());
         }
 
         return appointmentDTO;
@@ -197,7 +205,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+            .type(WebSocketResponseType.APPOINTMENT)
+            .payload(appointmentDTO)
+            .build()); 
         }
         return appointmentDTO;
     }
@@ -234,7 +245,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+            .type(WebSocketResponseType.APPOINTMENT)
+            .payload(appointmentDTO)
+            .build());
         }
 
         return appointmentDTO;
@@ -266,7 +280,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+            .type(WebSocketResponseType.APPOINTMENT)
+            .payload(appointmentDTO)
+            .build());
         }
 
 
