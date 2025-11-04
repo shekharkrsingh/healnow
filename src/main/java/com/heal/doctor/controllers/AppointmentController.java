@@ -1,19 +1,19 @@
 package com.heal.doctor.controllers;
 
-import com.heal.doctor.dto.*;
-import com.heal.doctor.utils.ApiResponse;
-import com.heal.doctor.models.enums.AppointmentStatus;
+import com.heal.doctor.dto.AppointmentDTO;
+import com.heal.doctor.dto.AppointmentRequestDTO;
+import com.heal.doctor.dto.EmergencyStatusDTO;
+import com.heal.doctor.dto.UpdateAppointmentDetailsDTO;
 import com.heal.doctor.services.IAppointmentService;
-import lombok.RequiredArgsConstructor;
+import com.heal.doctor.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
@@ -46,13 +46,18 @@ public class AppointmentController {
     }
 
     @GetMapping("/by-doctor")
-    public ResponseEntity<ApiResponse<List<AppointmentDTO>>> getAppointmentsByDoctorAndDate(@RequestParam(value = "date", required = false) String date){
+    public ResponseEntity<ApiResponse<List<AppointmentDTO>>> getAppointmentsByDoctorAndDate(@RequestParam(value = "date", required = false) String date) {
         List<AppointmentDTO> appointments;
-        if(date==null || date.trim().isEmpty()){
+        if (date == null || date.trim().isEmpty()) {
             appointments = appointmentService
                     .getAppointmentsByBookingDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        }
-        else{
+            appointments = appointments.stream()
+                    .sorted(
+                            Comparator.comparing(AppointmentDTO::getIsEmergency, Comparator.reverseOrder())
+                                    .thenComparing(AppointmentDTO::getAppointmentDateTime)
+                    )
+                    .collect(Collectors.toList());
+        } else {
             appointments = appointmentService.getAppointmentsByBookingDate(date);
         }
         return ResponseEntity.ok(ApiResponse.<List<AppointmentDTO>>builder()
@@ -94,8 +99,8 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<AppointmentDTO>> updateEmergencyStatus(
             @PathVariable String appointmentId,
             @RequestBody EmergencyStatusDTO isEmergency
-    ){
-        AppointmentDTO appointmentDTO= appointmentService.updateEmergencyStatus(appointmentId, isEmergency.getIsEmergency());
+    ) {
+        AppointmentDTO appointmentDTO = appointmentService.updateEmergencyStatus(appointmentId, isEmergency.getIsEmergency());
 
 
         return ResponseEntity.ok(ApiResponse.<AppointmentDTO>builder()
