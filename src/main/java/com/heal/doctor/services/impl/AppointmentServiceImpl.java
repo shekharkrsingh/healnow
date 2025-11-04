@@ -2,8 +2,8 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentRequestDTO;
-import com.heal.doctor.dto.WebsocketResponseDTO;
 import com.heal.doctor.dto.WebSocketResponseType;
+import com.heal.doctor.dto.WebsocketResponseDTO;
 import com.heal.doctor.models.AppointmentEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
@@ -15,7 +15,6 @@ import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.AppointmentId;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.DateUtils;
-
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -90,25 +89,29 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDate).equals(removeTime(new Date()))) {
-            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), appointmentDTO);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
         }
         return appointmentDTO;
     }
 
     @Transactional
     @Override
-    public AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency){
-        AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(()->new RuntimeException("Appointment not found"));
-        String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+    public AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency) {
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
-        AppointmentEntity newAppointmentEntity=appointmentEntity;
-        if(!appointmentEntity.getIsEmergency().equals(isEmergency)){
+        AppointmentEntity newAppointmentEntity = appointmentEntity;
+        if (!appointmentEntity.getIsEmergency().equals(isEmergency)) {
             appointmentEntity.setIsEmergency(isEmergency);
-            newAppointmentEntity=appointmentRepository.save(appointmentEntity);
-            if(newAppointmentEntity.getIsEmergency()) {
+            newAppointmentEntity = appointmentRepository.save(appointmentEntity);
+            if (newAppointmentEntity.getIsEmergency()) {
                 NotificationEntity notification = NotificationEntity.builder().
                         doctorId(appointmentEntity.getDoctorId()).
                         type(NotificationType.EMERGENCY).
@@ -118,30 +121,27 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 notificationService.createNotification(notification);
             }
         }
-        AppointmentDTO appointmentDTO=modelMapper.map(newAppointmentEntity, AppointmentDTO.class);
+        AppointmentDTO appointmentDTO = modelMapper.map(newAppointmentEntity, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
-            .type(WebSocketResponseType.APPOINTMENT)
-            .payload(appointmentDTO)
-            .build());
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                    .type(WebSocketResponseType.APPOINTMENT)
+                    .payload(appointmentDTO)
+                    .build());
         }
         return appointmentDTO;
     }
 
 
-
-
-
     @Override
     public AppointmentDTO getAppointmentById(String appointmentId) {
-        AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(()->new RuntimeException("Appointment not found"));
-        String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
-        return  modelMapper.map(appointmentEntity, AppointmentDTO.class);
+        return modelMapper.map(appointmentEntity, AppointmentDTO.class);
     }
 
     @Override
@@ -161,22 +161,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Transactional
     @Override
     public AppointmentDTO updateAppointmentStatus(String appointmentId, AppointmentStatus status) {
-        AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(()->new RuntimeException("Appointment not found"));
-        String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
             throw new SecurityException("Access denied: You are not authorized to update this appointment.");
         }
         appointmentEntity.setStatus(status);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
-        AppointmentDTO appointmentDTO=modelMapper.map(updatedAppointment, AppointmentDTO.class);
+        AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         // 🔴 WebSocket update added (Status Change)
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
-            .type(WebSocketResponseType.APPOINTMENT)
-            .payload(appointmentDTO)
-            .build());
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                    .type(WebSocketResponseType.APPOINTMENT)
+                    .payload(appointmentDTO)
+                    .build());
         }
 
         return appointmentDTO;
@@ -185,34 +185,34 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Transactional
     @Override
     public AppointmentDTO updatePaymentStatus(String appointmentId, Boolean paymentStatus) {
-        AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(()->new RuntimeException("Appointment not found"));
-        String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
             throw new SecurityException("Access denied: You are not authorized to update this appointment.");
         }
 
-        if(
+        if (
                 (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED))
-                && !appointmentEntity.getPaymentStatus()
-                && paymentStatus
+                        && !appointmentEntity.getPaymentStatus()
+                        && paymentStatus
         ) {
             throw new RuntimeException("Cannot mark as paid: Appointment is not marked as accepted");
-            }
+        }
         appointmentEntity.setPaymentStatus(paymentStatus);
-        AppointmentEntity updatedAppointment=appointmentRepository.save(appointmentEntity);
+        AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
 
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
-            .type(WebSocketResponseType.APPOINTMENT)
-            .payload(appointmentDTO)
-            .build()); 
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
         }
         return appointmentDTO;
     }
-
 
 
     @Transactional
@@ -221,8 +221,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
 
@@ -245,10 +245,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
-            .type(WebSocketResponseType.APPOINTMENT)
-            .payload(appointmentDTO)
-            .build());
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
         }
 
         return appointmentDTO;
@@ -257,11 +258,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Transactional
     @Override
     public AppointmentDTO updateAvailableAtClinic(String appointmentId, Boolean availableAtClinicStatus) {
-        AppointmentEntity appointmentEntity=appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(()->new RuntimeException("Appointment not found"));
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        String currentDoctorId=appointmentEntity.getDoctorId();
-        if(!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())){
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
 
@@ -280,16 +281,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
-        messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(), WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
-            .type(WebSocketResponseType.APPOINTMENT)
-            .payload(appointmentDTO)
-            .build());
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
         }
 
 
         return appointmentDTO;
     }
-
 
 
     private Date removeTime(Date date) {
