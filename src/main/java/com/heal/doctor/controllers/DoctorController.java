@@ -31,9 +31,8 @@ public class DoctorController {
 
     @PostMapping("/update-email")
     public ResponseEntity<ApiResponse<String>> updateEmail(@RequestBody UpdateEmailDTO updateEmailDTO) {
-        System.out.println(updateEmailDTO.toString());
-        doctorService.updateEmail(updateEmailDTO);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Email updated successfully", null));
+        String newAuthToken=doctorService.updateEmail(updateEmailDTO);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Email updated successfully", newAuthToken));
     }
 
     @PostMapping("/change-password")

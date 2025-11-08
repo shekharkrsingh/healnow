@@ -216,7 +216,7 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
-    public void updateEmail(UpdateEmailDTO updateEmailDTO) {
+    public String updateEmail(UpdateEmailDTO updateEmailDTO) {
         DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
         Optional<DoctorEntity> doctorIsAlreadyAvailable = doctorRepository.findByEmail(updateEmailDTO.getNewEmail());
@@ -258,6 +258,7 @@ public class DoctorServiceImpl implements IDoctorService {
                 oldMail,
                 updateEmailDTO.getNewEmail()
         );
+        return loginDoctor(updateEmailDTO.getNewEmail(), updateEmailDTO.getPassword());
     }
 
     @Override
