@@ -14,7 +14,7 @@ public interface IDoctorService {
 
     void deleteDoctor(String doctorId);
     void forgotPassword(ForgotPasswordDTO forgotPasswordDTO);
-    void updateEmail( UpdateEmailDTO updateEmailDTO);
+    String updateEmail( UpdateEmailDTO updateEmailDTO);
     void changePassword(ChangePasswordDTO changePasswordDTO);
     String loginDoctor(String username, String password);
 }
