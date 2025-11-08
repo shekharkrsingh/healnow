@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.UniqueElements;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -25,9 +26,11 @@ public class DoctorEntity {
     private String id;
 
     @Indexed(unique = true)
+    @UniqueElements
     private String doctorId;
 
     @Indexed(unique = true)
+    @UniqueElements
     private String email;
 
     private String firstName;

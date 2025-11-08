@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -218,6 +219,14 @@ public class DoctorServiceImpl implements IDoctorService {
     public void updateEmail(UpdateEmailDTO updateEmailDTO) {
         DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        Optional<DoctorEntity> doctorIsAlreadyAvailable = doctorRepository.findByEmail(updateEmailDTO.getNewEmail());
+
+        if (doctorIsAlreadyAvailable.isPresent()) {
+            throw new RuntimeException(
+                    "Doctor with email ID '" + updateEmailDTO.getNewEmail() + "' is already present. Cannot update email to the provided email ID."
+            );
+        }
+
 
         if (!passwordEncoder.matches(updateEmailDTO.getPassword(), doctor.getPassword())) {
             throw new IllegalArgumentException("Invalid password");
