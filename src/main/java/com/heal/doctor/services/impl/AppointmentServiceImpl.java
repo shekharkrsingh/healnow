@@ -302,7 +302,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new SecurityException("Access denied: You are not authorized to view this appointment.");
         }
         if (appointmentEntity.getTreated()) {
-            throw new RuntimeException("Cannot update Status: Patient is already treated.");
+            throw new RuntimeException("Cannot cancle: Patient is already treated.");
+        }
+        if (appointmentEntity.getPaymentStatus().equals(true)) {
+            throw new RuntimeException("Cannot cancle: Patient have already paid.");
         }
         appointmentEntity.setStatus(AppointmentStatus.CANCELLED);
 
