@@ -110,11 +110,11 @@ public class AppointmentController {
                 .build());
     }
 
-    @PatchMapping("/cancle/{appointmentId}")
-    public ResponseEntity<ApiResponse<AppointmentDTO>> cancleAppointmnet(
+    @PatchMapping("/cancel/{appointmentId}")
+    public ResponseEntity<ApiResponse<AppointmentDTO>> cancelAppointment(
             @PathVariable String appointmentId
     ){
-        AppointmentDTO appointmentDTO=appointmentService.cancleAppointment(appointmentId);
+        AppointmentDTO appointmentDTO=appointmentService.cancelAppointment(appointmentId);
         return ResponseEntity.ok(ApiResponse.<AppointmentDTO>builder()
                 .success(true)
                 .message("Appointment updated successfully")
