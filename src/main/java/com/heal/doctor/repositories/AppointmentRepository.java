@@ -2,6 +2,8 @@ package com.heal.doctor.repositories;
 
 import com.heal.doctor.models.AppointmentEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
@@ -14,5 +16,19 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
 
     List<AppointmentEntity> findByDoctorIdAndBookingDateTimeBetween(String doctorId, Date startDate, Date endDate);
 
-    boolean existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetween(String doctorId, String patientName, String contact, Date startDate, Date endDate); // Change to appointmentDateTime
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END " +
+            "FROM Appointment a " +
+            "WHERE a.doctorId = :doctorId " +
+            "AND a.patientName = :patientName " +
+            "AND a.contact = :contact " +
+            "AND a.appointmentDateTime BETWEEN :startDate AND :endDate " +
+            "AND a.status = 'ACCEPTED'")
+    boolean existsAcceptedAppointment(
+            @Param("doctorId") String doctorId,
+            @Param("patientName") String patientName,
+            @Param("contact") String contact,
+            @Param("startDate") Date startDate,
+            @Param("endDate") Date endDate
+    );
+
 }

@@ -109,4 +109,16 @@ public class AppointmentController {
                 .data(appointmentDTO)
                 .build());
     }
+
+    @PatchMapping("/cancle/{appointmentId}")
+    public ResponseEntity<ApiResponse<AppointmentDTO>> cancleAppointmnet(
+            @PathVariable String appointmentId
+    ){
+        AppointmentDTO appointmentDTO=appointmentService.cancleAppointment(appointmentId);
+        return ResponseEntity.ok(ApiResponse.<AppointmentDTO>builder()
+                .success(true)
+                .message("Appointment updated successfully")
+                .data(appointmentDTO)
+                .build());
+    }
 }
