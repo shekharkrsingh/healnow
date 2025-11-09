@@ -63,14 +63,14 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();
         Date[] date = DateUtils.getStartAndEndOfDay(new Date());
 
-        boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetween(
+        boolean exists = appointmentRepository.existsAcceptedAppointment(
                 doctorId,
                 requestDTO.getPatientName(),
                 requestDTO.getContact(),
                 date[0],
                 date[1]);
 
-        if (exists) {
+        if (exists ) {
             throw new RuntimeException("An appointment for this doctor already exists on the selected date.");
         }
 
@@ -288,6 +288,35 @@ public class AppointmentServiceImpl implements IAppointmentService {
                             .build());
         }
 
+
+        return appointmentDTO;
+    }
+
+    @Transactional
+    @Override
+    public AppointmentDTO cancleAppointment(String appointmentId){
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
+            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+        }
+        if (appointmentEntity.getTreated()) {
+            throw new RuntimeException("Cannot update Status: Patient is already treated.");
+        }
+        appointmentEntity.setStatus(AppointmentStatus.CANCELLED);
+
+        AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
+
+        AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
+
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
+        }
 
         return appointmentDTO;
     }
