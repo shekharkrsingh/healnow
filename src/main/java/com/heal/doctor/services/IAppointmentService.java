@@ -21,4 +21,5 @@ public interface IAppointmentService {
     AppointmentDTO updateAvailableAtClinic(String appointmentId, Boolean availableAtClinicStatus);
     AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency);
     AppointmentDTO cancelAppointment(String appointmentId);
+    List<AppointmentDTO> getAppointmentsByDoctorAndDateRange(String doctorId, String  fromDate, String toDate);
 }
