@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"></meta>
+    <title>Doctor Appointment Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background-color: #ffffff;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 70px;
+            height: 70px;
+            background-color: #1a73e8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .company-info h1 {
+            font-size: 24px;
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+
+        .company-info p {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .report-info {
+            text-align: right;
+        }
+
+        .report-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .report-period {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .doctor-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #1a73e8;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #1a73e8;
+            margin: 25px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .appointment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+
+        .appointment-table th {
+            background-color: #1a73e8;
+            color: white;
+            text-align: left;
+            padding: 10px 8px;
+            font-weight: 600;
+            font-size: 11px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .appointment-table td {
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 11px;
+            vertical-align: top;
+        }
+
+        .appointment-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            min-width: 70px;
+        }
+
+        .status.cancelled {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .status.treated {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .booking-mode {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            min-width: 70px;
+        }
+
+        .booking-mode.online {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+
+        .booking-mode.onsite {
+            background-color: #fff3e0;
+            color: #ef6c00;
+            border: 1px solid #ffe0b2;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #1a73e8;
+        }
+
+        .summary-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a73e8;
+            margin: 8px 0;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .copyright {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .warning {
+            color: #d32f2f;
+            font-size: 10px;
+            font-style: italic;
+            max-width: 60%;
+            text-align: right;
+        }
+
+        @media print {
+            body {
+                font-size: 10pt;
+            }
+
+            .container {
+                padding: 0;
+                width: 100%;
+            }
+
+            .header {
+                margin-bottom: 15px;
+            }
+
+            .section-title {
+                margin: 15px 0 10px 0;
+            }
+
+            .appointment-table {
+                font-size: 9pt;
+            }
+
+            .appointment-table th,
+            .appointment-table td {
+                padding: 6px 4px;
+            }
+
+            .footer {
+                margin-top: 20px;
+            }
+
+            .summary-value {
+                font-size: 20pt;
+            }
+
+            .header, .summary-section, .footer-bottom {
+                page-break-inside: avoid;
+            }
+
+            .appointment-table {
+                page-break-inside: auto;
+            }
+
+            .appointment-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <div class="header-top">
+            <div class="logo-section">
+                <div class="logo" th:text="${#strings.substring(companyName, 0, 2)}">MC</div>
+                <div class="company-info">
+                    <h1 th:text="${companyName}">MediCare Solutions</h1>
+                    <p>Comprehensive Healthcare Services</p>
+                </div>
+            </div>
+            <div class="report-info">
+                <div class="report-title">Appointment Report</div>
+                <div class="report-period" th:text="'Period: ' + ${reportFromDate} + ' to ' + ${reportToDate}">Period: Oct 1, 2023 - Oct 31, 2023</div>
+            </div>
+        </div>
+
+        <div class="doctor-details">
+            <div class="detail-item">
+                <span class="detail-label">Doctor Name</span>
+                <span class="detail-value" th:text="${doctorName}">Dr. Sarah Johnson</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Doctor ID</span>
+                <span class="detail-value" th:text="${doctorId}">DOC-7284</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Specialization</span>
+                <span class="detail-value" th:text="${specialization}">Cardiology</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Clinic Address</span>
+                <span class="detail-value" th:text="${address}">123 Health St, Medical City</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Report Generated On</span>
+                <span class="detail-value" th:text="${reportGeneratedOn}">15 Nov, 2023</span>
+            </div>
+        </div>
+    </header>
+
+    <section class="report-body">
+        <h2 class="section-title">Appointment Details</h2>
+
+        <table class="appointment-table">
+            <thead>
+            <tr>
+                <th>Appointment ID</th>
+                <th>Patient Name</th>
+                <th>Contact Number</th>
+                <th>Appointment Date</th>
+                <th>Status</th>
+                <th>Booking Mode</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="appointment : ${appointments}">
+                <td th:text="${appointment.appointmentId}">APT-1001</td>
+                <td th:text="${appointment.patientName}">Robert Wilson</td>
+                <td th:text="${appointment.contact}">(555) 123-4567</td>
+                <td th:text="${#dates.format(appointment.appointmentDateTime, 'dd MMM, yyyy')}">Oct 3, 2023</td>
+                <td>
+                    <span th:classappend="${appointment.status.name() == 'TREATED'} ? 'status treated' : 'status cancelled'"
+                          th:text="${appointment.status}">Treated</span>
+                </td>
+                <td>
+                    <span th:classappend="${appointment.appointmentType.name() == 'ONLINE'} ? 'booking-mode online' : 'booking-mode onsite'"
+                          th:text="${appointment.appointmentType}">Online</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer class="footer">
+        <div class="summary-section">
+            <div class="summary-card">
+                <div class="summary-value" th:text="${totalAppointments}">10</div>
+                <div class="summary-label">Total Appointments</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" th:text="${cancelledAppointments}">3</div>
+                <div class="summary-label">Cancelled Appointments</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value" th:text="${treatedAppointments}">7</div>
+                <div class="summary-label">Treated Appointments</div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="copyright">
+                &copy; 2023 <span th:text="${companyName}">MediCare Solutions</span>. All rights reserved.
+            </div>
+            <div class="warning">
+                CONFIDENTIAL: This report contains sensitive information. If you received this in error, please delete immediately.
+            </div>
+        </div>
+    </footer>
+</div>
+</body>
+</html>
