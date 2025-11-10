@@ -31,4 +31,8 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             @Param("endDate") Date endDate
     );
 
+    List<AppointmentEntity> findByDoctorIdAndAppointmentDateTimeBetween(
+            String doctorId, Date fromDate, Date toDate
+    );
+
 }
