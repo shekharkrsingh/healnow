@@ -63,12 +63,13 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();
         Date[] date = DateUtils.getStartAndEndOfDay(new Date());
 
-        boolean exists = appointmentRepository.existsAcceptedAppointment(
+        boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
                 doctorId,
                 requestDTO.getPatientName(),
                 requestDTO.getContact(),
                 date[0],
-                date[1]);
+                date[1],
+                AppointmentStatus.ACCEPTED);
 
         if (exists ) {
             throw new RuntimeException("An appointment for this doctor already exists on the selected date.");
@@ -83,7 +84,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
         appointmentEntity.setIsEmergency(false);
-
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
 
         AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
