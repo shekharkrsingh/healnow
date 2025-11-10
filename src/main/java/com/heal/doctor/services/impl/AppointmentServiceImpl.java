@@ -324,6 +324,23 @@ public class AppointmentServiceImpl implements IAppointmentService {
         return appointmentDTO;
     }
 
+    @Override
+    public List<AppointmentDTO> getAppointmentsByDoctorAndDateRange(String doctorId, String fromDate, String toDate) {
+
+
+        List<AppointmentEntity> appointments = appointmentRepository
+                .findByDoctorIdAndAppointmentDateTimeBetween(
+                        doctorId,
+                        DateUtils.parseToDate("2025-11-01"),
+                        DateUtils.parseToDate("2025-11-10")
+                );
+
+        return appointments.stream()
+                .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
+                .toList();
+    }
+
+
 
     private Date removeTime(Date date) {
         Calendar cal = Calendar.getInstance();
