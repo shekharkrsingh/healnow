@@ -36,4 +36,15 @@ public class DateUtils {
             throw new IllegalArgumentException("Error processing date. Please ensure the date is valid.", e);
         }
     }
+
+    public static Date parseToDate(String dateString) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate localDate = LocalDate.parse(dateString, formatter);
+            return java.util.Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid date format. Please use 'yyyy-MM-dd'.", e);
+        }
+    }
+
 }
