@@ -2,6 +2,8 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.DoctorDTO;
+import com.heal.doctor.exception.BadRequestException;
+import com.heal.doctor.exception.ReportGenerationException;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.IDoctorReports;
 import com.heal.doctor.services.IDoctorService;
@@ -107,10 +109,10 @@ public class DoctorReportsImpl implements IDoctorReports {
                 return outputStream.toByteArray();
             }
 
-        } catch (IllegalArgumentException e) {
+        } catch (BadRequestException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error while generating PDF report: " + e.getMessage(), e);
+            throw new ReportGenerationException("Failed to generate PDF report: " + e.getMessage(), e);
         }
     }
 
@@ -122,7 +124,7 @@ public class DoctorReportsImpl implements IDoctorReports {
             LocalDate.parse(fromDate, FORMATTER);
             return fromDate;
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid fromDate format. Expected yyyy-MM-dd, got: " + fromDate);
+            throw new BadRequestException("Invalid fromDate format. Expected yyyy-MM-dd, got: " + fromDate);
         }
     }
 
@@ -134,7 +136,7 @@ public class DoctorReportsImpl implements IDoctorReports {
             LocalDate.parse(toDate, FORMATTER);
             return toDate;
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid toDate format. Expected yyyy-MM-dd, got: " + toDate);
+            throw new BadRequestException("Invalid toDate format. Expected yyyy-MM-dd, got: " + toDate);
         }
     }
 }
