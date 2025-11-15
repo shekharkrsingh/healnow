@@ -6,6 +6,7 @@ import com.heal.doctor.dto.WebSocketResponseType;
 import com.heal.doctor.dto.WebsocketResponseDTO;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.repositories.NotificationRepository;
 import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.CurrentUserName;
@@ -48,8 +49,7 @@ public class NotificationService implements INotificationService {
     @Override
     public List<NotificationResponseDTO> getAllNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
-        Instant now = Instant.now();
-        List<NotificationEntity> notifications= notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
+        List<NotificationEntity> notifications = notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
         return notifications.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
@@ -58,8 +58,7 @@ public class NotificationService implements INotificationService {
     @Override
     public List<NotificationResponseDTO> getUnreadNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
-        Instant now = Instant.now();
-        List<NotificationEntity> notifications= notificationRepository.findByIsReadFalseAndDoctorIdOrDoctorIdIsNull(doctorId);
+        List<NotificationEntity> notifications = notificationRepository.findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(doctorId);
         return notifications.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
@@ -68,7 +67,7 @@ public class NotificationService implements INotificationService {
     @Override
     public NotificationResponseDTO markAsRead(String notificationId) {
         NotificationEntity notification = notificationRepository.findByIdAndDoctorId(notificationId, CurrentUserName.getCurrentDoctorId())
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification", notificationId));
         notification.setIsRead(true);
         NotificationEntity updatedNotification= notificationRepository.save(notification);
         return modelMapper.map(updatedNotification, NotificationResponseDTO.class);
@@ -78,11 +77,11 @@ public class NotificationService implements INotificationService {
     public List<NotificationResponseDTO> markAllAsReadForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         List<NotificationEntity> notifications = notificationRepository
-                .findByIsReadFalseAndDoctorId(doctorId);
+                .findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(doctorId);
         notifications.forEach(n -> {
             n.setIsRead(true);
         });
-        List<NotificationEntity> savedNotification= notificationRepository.saveAll(notifications);
+        List<NotificationEntity> savedNotification = notificationRepository.saveAll(notifications);
         return savedNotification.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();

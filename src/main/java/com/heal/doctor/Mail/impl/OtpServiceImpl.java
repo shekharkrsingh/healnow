@@ -3,6 +3,8 @@ package com.heal.doctor.Mail.impl;
 import com.heal.doctor.Mail.IDoctorAccountMailService;
 import com.heal.doctor.dto.OtpRequestDTO;
 import com.heal.doctor.dto.OtpResponseDTO;
+import com.heal.doctor.exception.BadRequestException;
+import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.OtpEntity;
 import com.heal.doctor.repositories.OtpRepository;
 import com.heal.doctor.Mail.IOtpService;
@@ -63,18 +65,17 @@ public class OtpServiceImpl implements IOtpService {
         var latestOtpOptional=otpRepository.findTopByIdentifierOrderByCreatedAtDesc(identifier);
 
         if(latestOtpOptional.isEmpty()){
-            throw new RuntimeException("Otp either expired or not available");
+            throw new ResourceNotFoundException("OTP", "OTP not found or has expired");
         }
 
         OtpEntity latestOtp=latestOtpOptional.get();
 
         if (new Date().after(latestOtp.getExpirationTime())) {
-            throw new RuntimeException("OTP has expired");
+            throw new BadRequestException("OTP has expired. Please request a new OTP");
         }
 
-
         if (!latestOtp.getOtp().equals(otp)) {
-            throw new RuntimeException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP. Please check and try again");
         }
         otpRepository.delete(latestOtp);
         return true;

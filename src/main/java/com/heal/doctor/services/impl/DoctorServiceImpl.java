@@ -12,6 +12,11 @@ import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.INotificationService;
+import com.heal.doctor.exception.BadRequestException;
+import com.heal.doctor.exception.ConflictException;
+import com.heal.doctor.exception.ResourceNotFoundException;
+import com.heal.doctor.exception.UnauthorizedException;
+import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.EmailValidatorUtil;
 import lombok.RequiredArgsConstructor;
@@ -50,16 +55,16 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
         if (!EmailValidatorUtil.isValidEmail(doctorRegistrationDTO.getEmail())) {
-            throw new IllegalArgumentException("Invalid email format");
+            throw new ValidationException("Invalid email format");
         }
         if (doctorRepository.findByEmail(doctorRegistrationDTO.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Doctor with this email already exists");
+            throw new ConflictException("Doctor", "A doctor with this email already exists");
         }
         if(doctorRegistrationDTO.getFirstName()==null || doctorRegistrationDTO.getPassword()==null){
-            throw new IllegalArgumentException("First Name and Password are required");
+            throw new ValidationException("First name and password are required");
         }
         if(doctorRegistrationDTO.getOtp()==null){
-            throw new IllegalArgumentException("OTP is required");
+            throw new ValidationException("OTP is required");
         }
 
         otpService.validateOtp(doctorRegistrationDTO.getEmail(), doctorRegistrationDTO.getOtp());
@@ -98,14 +103,14 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public DoctorDTO getDoctorById(String doctorId) {
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
         return modelMapper.map(doctor, DoctorDTO.class);
     }
 
     @Override
     public DoctorDTO getDoctorProfile(){
         DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
-                .orElseThrow(() -> new RuntimeException("Your profile not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor profile", CurrentUserName.getCurrentUsername()));
         return modelMapper.map(doctor, DoctorDTO.class);
     }
 
@@ -120,7 +125,7 @@ public class DoctorServiceImpl implements IDoctorService {
     public DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
         String username = CurrentUserName.getCurrentUsername();
         DoctorEntity existingDoctor = doctorRepository.findByEmail(username)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", username));
 
         if (updateDoctorDetailsDTO.getFirstName() != null && !updateDoctorDetailsDTO.getFirstName().isEmpty()) {
             existingDoctor.setFirstName(updateDoctorDetailsDTO.getFirstName());
@@ -189,7 +194,7 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public void deleteDoctor(String doctorId) {
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
         doctorRepository.delete(doctor);
     }
 
@@ -197,10 +202,10 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public void changePassword(ChangePasswordDTO changePasswordDTO) {
         DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", CurrentUserName.getCurrentUsername()));
 
         if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), doctor.getPassword())) {
-            throw new IllegalArgumentException("Invalid old password");
+            throw new UnauthorizedException("Invalid old password");
         }
         doctor.setUpdatedAt(new Date());
         doctor.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
@@ -218,22 +223,19 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public String updateEmail(UpdateEmailDTO updateEmailDTO) {
         DoctorEntity doctor = doctorRepository.findByEmail(CurrentUserName.getCurrentUsername())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", CurrentUserName.getCurrentUsername()));
         Optional<DoctorEntity> doctorIsAlreadyAvailable = doctorRepository.findByEmail(updateEmailDTO.getNewEmail());
 
         if (doctorIsAlreadyAvailable.isPresent()) {
-            throw new RuntimeException(
-                    "Doctor with email ID '" + updateEmailDTO.getNewEmail() + "' is already present. Cannot update email to the provided email ID."
-            );
+            throw new ConflictException("Email", "A doctor with email '" + updateEmailDTO.getNewEmail() + "' already exists");
         }
 
-
         if (!passwordEncoder.matches(updateEmailDTO.getPassword(), doctor.getPassword())) {
-            throw new IllegalArgumentException("Invalid password");
+            throw new UnauthorizedException("Invalid password");
         }
 
         if (!otpService.validateOtp(updateEmailDTO.getNewEmail(), updateEmailDTO.getOtp())) {
-            throw new IllegalArgumentException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP");
         }
         String oldMail=doctor.getEmail();
         doctor.setEmail(updateEmailDTO.getNewEmail());
@@ -264,10 +266,10 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public void forgotPassword(ForgotPasswordDTO forgotPasswordDTO) {
         DoctorEntity doctor = doctorRepository.findByEmail(forgotPasswordDTO.getEmail())
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", forgotPasswordDTO.getEmail()));
 
         if (!otpService.validateOtp(forgotPasswordDTO.getEmail(), forgotPasswordDTO.getOtp())) {
-            throw new IllegalArgumentException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP");
         }
 
         doctor.setPassword(passwordEncoder.encode(forgotPasswordDTO.getNewPassword()));
@@ -297,7 +299,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private void validateAvailableDays(List<AvailableDayEnum> availableDays) {
         for (AvailableDayEnum day : availableDays) {
             if (day == null) {
-                throw new IllegalArgumentException("Invalid day in available days.");
+                throw new ValidationException("Invalid day in available days");
             }
         }
     }

@@ -12,6 +12,11 @@ import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
+import com.heal.doctor.exception.BusinessRuleException;
+import com.heal.doctor.exception.ConflictException;
+import com.heal.doctor.exception.ForbiddenException;
+import com.heal.doctor.exception.ResourceNotFoundException;
+import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.utils.AppointmentId;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.DateUtils;
@@ -40,23 +45,23 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO bookAppointment(AppointmentRequestDTO requestDTO) {
         if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Patient Name is required and cannot be empty.");
+            throw new ValidationException("Patient name is required and cannot be empty.");
         }
 
         if (requestDTO.getPaymentStatus() == null) {
-            throw new IllegalArgumentException("Payment Status is required.");
+            throw new ValidationException("Payment status is required.");
         }
 
         if (requestDTO.getAvailableAtClinic() == null) {
-            throw new IllegalArgumentException("Availability at clinic is required.");
+            throw new ValidationException("Availability at clinic is required.");
         }
 
         if (requestDTO.getContact() == null || requestDTO.getContact().trim().isEmpty()) {
-            throw new IllegalArgumentException("Contact is required and cannot be empty.");
+            throw new ValidationException("Contact number is required and cannot be empty.");
         }
 
         if (requestDTO.getContact().trim().length() != 10) {
-            throw new IllegalArgumentException("Not a valid contact no.");
+            throw new ValidationException("Contact number must be exactly 10 digits.");
         }
 
         String doctorId = CurrentUserName.getCurrentDoctorId();
@@ -71,8 +76,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 date[1],
                 AppointmentStatus.ACCEPTED);
 
-        if (exists ) {
-            throw new RuntimeException("An appointment for this doctor already exists on the selected date.");
+        if (exists) {
+            throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
         }
 
         AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
@@ -102,10 +107,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+            throw new ForbiddenException("appointment", "update");
         }
         AppointmentEntity newAppointmentEntity = appointmentEntity;
         if (!appointmentEntity.getIsEmergency().equals(isEmergency)) {
@@ -136,10 +141,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO getAppointmentById(String appointmentId) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+            throw new ForbiddenException("appointment", "view");
         }
         return modelMapper.map(appointmentEntity, AppointmentDTO.class);
     }
@@ -162,10 +167,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO updateAppointmentStatus(String appointmentId, AppointmentStatus status) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to update this appointment.");
+            throw new ForbiddenException("appointment", "update");
         }
         appointmentEntity.setStatus(status);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
@@ -186,10 +191,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO updatePaymentStatus(String appointmentId, Boolean paymentStatus) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to update this appointment.");
+            throw new ForbiddenException("appointment", "update");
         }
 
         if (
@@ -197,7 +202,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         && !appointmentEntity.getPaymentStatus()
                         && paymentStatus
         ) {
-            throw new RuntimeException("Cannot mark as paid: Appointment is not marked as accepted");
+            throw new BusinessRuleException("mark as paid", "Appointment must be in ACCEPTED status");
         }
         appointmentEntity.setPaymentStatus(paymentStatus);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
@@ -219,23 +224,23 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO updateTreatedStatus(String appointmentId, Boolean treatedStatus) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+            throw new ForbiddenException("appointment", "update");
         }
 
         if (!appointmentEntity.getPaymentStatus()) {
-            throw new RuntimeException("Cannot mark as treated: Payment is pending.");
+            throw new BusinessRuleException("mark as treated", "Payment is pending");
         }
 
         if (!appointmentEntity.getAvailableAtClinic()) {
-            throw new RuntimeException("Cannot mark as treated: Patient is not available at the clinic.");
+            throw new BusinessRuleException("mark as treated", "Patient is not available at the clinic");
         }
 
         if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED)) {
-            throw new RuntimeException("Cannot mark as treated: Appointment is not marked as accepted.");
+            throw new BusinessRuleException("mark as treated", "Appointment must be in ACCEPTED status");
         }
 
         appointmentEntity.setTreatedDateTime(new Date());
@@ -259,20 +264,19 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO updateAvailableAtClinic(String appointmentId, Boolean availableAtClinicStatus) {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+            throw new ForbiddenException("appointment", "update");
         }
 
         if (appointmentEntity.getTreated()) {
-            throw new RuntimeException("Cannot update availability: Patient is already treated.");
+            throw new BusinessRuleException("update availability", "Patient is already treated");
         }
 
-
         if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED)) {
-            throw new RuntimeException("Cannot mark as available: Appointment is not marked as accepted.");
+            throw new BusinessRuleException("mark as available", "Appointment must be in ACCEPTED status");
         }
         appointmentEntity.setAvailableAtClinic(availableAtClinicStatus);
 
@@ -296,16 +300,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO cancelAppointment(String appointmentId){
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
         if (!currentDoctorId.equals(CurrentUserName.getCurrentDoctorId())) {
-            throw new SecurityException("Access denied: You are not authorized to view this appointment.");
+            throw new ForbiddenException("appointment", "cancel");
         }
         if (appointmentEntity.getTreated()) {
-            throw new RuntimeException("Cannot cancel: Patient is already treated.");
+            throw new BusinessRuleException("cancel appointment", "Patient is already treated");
         }
-        if (appointmentEntity.getPaymentStatus().equals(true)) {
-            throw new RuntimeException("Cannot cancel: Patient have already paid.");
+        if (Boolean.TRUE.equals(appointmentEntity.getPaymentStatus())) {
+            throw new BusinessRuleException("cancel appointment", "Payment has already been received");
         }
         appointmentEntity.setStatus(AppointmentStatus.CANCELLED);
 

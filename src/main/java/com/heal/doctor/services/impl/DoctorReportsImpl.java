@@ -2,6 +2,8 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.DoctorDTO;
+import com.heal.doctor.exception.BadRequestException;
+import com.heal.doctor.exception.ReportGenerationException;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.IDoctorReports;
 import com.heal.doctor.services.IDoctorService;
@@ -20,6 +22,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DoctorReportsImpl implements IDoctorReports {
@@ -69,12 +72,19 @@ public class DoctorReportsImpl implements IDoctorReports {
             variables.put("reportGeneratedOn", LocalDate.now().format(DISPLAY_FORMATTER));
             variables.put("appointments", appointments);
             variables.put("totalAppointments", appointments.size());
-            variables.put("treatedAppointments", appointments.stream()
-                    .filter(a -> a.getTreated().equals(true))
-                    .count());
-            variables.put("cancelledAppointments", appointments.stream()
-                    .filter(a -> a.getStatus() != null && a.getStatus().name().equals("CANCELLED"))
-                    .count());
+            
+            Map<String, Long> appointmentStats = appointments.stream()
+                    .collect(Collectors.groupingBy(
+                            a -> {
+                                if (Boolean.TRUE.equals(a.getTreated())) return "treated";
+                                if (a.getStatus() != null && a.getStatus().name().equals("CANCELLED")) return "cancelled";
+                                return "other";
+                            },
+                            Collectors.counting()
+                    ));
+            
+            variables.put("treatedAppointments", appointmentStats.getOrDefault("treated", 0L));
+            variables.put("cancelledAppointments", appointmentStats.getOrDefault("cancelled", 0L));
 
             Context context = new Context();
             context.setVariables(variables);
@@ -99,10 +109,10 @@ public class DoctorReportsImpl implements IDoctorReports {
                 return outputStream.toByteArray();
             }
 
-        } catch (IllegalArgumentException e) {
+        } catch (BadRequestException | IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Error while generating PDF report: " + e.getMessage(), e);
+            throw new ReportGenerationException("Failed to generate PDF report: " + e.getMessage(), e);
         }
     }
 
@@ -114,7 +124,7 @@ public class DoctorReportsImpl implements IDoctorReports {
             LocalDate.parse(fromDate, FORMATTER);
             return fromDate;
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid fromDate format. Expected yyyy-MM-dd, got: " + fromDate);
+            throw new BadRequestException("Invalid fromDate format. Expected yyyy-MM-dd, got: " + fromDate);
         }
     }
 
@@ -126,7 +136,7 @@ public class DoctorReportsImpl implements IDoctorReports {
             LocalDate.parse(toDate, FORMATTER);
             return toDate;
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid toDate format. Expected yyyy-MM-dd, got: " + toDate);
+            throw new BadRequestException("Invalid toDate format. Expected yyyy-MM-dd, got: " + toDate);
         }
     }
 }

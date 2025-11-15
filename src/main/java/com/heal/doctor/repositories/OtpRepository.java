@@ -10,4 +10,6 @@ public interface OtpRepository extends MongoRepository<OtpEntity, Long> {
     Optional<OtpEntity> findTopByIdentifierOrderByCreatedAtDesc(String identifier);
 
     void deleteByIdentifier(String identifier);
+    
+    long countByIdentifier(String identifier);
 }

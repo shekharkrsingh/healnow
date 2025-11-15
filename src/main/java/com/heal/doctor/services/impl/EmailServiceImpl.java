@@ -1,5 +1,6 @@
 package com.heal.doctor.services.impl;
 
+import com.heal.doctor.exception.EmailException;
 import com.heal.doctor.services.IEmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -46,7 +47,7 @@ public class EmailServiceImpl implements IEmailService {
 
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Error sending email: " + e.getMessage());
+            throw new EmailException("Failed to send email to " + to + ": " + e.getMessage(), e);
         }
     }
 
@@ -72,7 +73,7 @@ public class EmailServiceImpl implements IEmailService {
 
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Error sending email with attachment: " + e.getMessage());
+            throw new EmailException("Failed to send email with attachment to " + to + ": " + e.getMessage(), e);
         }
     }
 
@@ -87,7 +88,7 @@ public class EmailServiceImpl implements IEmailService {
             helper.setFrom(senderEmail);
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Error sending email: " + e.getMessage());
+            throw new EmailException("Failed to send email to " + to + ": " + e.getMessage(), e);
         }
     }
 
@@ -109,7 +110,7 @@ public class EmailServiceImpl implements IEmailService {
 
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Error sending email with attachment: " + e.getMessage());
+            throw new EmailException("Failed to send email with attachment to " + to + ": " + e.getMessage(), e);
         }
     }
 }

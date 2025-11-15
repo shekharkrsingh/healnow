@@ -12,7 +12,7 @@ public interface NotificationRepository extends MongoRepository<NotificationEnti
 
     List<NotificationEntity> findByIsReadFalseAndDoctorIdOrDoctorIdIsNull(String doctorId);
 
-    List<NotificationEntity> findByIsReadFalseAndDoctorId(String doctorId);
+    List<NotificationEntity> findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(String doctorId);
 
     Optional<NotificationEntity> findByIdAndDoctorId(String id, String doctorId);
 }
