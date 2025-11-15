@@ -31,6 +31,9 @@ import java.util.List;
 @Document(collection = "doctors")
 public class DoctorEntity {
 
+    private static final int VALID_PHONE_LENGTH = 10;
+    private static final String PHONE_PATTERN = "^\\d{10}$";
+
     @Id
     private String id;
 
@@ -62,8 +65,8 @@ public class DoctorEntity {
     private String specialization;
 
     @NotBlank(message = "Phone number is required")
-    @Size(min = 10, max = 15, message = "Phone number must be between 10 and 15 digits")
-    @Pattern(regexp = "^\\d+$", message = "Phone number must contain only digits")
+    @Size(min = VALID_PHONE_LENGTH, max = VALID_PHONE_LENGTH, message = "Phone number must be exactly " + VALID_PHONE_LENGTH + " digits")
+    @Pattern(regexp = PHONE_PATTERN, message = "Phone number must be exactly " + VALID_PHONE_LENGTH + " digits")
     private String phoneNumber;
 
     @Size(max = 7, message = "Available days cannot exceed 7 days")

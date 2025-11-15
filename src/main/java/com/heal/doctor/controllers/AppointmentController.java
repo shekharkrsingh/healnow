@@ -6,6 +6,7 @@ import com.heal.doctor.dto.EmergencyStatusDTO;
 import com.heal.doctor.dto.UpdateAppointmentDetailsDTO;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.utils.ApiResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/book")
-    public ResponseEntity<ApiResponse<AppointmentDTO>> bookAppointment(@RequestBody AppointmentRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponse<AppointmentDTO>> bookAppointment(@Valid @RequestBody AppointmentRequestDTO requestDTO) {
         AppointmentDTO appointment = appointmentService.bookAppointment(requestDTO);
         return ResponseEntity.ok(ApiResponse.<AppointmentDTO>builder()
                 .success(true)
