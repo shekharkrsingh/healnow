@@ -37,6 +37,7 @@ import java.util.List;
 public class AppointmentServiceImpl implements IAppointmentService {
 
     private static final Logger logger = LoggerFactory.getLogger(AppointmentServiceImpl.class);
+    private static final int VALID_CONTACT_LENGTH = 10;
 
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
@@ -70,9 +71,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ValidationException("Contact number is required and cannot be empty.");
         }
 
-        if (requestDTO.getContact().trim().length() != 10) {
+        if (requestDTO.getContact().trim().length() != VALID_CONTACT_LENGTH) {
             logger.warn("Appointment booking failed: Invalid contact length for doctorId: {}, contact: {}", doctorId, requestDTO.getContact());
-            throw new ValidationException("Contact number must be exactly 10 digits.");
+            throw new ValidationException("Contact number must be exactly " + VALID_CONTACT_LENGTH + " digits.");
         }
 
         Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();

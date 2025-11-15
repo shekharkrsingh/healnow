@@ -23,6 +23,8 @@ import java.util.Map;
 public class DoctorHandshakeInterceptor implements HandshakeInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DoctorHandshakeInterceptor.class);
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
 
     @Autowired
     private WebSocketSessionRegistry sessionRegistry;
@@ -44,8 +46,8 @@ public class DoctorHandshakeInterceptor implements HandshakeInterceptor {
 
             if (token == null || token.trim().isEmpty()) {
                 String authHeader = servletRequest.getServletRequest().getHeader("Authorization");
-                if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                    token = authHeader.substring(7);
+                if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+                    token = authHeader.substring(BEARER_PREFIX_LENGTH);
                 }
             }
 
