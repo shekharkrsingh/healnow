@@ -45,9 +45,10 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
         doctorStatisticsDTO.setLastWeekTreatedData(dailyTreatedPatientsLastWeek);
         doctorStatisticsDTO.setLastActiveDayAppointments(lastActiveDayAppointments);
         doctorStatisticsDTO.setLastActiveDayTreatedAppointments(lastActiveDayTreatedAppointments);
-        doctorStatisticsDTO.setLastActiveDayPercentageTreatedAppointments(
-                ((double)doctorStatisticsDTO.getLastActiveDayTreatedAppointments()/doctorStatisticsDTO.getLastActiveDayAppointments())*100
-                );
+        double percentage = doctorStatisticsDTO.getLastActiveDayAppointments() > 0
+                ? ((double)doctorStatisticsDTO.getLastActiveDayTreatedAppointments() / doctorStatisticsDTO.getLastActiveDayAppointments()) * 100
+                : 0.0;
+        doctorStatisticsDTO.setLastActiveDayPercentageTreatedAppointments(percentage);
 
         return doctorStatisticsDTO;
     }

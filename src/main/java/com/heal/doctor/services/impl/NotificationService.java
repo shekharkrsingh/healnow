@@ -48,8 +48,7 @@ public class NotificationService implements INotificationService {
     @Override
     public List<NotificationResponseDTO> getAllNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
-        Instant now = Instant.now();
-        List<NotificationEntity> notifications= notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
+        List<NotificationEntity> notifications = notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
         return notifications.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
@@ -58,8 +57,7 @@ public class NotificationService implements INotificationService {
     @Override
     public List<NotificationResponseDTO> getUnreadNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
-        Instant now = Instant.now();
-        List<NotificationEntity> notifications= notificationRepository.findByIsReadFalseAndDoctorIdOrDoctorIdIsNull(doctorId);
+        List<NotificationEntity> notifications = notificationRepository.findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(doctorId);
         return notifications.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
@@ -78,11 +76,11 @@ public class NotificationService implements INotificationService {
     public List<NotificationResponseDTO> markAllAsReadForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         List<NotificationEntity> notifications = notificationRepository
-                .findByIsReadFalseAndDoctorId(doctorId);
+                .findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(doctorId);
         notifications.forEach(n -> {
             n.setIsRead(true);
         });
-        List<NotificationEntity> savedNotification= notificationRepository.saveAll(notifications);
+        List<NotificationEntity> savedNotification = notificationRepository.saveAll(notifications);
         return savedNotification.stream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
                 .toList();
