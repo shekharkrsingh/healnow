@@ -1,8 +1,8 @@
 package com.heal.doctor.utils;
 
+import com.heal.doctor.exception.BadRequestException;
 import org.springframework.stereotype.Component;
 
-import javax.naming.AuthenticationException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,7 +33,7 @@ public class AppointmentId {
             String appointmentDate = parts[3] + " " + parts[4];
             return new String[]{doctorId, appointmentDate};
         } else {
-            throw new RuntimeException("Try again");
+            throw new BadRequestException("Invalid appointment ID format");
         }
     }
 }
