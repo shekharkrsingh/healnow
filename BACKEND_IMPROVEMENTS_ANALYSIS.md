@@ -766,9 +766,15 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
      private String appointmentId;
      ```
 
-2. **No Validation Annotations**
+2. ~~**No Validation Annotations**~~ ✅ **COMPLETED**
    - Fields not validated at entity level
-   - **Fix:** Add `@NotNull`, `@NotBlank` where appropriate
+   - **Status:** Added comprehensive validation annotations:
+     - `@NotBlank` for required string fields (appointmentId, doctorId, patientName, contact)
+     - `@NotNull` for required Boolean and enum fields
+     - `@Size` for length constraints (contact: 10-15, patientName: 2-100, description: max 1000)
+     - `@Pattern` for format validation (patientName: letters/spaces/hyphens/apostrophes, contact: digits only)
+     - `@Email` for email field validation
+   - ~~**Fix:** Add `@NotNull`, `@NotBlank` where appropriate~~ ✅ **COMPLETED**
 
 3. ~~**Date Fields Not Indexed**~~ ✅ **COMPLETED**
    - `appointmentDateTime`, `bookingDateTime`, `treatedDateTime`
@@ -791,10 +797,12 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
 
 **Critical Issues:**
 
-1. **Password Stored as Plain Field**
+1. ~~**Password Stored as Plain Field**~~ ✅ **COMPLETED**
    - Line 55: Password field visible in entity
    - **Security:** Should use `@JsonIgnore` or separate security entity
-   - **Fix:** Add `@JsonIgnore` or exclude from DTO mapping
+   - **Status:** Added `@JsonIgnore` annotation on password field to prevent serialization
+   - **Status:** Added `@NotBlank` and `@Size(min = 8, max = 128)` for password validation
+   - ~~**Fix:** Add `@JsonIgnore` or exclude from DTO mapping~~ ✅ **COMPLETED**
 
 2. **Missing Indexes on Search Fields**
    - `specialization`, `phoneNumber` - No indexes
@@ -802,12 +810,26 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
 
 **Medium Priority Issues:**
 
-3. **No Validation Annotations**
-   - **Fix:** Add validation
+3. ~~**No Validation Annotations**~~ ✅ **COMPLETED**
+   - **Status:** Added comprehensive validation annotations:
+     - `@NotBlank` for required fields (email, firstName, lastName, phoneNumber, password)
+     - `@Email` for email validation
+     - `@Size` for length constraints (names: 2-50, specialization: max 100, bio: max 5000, about: max 2000)
+     - `@Pattern` for format validation (names: letters only, phone: digits only, picture URLs: valid URL pattern)
+     - `@Min/@Max` for yearsOfExperience (0-70)
+     - `@JsonIgnore` on password field for security
+     - `@Valid` for nested objects (Address, TimeSlot, lists)
+     - List size constraints (education: max 20, achievements: max 50, timeSlots: max 50)
+   - ~~**Fix:** Add validation~~ ✅ **COMPLETED**
 
-4. **Large Lists Without Size Limits**
+4. ~~**Large Lists Without Size Limits**~~ ✅ **COMPLETED**
    - `education`, `achievementsAndAwards` - No max size
-   - **Fix:** Add size constraints
+   - **Status:** Added `@Size` constraints:
+     - `education`: max 20 items, each item max 200 characters
+     - `achievementsAndAwards`: max 50 items
+     - `availableTimeSlots`: max 50 items
+     - `availableDays`: max 7 days
+   - ~~**Fix:** Add size constraints~~ ✅ **COMPLETED**
 
 #### 3. NotificationEntity.java
 
@@ -1222,6 +1244,70 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
 4. **Write Concerns**
    - Configure appropriate write concern for your needs
    - Use `w: "majority"` for critical data
+
+---
+
+### Entity Validation Layer - COMPLETED ✅
+
+#### Summary of Validation Additions
+
+**AppointmentEntity:**
+- ✅ Added `@NotBlank` for appointmentId, doctorId, patientName, contact
+- ✅ Added `@NotNull` for Boolean and enum fields (availableAtClinic, treated, status, paymentStatus, isEmergency)
+- ✅ Added `@Size` constraints (patientName: 2-100, contact: 10-15, description: max 1000, email: max 255)
+- ✅ Added `@Pattern` validation (patientName: letters/spaces/hyphens, contact: digits only)
+- ✅ Added `@Email` for email field
+- ✅ **Note:** appointmentDateTime intentionally left nullable (defaults to current date in service if null)
+- ✅ **Note:** bookingDateTime intentionally left nullable (auto-set in service)
+- ✅ **Note:** treatedDateTime intentionally left nullable (set only when treated=true)
+
+**DoctorEntity:**
+- ✅ Added `@NotBlank` for doctorId, email, firstName, lastName, phoneNumber, password
+- ✅ Added `@Email` for email validation
+- ✅ Added `@Size` constraints (names: 2-50, specialization: max 100, bio: max 5000, about: max 2000)
+- ✅ Added `@Pattern` validation (names: letters only, phone: digits only, URLs: valid URL pattern)
+- ✅ Added `@Min(0)/@Max(70)` for yearsOfExperience
+- ✅ Added `@JsonIgnore` on password field for security
+- ✅ Added `@Valid` for nested objects (Address, TimeSlot)
+- ✅ Added list size constraints (education: 20, achievements: 50, timeSlots: 50, availableDays: 7)
+- ✅ **Note:** Many fields left nullable for partial updates (service handles null checks)
+
+**NotificationEntity:**
+- ✅ Enhanced existing `@NotNull` for type and message
+- ✅ Added `@NotBlank` for message (previously only @NotEmpty)
+- ✅ Added `@Size` constraints (title: max 200, message: 1-2000, doctorId: max 50)
+- ✅ **Note:** doctorId intentionally nullable (system notifications have null doctorId)
+
+**OtpEntity:**
+- ✅ Added `@NotBlank` and `@Email` for identifier
+- ✅ Added `@NotBlank`, `@Size(min=4, max=8)`, and `@Pattern` for OTP (digits only)
+- ✅ Added `@NotNull` for expirationTime
+- ✅ Added no-arg constructor to support validation
+
+**Address (nested class):**
+- ✅ Added `@NotBlank` for city, state, country, pincode
+- ✅ Added `@Size` constraints (street: max 200, city/state/country: 2-100, pincode: 5-10)
+- ✅ Added `@Pattern` validation (city/state/country: letters only, pincode: alphanumeric)
+
+**TimeSlot (nested class):**
+- ✅ Added `@NotBlank` for startTime and endTime
+- ✅ Added `@Size(max=10)` for time fields
+- ✅ Added `@Pattern` for time format validation (HH:MM AM/PM)
+
+**Validation Conflicts Resolved:**
+1. ✅ AppointmentEntity: appointmentDateTime nullable (service defaults to current date) - No @FutureOrPresent added
+2. ✅ AppointmentEntity: bookingDateTime nullable (auto-set by service) - No validation added
+3. ✅ AppointmentEntity: treatedDateTime nullable (only set when treated=true) - No validation added
+4. ✅ DoctorEntity: Optional fields in updates handled - Fields remain nullable, service validates on creation
+5. ✅ NotificationEntity: doctorId nullable for system notifications - Size constraint only, not @NotBlank
+
+**Best Practices Followed:**
+- ✅ Validation at entity level for data integrity
+- ✅ Size constraints prevent database overflow
+- ✅ Pattern validation prevents invalid data formats
+- ✅ @JsonIgnore on sensitive fields (password)
+- ✅ @Valid for nested objects to ensure deep validation
+- ✅ Business logic conflicts avoided (date validations match service logic)
 
 ---
 

@@ -32,15 +32,18 @@ public class NotificationEntity {
     private String id;
 
     @Indexed(name = "doctor_id_idx")
+    @Size(max = 50, message = "Doctor ID must not exceed 50 characters")
     private String doctorId;
 
-    @NotNull
+    @NotNull(message = "Notification type is required")
     private NotificationType type;
 
+    @Size(max = 200, message = "Title must not exceed 200 characters")
     private String title;
 
-    @NotNull
-    @NotEmpty
+    @NotNull(message = "Message is required")
+    @NotBlank(message = "Message cannot be blank")
+    @Size(min = 1, max = 2000, message = "Message must be between 1 and 2000 characters")
     private String message;
 
     @Builder.Default
