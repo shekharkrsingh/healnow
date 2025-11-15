@@ -5,109 +5,119 @@ import com.heal.doctor.models.DailyTreatedPatients;
 import com.heal.doctor.repositories.DoctorStatisticsRepository;
 import com.heal.doctor.services.IDoctorStatisticsService;
 import com.heal.doctor.utils.CurrentUserName;
+import com.heal.doctor.utils.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
 public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
 
-    private final DoctorStatisticsRepository statisticsRepository;
+    private static final Logger logger = LoggerFactory.getLogger(DoctorStatisticsServiceImpl.class);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final int DAYS_BACK_WEEK = 7;
 
-    public DoctorStatisticsServiceImpl(DoctorStatisticsRepository statisticsRepository) {
+    private final DoctorStatisticsRepository statisticsRepository;
+    private final Executor taskExecutor;
+
+    public DoctorStatisticsServiceImpl(DoctorStatisticsRepository statisticsRepository,
+                                      @Qualifier("emailTaskExecutor") Executor taskExecutor) {
         this.statisticsRepository = statisticsRepository;
+        this.taskExecutor = taskExecutor;
     }
 
     public DoctorStatisticsDTO fetchStatistics() {
-        Date startOfDay = getStartOfDay();
-        Date endOfDay = getEndOfDay();
-        Date startOfWeek = getStartOfLast7Days();
-        Date endOfYesterday = getEndOfYesterday();
+        logger.debug("Fetching statistics for doctor");
+        
+        Date[] todayDates = DateUtils.getStartAndEndOfDay(new Date());
+        Date startOfDay = todayDates[0];
+        Date endOfDay = todayDates[1];
+        
+        Date[] weekDates = getStartAndEndOfLastWeek();
+        Date startOfWeek = weekDates[0];
+        Date endOfYesterday = weekDates[1];
 
         String doctorId = CurrentUserName.getCurrentDoctorId();
 
-        Integer totalAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
-        Integer totalUntreatedAppointmentsTodayAndNotAvailable = Objects.requireNonNullElse(statisticsRepository.getTotalUntreatedAppointmentsTodayAndNotAvailable(startOfDay, endOfDay, doctorId), 0);
-        Integer totalTreatedAppointmentsToday = Objects.requireNonNullElse(statisticsRepository.getTotalTreatedAppointmentsToday(startOfDay, endOfDay, doctorId), 0);
-        Integer totalAvailableAtClinic = Objects.requireNonNullElse(statisticsRepository.getTotalAvailableAtClinicToday(startOfDay, endOfDay, doctorId), 0);
-        List<DailyTreatedPatients> dailyTreatedPatientsLastWeek = getProcessedDailyTreatedPatients(startOfWeek, endOfYesterday, doctorId);
+        CompletableFuture<DoctorStatisticsRepository.StatisticsResult> todayStatsFuture = CompletableFuture.supplyAsync(
+                () -> statisticsRepository.getTodayStatisticsOptimized(startOfDay, endOfDay, doctorId),
+                taskExecutor);
+        
+        CompletableFuture<List<DailyTreatedPatients>> dailyTreatedFuture = CompletableFuture.supplyAsync(
+                () -> getProcessedDailyTreatedPatients(startOfWeek, endOfYesterday, doctorId),
+                taskExecutor);
+        
+        CompletableFuture<Integer> lastActiveDayAppointmentsFuture = CompletableFuture.supplyAsync(
+                () -> statisticsRepository.getLastActiveDayAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0),
+                taskExecutor);
+        
+        CompletableFuture<Integer> lastActiveDayTreatedFuture = CompletableFuture.supplyAsync(
+                () -> statisticsRepository.getLastActiveDayTreatedAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0),
+                taskExecutor);
 
-        Integer lastActiveDayAppointments = statisticsRepository.getLastActiveDayAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0);
-        Integer lastActiveDayTreatedAppointments = statisticsRepository.getLastActiveDayTreatedAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0);
+        CompletableFuture.allOf(todayStatsFuture, dailyTreatedFuture, lastActiveDayAppointmentsFuture, lastActiveDayTreatedFuture).join();
+
+        DoctorStatisticsRepository.StatisticsResult todayStats = todayStatsFuture.join();
+        List<DailyTreatedPatients> dailyTreatedPatientsLastWeek = dailyTreatedFuture.join();
+        Integer lastActiveDayAppointments = lastActiveDayAppointmentsFuture.join();
+        Integer lastActiveDayTreatedAppointments = lastActiveDayTreatedFuture.join();
 
         DoctorStatisticsDTO doctorStatisticsDTO = new DoctorStatisticsDTO();
-        doctorStatisticsDTO.setTotalAppointment(totalAppointmentsToday);
-        doctorStatisticsDTO.setTotalUntreatedAppointmentAndNotAvailable(totalUntreatedAppointmentsTodayAndNotAvailable);
-        doctorStatisticsDTO.setTotalTreatedAppointment(totalTreatedAppointmentsToday);
-        doctorStatisticsDTO.setTotalAvailableAtClinic(totalAvailableAtClinic);
+        doctorStatisticsDTO.setTotalAppointment(Objects.requireNonNullElse(todayStats.getTotalAppointments(), 0));
+        doctorStatisticsDTO.setTotalUntreatedAppointmentAndNotAvailable(Objects.requireNonNullElse(todayStats.getUntreatedNotAvailable(), 0));
+        doctorStatisticsDTO.setTotalTreatedAppointment(Objects.requireNonNullElse(todayStats.getTreatedAppointments(), 0));
+        doctorStatisticsDTO.setTotalAvailableAtClinic(Objects.requireNonNullElse(todayStats.getAvailableAtClinic(), 0));
         doctorStatisticsDTO.setLastWeekTreatedData(dailyTreatedPatientsLastWeek);
         doctorStatisticsDTO.setLastActiveDayAppointments(lastActiveDayAppointments);
         doctorStatisticsDTO.setLastActiveDayTreatedAppointments(lastActiveDayTreatedAppointments);
-        double percentage = doctorStatisticsDTO.getLastActiveDayAppointments() > 0
-                ? ((double)doctorStatisticsDTO.getLastActiveDayTreatedAppointments() / doctorStatisticsDTO.getLastActiveDayAppointments()) * 100
+        
+        double percentage = lastActiveDayAppointments > 0
+                ? ((double)lastActiveDayTreatedAppointments / lastActiveDayAppointments) * 100
                 : 0.0;
         doctorStatisticsDTO.setLastActiveDayPercentageTreatedAppointments(percentage);
 
+        logger.debug("Statistics fetched successfully: totalAppointments: {}, treatedAppointments: {}",
+                doctorStatisticsDTO.getTotalAppointment(), doctorStatisticsDTO.getTotalTreatedAppointment());
+        
         return doctorStatisticsDTO;
     }
 
-    private Date getStartOfDay() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-
-    private Date getEndOfDay() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 999);
-        return calendar.getTime();
-    }
-
-    private Date getStartOfLast7Days() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, -7); // 7 days ago
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-
-    private Date getEndOfYesterday() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, -1); // Yesterday
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 999);
-        return calendar.getTime();
+    private Date[] getStartAndEndOfLastWeek() {
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.minusDays(DAYS_BACK_WEEK);
+        LocalDate endOfYesterday = today.minusDays(1);
+        
+        Date[] startDates = DateUtils.getStartAndEndOfDay(java.util.Date.from(startOfWeek.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        Date[] endDates = DateUtils.getStartAndEndOfDay(java.util.Date.from(endOfYesterday.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        
+        return new Date[]{startDates[0], endDates[1]};
     }
 
     private List<DailyTreatedPatients> getProcessedDailyTreatedPatients(Date startOfWeek, Date endOfYesterday, String doctorId) {
         List<DailyTreatedPatients> rawData = statisticsRepository.getDailyTreatedPatientsLastWeek(startOfWeek, endOfYesterday, doctorId);
 
-        Map<String, Integer> treatedDataMap = rawData.stream()
-                .collect(Collectors.toMap(DailyTreatedPatients::getDate, DailyTreatedPatients::getCount));
+        Map<String, Integer> treatedDataMap = rawData.parallelStream()
+                .collect(Collectors.toConcurrentMap(DailyTreatedPatients::getDate, DailyTreatedPatients::getCount));
 
         List<DailyTreatedPatients> finalList = new ArrayList<>();
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startOfWeek);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-        while (!calendar.getTime().after(endOfYesterday)) {
-            String dateStr = sdf.format(calendar.getTime());
-            int count = treatedDataMap.getOrDefault(dateStr, 0); // Default to 0 if missing
+        LocalDate startDate = startOfWeek.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = endOfYesterday.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            String dateStr = currentDate.format(DATE_FORMATTER);
+            int count = treatedDataMap.getOrDefault(dateStr, 0);
             finalList.add(new DailyTreatedPatients(dateStr, count));
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
+            currentDate = currentDate.plusDays(1);
         }
 
         return finalList;
