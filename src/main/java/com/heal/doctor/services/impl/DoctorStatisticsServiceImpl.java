@@ -48,8 +48,20 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
 
         String doctorId = CurrentUserName.getCurrentDoctorId();
 
-        CompletableFuture<DoctorStatisticsRepository.StatisticsResult> todayStatsFuture = CompletableFuture.supplyAsync(
-                () -> statisticsRepository.getTodayStatisticsOptimized(startOfDay, endOfDay, doctorId),
+        CompletableFuture<Integer> totalAppointmentsFuture = CompletableFuture.supplyAsync(
+                () -> Objects.requireNonNullElse(statisticsRepository.getTotalAppointmentsToday(startOfDay, endOfDay, doctorId), 0),
+                taskExecutor);
+        
+        CompletableFuture<Integer> untreatedNotAvailableFuture = CompletableFuture.supplyAsync(
+                () -> Objects.requireNonNullElse(statisticsRepository.getTotalUntreatedAppointmentsTodayAndNotAvailable(startOfDay, endOfDay, doctorId), 0),
+                taskExecutor);
+        
+        CompletableFuture<Integer> treatedAppointmentsFuture = CompletableFuture.supplyAsync(
+                () -> Objects.requireNonNullElse(statisticsRepository.getTotalTreatedAppointmentsToday(startOfDay, endOfDay, doctorId), 0),
+                taskExecutor);
+        
+        CompletableFuture<Integer> availableAtClinicFuture = CompletableFuture.supplyAsync(
+                () -> Objects.requireNonNullElse(statisticsRepository.getTotalAvailableAtClinicToday(startOfDay, endOfDay, doctorId), 0),
                 taskExecutor);
         
         CompletableFuture<List<DailyTreatedPatients>> dailyTreatedFuture = CompletableFuture.supplyAsync(
@@ -64,18 +76,22 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
                 () -> statisticsRepository.getLastActiveDayTreatedAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0),
                 taskExecutor);
 
-        CompletableFuture.allOf(todayStatsFuture, dailyTreatedFuture, lastActiveDayAppointmentsFuture, lastActiveDayTreatedFuture).join();
+        CompletableFuture.allOf(totalAppointmentsFuture, untreatedNotAvailableFuture, treatedAppointmentsFuture,
+                availableAtClinicFuture, dailyTreatedFuture, lastActiveDayAppointmentsFuture, lastActiveDayTreatedFuture).join();
 
-        DoctorStatisticsRepository.StatisticsResult todayStats = todayStatsFuture.join();
+        Integer totalAppointmentsToday = totalAppointmentsFuture.join();
+        Integer totalUntreatedAppointmentsTodayAndNotAvailable = untreatedNotAvailableFuture.join();
+        Integer totalTreatedAppointmentsToday = treatedAppointmentsFuture.join();
+        Integer totalAvailableAtClinic = availableAtClinicFuture.join();
         List<DailyTreatedPatients> dailyTreatedPatientsLastWeek = dailyTreatedFuture.join();
         Integer lastActiveDayAppointments = lastActiveDayAppointmentsFuture.join();
         Integer lastActiveDayTreatedAppointments = lastActiveDayTreatedFuture.join();
 
         DoctorStatisticsDTO doctorStatisticsDTO = new DoctorStatisticsDTO();
-        doctorStatisticsDTO.setTotalAppointment(Objects.requireNonNullElse(todayStats.getTotalAppointments(), 0));
-        doctorStatisticsDTO.setTotalUntreatedAppointmentAndNotAvailable(Objects.requireNonNullElse(todayStats.getUntreatedNotAvailable(), 0));
-        doctorStatisticsDTO.setTotalTreatedAppointment(Objects.requireNonNullElse(todayStats.getTreatedAppointments(), 0));
-        doctorStatisticsDTO.setTotalAvailableAtClinic(Objects.requireNonNullElse(todayStats.getAvailableAtClinic(), 0));
+        doctorStatisticsDTO.setTotalAppointment(totalAppointmentsToday);
+        doctorStatisticsDTO.setTotalUntreatedAppointmentAndNotAvailable(totalUntreatedAppointmentsTodayAndNotAvailable);
+        doctorStatisticsDTO.setTotalTreatedAppointment(totalTreatedAppointmentsToday);
+        doctorStatisticsDTO.setTotalAvailableAtClinic(totalAvailableAtClinic);
         doctorStatisticsDTO.setLastWeekTreatedData(dailyTreatedPatientsLastWeek);
         doctorStatisticsDTO.setLastActiveDayAppointments(lastActiveDayAppointments);
         doctorStatisticsDTO.setLastActiveDayTreatedAppointments(lastActiveDayTreatedAppointments);
