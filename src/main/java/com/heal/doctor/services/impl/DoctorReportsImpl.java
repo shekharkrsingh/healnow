@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class DoctorReportsImpl implements IDoctorReports {
 
+    private static final Logger logger = LoggerFactory.getLogger(DoctorReportsImpl.class);
+
     private final TemplateEngine templateEngine;
     private final IDoctorService doctorService;
     private final IAppointmentService appointmentService;
@@ -97,16 +99,22 @@ public class DoctorReportsImpl implements IDoctorReports {
                 renderer.layout();
                 renderer.createPDF(outputStream);
 
+                byte[] pdfBytes = outputStream.toByteArray();
+                
                 emailService.sendSimpleEmailWithAttachment(
                         CurrentUserName.getCurrentUsername(),
                         "Doctor Appointment Report - " + LocalDate.now().format(DISPLAY_FORMATTER),
                         "Please find your appointment report attached.",
-                        outputStream.toByteArray(),
+                        pdfBytes,
                         "appointment-report-" + LocalDate.now() + ".pdf",
                         "application/pdf"
-                );
+                ).exceptionally(ex -> {
+                    logger.error("Failed to send report email asynchronously: error: {}", ex.getMessage(), ex);
+                    return null;
+                });
+                logger.info("Report email sending initiated asynchronously for: {}", CurrentUserName.getCurrentUsername());
 
-                return outputStream.toByteArray();
+                return pdfBytes;
             }
 
         } catch (BadRequestException | IllegalArgumentException e) {

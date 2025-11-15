@@ -11,12 +11,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class EmailServiceImpl implements IEmailService {
@@ -36,8 +38,9 @@ public class EmailServiceImpl implements IEmailService {
     private String senderEmail;
 
     @Override
-    public void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
-        logger.debug("Sending HTML email: to: {}, subject: {}, template: {}", to, subject, templateName);
+    @Async("emailTaskExecutor")
+    public CompletableFuture<Void> sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
+        logger.debug("Sending HTML email asynchronously: to: {}, subject: {}, template: {}", to, subject, templateName);
         MimeMessage message = mailSender.createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
@@ -52,17 +55,21 @@ public class EmailServiceImpl implements IEmailService {
 
             mailSender.send(message);
             logger.info("HTML email sent successfully: to: {}, subject: {}", to, subject);
+            return CompletableFuture.completedFuture(null);
         } catch (MessagingException e) {
             logger.error("Failed to send HTML email: to: {}, subject: {}, error: {}", to, subject, e.getMessage(), e);
-            throw new EmailException("Failed to send email to " + to + ": " + e.getMessage(), e);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(new EmailException("Failed to send email to " + to + ": " + e.getMessage(), e));
+            return future;
         }
     }
 
     @Override
-    public void sendHtmlEmailWithAttachment(String to, String subject, String templateName,
+    @Async("emailTaskExecutor")
+    public CompletableFuture<Void> sendHtmlEmailWithAttachment(String to, String subject, String templateName,
                                             Map<String, Object> variables, byte[] attachment,
                                             String attachmentFileName, String attachmentContentType) {
-        logger.debug("Sending HTML email with attachment: to: {}, subject: {}, attachment: {}", 
+        logger.debug("Sending HTML email with attachment asynchronously: to: {}, subject: {}, attachment: {}", 
                 to, subject, attachmentFileName);
         MimeMessage message = mailSender.createMimeMessage();
         try {
@@ -82,16 +89,20 @@ public class EmailServiceImpl implements IEmailService {
             mailSender.send(message);
             logger.info("HTML email with attachment sent successfully: to: {}, subject: {}, attachment: {}", 
                     to, subject, attachmentFileName);
+            return CompletableFuture.completedFuture(null);
         } catch (MessagingException e) {
             logger.error("Failed to send HTML email with attachment: to: {}, subject: {}, attachment: {}, error: {}", 
                     to, subject, attachmentFileName, e.getMessage(), e);
-            throw new EmailException("Failed to send email with attachment to " + to + ": " + e.getMessage(), e);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(new EmailException("Failed to send email with attachment to " + to + ": " + e.getMessage(), e));
+            return future;
         }
     }
 
     @Override
-    public void sendSimpleEmail(String to, String subject, String body) {
-        logger.debug("Sending simple email: to: {}, subject: {}", to, subject);
+    @Async("emailTaskExecutor")
+    public CompletableFuture<Void> sendSimpleEmail(String to, String subject, String body) {
+        logger.debug("Sending simple email asynchronously: to: {}, subject: {}", to, subject);
         MimeMessage message = mailSender.createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
@@ -101,17 +112,21 @@ public class EmailServiceImpl implements IEmailService {
             helper.setFrom(senderEmail);
             mailSender.send(message);
             logger.info("Simple email sent successfully: to: {}, subject: {}", to, subject);
+            return CompletableFuture.completedFuture(null);
         } catch (MessagingException e) {
             logger.error("Failed to send simple email: to: {}, subject: {}, error: {}", to, subject, e.getMessage(), e);
-            throw new EmailException("Failed to send email to " + to + ": " + e.getMessage(), e);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(new EmailException("Failed to send email to " + to + ": " + e.getMessage(), e));
+            return future;
         }
     }
 
     @Override
-    public void sendSimpleEmailWithAttachment(String to, String subject, String body,
+    @Async("emailTaskExecutor")
+    public CompletableFuture<Void> sendSimpleEmailWithAttachment(String to, String subject, String body,
                                               byte[] attachment, String attachmentFileName,
                                               String attachmentContentType) {
-        logger.debug("Sending simple email with attachment: to: {}, subject: {}, attachment: {}", 
+        logger.debug("Sending simple email with attachment asynchronously: to: {}, subject: {}, attachment: {}", 
                 to, subject, attachmentFileName);
         MimeMessage message = mailSender.createMimeMessage();
         try {
@@ -127,10 +142,13 @@ public class EmailServiceImpl implements IEmailService {
             mailSender.send(message);
             logger.info("Simple email with attachment sent successfully: to: {}, subject: {}, attachment: {}", 
                     to, subject, attachmentFileName);
+            return CompletableFuture.completedFuture(null);
         } catch (MessagingException e) {
             logger.error("Failed to send simple email with attachment: to: {}, subject: {}, attachment: {}, error: {}", 
                     to, subject, attachmentFileName, e.getMessage(), e);
-            throw new EmailException("Failed to send email with attachment to " + to + ": " + e.getMessage(), e);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(new EmailException("Failed to send email with attachment to " + to + ": " + e.getMessage(), e));
+            return future;
         }
     }
 }

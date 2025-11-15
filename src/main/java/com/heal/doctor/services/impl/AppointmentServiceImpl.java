@@ -149,7 +149,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         title("New Emergency Appointment Alert").
                         message("A new emergency appointment has been registered. Please check and take immediate action.").
                         build();
-                notificationService.createNotification(notification);
+                notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+                    logger.error("Failed to create emergency notification asynchronously: appointmentId: {}, doctorId: {}, error: {}", 
+                            appointmentId, appointmentEntity.getDoctorId(), ex.getMessage(), ex);
+                    return null;
+                });
             }
         }
         AppointmentDTO appointmentDTO = modelMapper.map(newAppointmentEntity, AppointmentDTO.class);

@@ -100,7 +100,11 @@ public class DoctorServiceImpl implements IDoctorService {
                 title("Welcome "+ savedDoctor.getFirstName()).
                 message("Your account has been successfully created. Complete your profile to start managing appointments and providing care.").
                 build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create welcome notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorWelcomeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
         
         return modelMapper.map(savedDoctor, DoctorDTO.class);
@@ -268,7 +272,11 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create password change notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorPasswordChangeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
     }
 
@@ -307,7 +315,11 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Security Update")
                 .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
                 .build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create email change notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorLoginEmailChangedMail(
                 oldMail,
                 doctor.getFirstName(),
@@ -344,11 +356,15 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create password reset notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorPasswordChangeMail(
                 savedDoctor.getFirstName(),
                 savedDoctor.getEmail()
-        );
+            );
     }
 
 
