@@ -14,11 +14,14 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationService implements INotificationService {
@@ -58,14 +61,44 @@ public class NotificationService implements INotificationService {
     }
 
     @Override
+    @Async("notificationTaskExecutor")
+    public CompletableFuture<Void> createNotificationAsync(NotificationEntity notification) {
+        logger.debug("Creating notification asynchronously: doctorId: {}, type: {}, title: {}", 
+                notification.getDoctorId(), notification.getType(), notification.getTitle());
+        try {
+            NotificationEntity savedNotification = notificationRepository.save(notification);
+            logger.info("Notification created asynchronously: notificationId: {}, doctorId: {}, type: {}", 
+                    savedNotification.getId(), savedNotification.getDoctorId(), savedNotification.getType());
+            NotificationResponseDTO notificationResponseDTO = modelMapper.map(savedNotification, NotificationResponseDTO.class);
+            if(!notification.getType().equals(NotificationType.SYSTEM)){
+                String doctorId = savedNotification.getDoctorId();
+                logger.debug("Sending WebSocket notification asynchronously: doctorId: {}, notificationId: {}", 
+                        doctorId, savedNotification.getId());
+                messagingTemplate.convertAndSend("/topic/appointments/" + doctorId,
+                        WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
+                        .type(WebSocketResponseType.NOTIFICATION)
+                        .payload(notificationResponseDTO)
+                        .build());
+            }
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            logger.error("Failed to create notification asynchronously: doctorId: {}, type: {}, error: {}", 
+                    notification.getDoctorId(), notification.getType(), e.getMessage(), e);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+        }
+    }
+
+    @Override
     public List<NotificationResponseDTO> getAllNotificationsForCurrentDoctor() {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         logger.debug("Fetching all notifications: doctorId: {}", doctorId);
         List<NotificationEntity> notifications = notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
         logger.debug("Found {} notifications for doctorId: {}", notifications.size(), doctorId);
-        return notifications.stream()
+        return notifications.parallelStream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -74,9 +107,9 @@ public class NotificationService implements INotificationService {
         logger.debug("Fetching unread notifications: doctorId: {}", doctorId);
         List<NotificationEntity> notifications = notificationRepository.findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(doctorId);
         logger.debug("Found {} unread notifications for doctorId: {}", notifications.size(), doctorId);
-        return notifications.stream()
+        return notifications.parallelStream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -102,9 +135,9 @@ public class NotificationService implements INotificationService {
         });
         List<NotificationEntity> savedNotification = notificationRepository.saveAll(notifications);
         logger.info("Marked {} notifications as read for doctorId: {}", savedNotification.size(), doctorId);
-        return savedNotification.stream()
+        return savedNotification.parallelStream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
 }

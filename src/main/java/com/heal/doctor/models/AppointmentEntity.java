@@ -34,6 +34,9 @@ import java.util.Date;
 })
 public class AppointmentEntity {
 
+    private static final int VALID_CONTACT_LENGTH = 10;
+    private static final String CONTACT_PATTERN = "^\\d{10}$";
+
     @Id
     private String id;
 
@@ -53,8 +56,8 @@ public class AppointmentEntity {
     private String patientName;
 
     @NotBlank(message = "Contact number is required")
-    @Size(min = 10, max = 15, message = "Contact number must be between 10 and 15 digits")
-    @Pattern(regexp = "^\\d+$", message = "Contact number must contain only digits")
+    @Size(min = VALID_CONTACT_LENGTH, max = VALID_CONTACT_LENGTH, message = "Contact number must be exactly " + VALID_CONTACT_LENGTH + " digits")
+    @Pattern(regexp = CONTACT_PATTERN, message = "Contact number must be exactly " + VALID_CONTACT_LENGTH + " digits")
     private String contact;
 
     @Email(message = "Email must be a valid email address")
