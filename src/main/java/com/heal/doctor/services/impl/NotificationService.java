@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationService implements INotificationService {
@@ -95,9 +96,9 @@ public class NotificationService implements INotificationService {
         logger.debug("Fetching all notifications: doctorId: {}", doctorId);
         List<NotificationEntity> notifications = notificationRepository.findByDoctorIdOrDoctorIdIsNullOrderByCreatedAtDesc(doctorId);
         logger.debug("Found {} notifications for doctorId: {}", notifications.size(), doctorId);
-        return notifications.stream()
+        return notifications.parallelStream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -106,9 +107,9 @@ public class NotificationService implements INotificationService {
         logger.debug("Fetching unread notifications: doctorId: {}", doctorId);
         List<NotificationEntity> notifications = notificationRepository.findByIsReadFalseAndDoctorIdOrderByCreatedAtDesc(doctorId);
         logger.debug("Found {} unread notifications for doctorId: {}", notifications.size(), doctorId);
-        return notifications.stream()
+        return notifications.parallelStream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -134,9 +135,9 @@ public class NotificationService implements INotificationService {
         });
         List<NotificationEntity> savedNotification = notificationRepository.saveAll(notifications);
         logger.info("Marked {} notifications as read for doctorId: {}", savedNotification.size(), doctorId);
-        return savedNotification.stream()
+        return savedNotification.parallelStream()
                 .map(notification -> modelMapper.map(notification, NotificationResponseDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
 }

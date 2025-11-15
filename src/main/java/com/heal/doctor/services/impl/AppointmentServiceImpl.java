@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
@@ -195,9 +196,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         logger.debug("Found {} appointments for doctorId: {}, date: {}", appointments.size(), currentDoctor, date);
         return appointments
-                .stream()
+                .parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -438,9 +439,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         logger.debug("Found {} appointments for doctorId: {}, dateRange: {} to {}", 
                 appointments.size(), doctorId, fromDate, toDate);
-        return appointments.stream()
+        return appointments.parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
 
