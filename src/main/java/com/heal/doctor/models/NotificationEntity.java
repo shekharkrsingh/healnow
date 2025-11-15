@@ -45,5 +45,5 @@ public class NotificationEntity {
 
     @Indexed(name = "expiration_time_index", expireAfter = "0s")
     @Builder.Default
-    private Instant expiryDate = Instant.now().plusSeconds(7 * 24 * 60 * 60);
+    private Instant expiryDate = Instant.now().plusSeconds(7L * 24 * 60 * 60);
 }
