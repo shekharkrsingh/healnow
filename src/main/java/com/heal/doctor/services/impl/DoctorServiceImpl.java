@@ -19,12 +19,12 @@ import com.heal.doctor.exception.UnauthorizedException;
 import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.EmailValidatorUtil;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,13 +36,20 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DoctorServiceImpl implements IDoctorService {
 
     private static final Logger logger = LoggerFactory.getLogger(DoctorServiceImpl.class);
+    private static final String DOCTOR_ID_PREFIX = "DOC";
+    private static final String DOCTOR_ID_DATE_FORMAT = "yyMMdd-HHmm";
+    private static final String DOCTOR_ID_RANDOM_FORMAT = "%03d";
+    private static final int DOCTOR_ID_RANDOM_RANGE = 1000;
+    private static final int VALID_PHONE_LENGTH = 10;
+    private static final String PHONE_PATTERN = "^\\d{10}$";
 
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
@@ -53,6 +60,26 @@ public class DoctorServiceImpl implements IDoctorService {
     private final OtpServiceImpl otpService;
     private final INotificationService notificationService;
     private final IDoctorAccountMailService doctorAccountMailService;
+    private final Executor taskExecutor;
+
+    public DoctorServiceImpl(DoctorRepository doctorRepository, ModelMapper modelMapper,
+                            PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
+                            AuthenticationManager authenticationManager,
+                            UserDetailsService userDetailsService, OtpServiceImpl otpService,
+                            INotificationService notificationService,
+                            IDoctorAccountMailService doctorAccountMailService,
+                            @Qualifier("emailTaskExecutor") Executor taskExecutor) {
+        this.doctorRepository = doctorRepository;
+        this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.otpService = otpService;
+        this.notificationService = notificationService;
+        this.doctorAccountMailService = doctorAccountMailService;
+        this.taskExecutor = taskExecutor;
+    }
 
     @Transactional
     @Override
@@ -94,7 +121,11 @@ public class DoctorServiceImpl implements IDoctorService {
                 title("Welcome "+ savedDoctor.getFirstName()).
                 message("Your account has been successfully created. Complete your profile to start managing appointments and providing care.").
                 build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create welcome notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorWelcomeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
         
         return modelMapper.map(savedDoctor, DoctorDTO.class);
@@ -143,7 +174,7 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public List<DoctorDTO> getAllDoctors() {
         logger.debug("Fetching all doctors");
-        List<DoctorDTO> doctors = doctorRepository.findAll().stream()
+        List<DoctorDTO> doctors = doctorRepository.findAll().parallelStream()
                 .map(doctor -> modelMapper.map(doctor, DoctorDTO.class))
                 .collect(Collectors.toList());
         logger.debug("Retrieved {} doctors", doctors.size());
@@ -167,7 +198,16 @@ public class DoctorServiceImpl implements IDoctorService {
             existingDoctor.setSpecialization(updateDoctorDetailsDTO.getSpecialization());
         }
         if (updateDoctorDetailsDTO.getPhoneNumber() != null && !updateDoctorDetailsDTO.getPhoneNumber().isEmpty()) {
-            existingDoctor.setPhoneNumber(updateDoctorDetailsDTO.getPhoneNumber());
+            String phoneNumber = updateDoctorDetailsDTO.getPhoneNumber().trim();
+            if (phoneNumber.length() != VALID_PHONE_LENGTH) {
+                logger.warn("Phone number update failed - invalid length: email: {}, phoneNumber length: {}", username, phoneNumber.length());
+                throw new ValidationException("Phone number must be exactly " + VALID_PHONE_LENGTH + " digits.");
+            }
+            if (!phoneNumber.matches(PHONE_PATTERN)) {
+                logger.warn("Phone number update failed - invalid format: email: {}", username);
+                throw new ValidationException("Phone number must contain exactly " + VALID_PHONE_LENGTH + " digits.");
+            }
+            existingDoctor.setPhoneNumber(phoneNumber);
         }
         if (updateDoctorDetailsDTO.getAvailableDays() != null) {
             validateAvailableDays(updateDoctorDetailsDTO.getAvailableDays());
@@ -253,7 +293,11 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create password change notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorPasswordChangeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
     }
 
@@ -292,19 +336,27 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Security Update")
                 .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
                 .build();
-        notificationService.createNotification(notification);
-        doctorAccountMailService.doctorLoginEmailChangedMail(
-                oldMail,
-                doctor.getFirstName(),
-                oldMail,
-                updateEmailDTO.getNewEmail()
-        );
-        doctorAccountMailService.doctorLoginEmailChangedMail(
-                updateEmailDTO.getNewEmail(),
-                doctor.getFirstName(),
-                oldMail,
-                updateEmailDTO.getNewEmail()
-        );
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create email change notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
+        
+        CompletableFuture<Void> oldEmailFuture = CompletableFuture.runAsync(() ->
+                doctorAccountMailService.doctorLoginEmailChangedMail(
+                        oldMail, doctor.getFirstName(), oldMail, updateEmailDTO.getNewEmail()),
+                taskExecutor);
+        
+        CompletableFuture<Void> newEmailFuture = CompletableFuture.runAsync(() ->
+                doctorAccountMailService.doctorLoginEmailChangedMail(
+                        updateEmailDTO.getNewEmail(), doctor.getFirstName(), oldMail, updateEmailDTO.getNewEmail()),
+                taskExecutor);
+        
+        CompletableFuture.allOf(oldEmailFuture, newEmailFuture).exceptionally(ex -> {
+            logger.error("Failed to send email change notifications in parallel: error: {}", ex.getMessage(), ex);
+            return null;
+        });
+        
         return loginDoctor(updateEmailDTO.getNewEmail(), updateEmailDTO.getPassword());
     }
 
@@ -329,18 +381,22 @@ public class DoctorServiceImpl implements IDoctorService {
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
-        notificationService.createNotification(notification);
+        notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+            logger.error("Failed to create password reset notification asynchronously: doctorId: {}, error: {}", 
+                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+            return null;
+        });
         doctorAccountMailService.doctorPasswordChangeMail(
                 savedDoctor.getFirstName(),
                 savedDoctor.getEmail()
-        );
+            );
     }
 
 
     private String generateDoctorId() {
-        String prefix = "DOC";
-        String timestamp = new SimpleDateFormat("yyMMdd-HHmm").format(new Date());
-        String randomNumber = String.format("%03d", new Random().nextInt(1000));
+        String prefix = DOCTOR_ID_PREFIX;
+        String timestamp = new SimpleDateFormat(DOCTOR_ID_DATE_FORMAT).format(new Date());
+        String randomNumber = String.format(DOCTOR_ID_RANDOM_FORMAT, new Random().nextInt(DOCTOR_ID_RANDOM_RANGE));
         return String.format("%s-%s-%s", prefix, timestamp, randomNumber);
     }
 

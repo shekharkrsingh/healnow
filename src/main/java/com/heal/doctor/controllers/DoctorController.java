@@ -4,6 +4,7 @@ package com.heal.doctor.controllers;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.services.IDoctorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class DoctorController {
 
 
     @PutMapping()
-    public ResponseEntity<ApiResponse<DoctorDTO>> updateDoctor(@RequestBody UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
+    public ResponseEntity<ApiResponse<DoctorDTO>> updateDoctor(@Valid @RequestBody UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
         DoctorDTO savedDoctorDTO = doctorService.updateDoctor(updateDoctorDetailsDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor updated successfully", savedDoctorDTO));
     }

@@ -31,12 +31,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Service
 public class AppointmentServiceImpl implements IAppointmentService {
 
     private static final Logger logger = LoggerFactory.getLogger(AppointmentServiceImpl.class);
+    private static final int VALID_CONTACT_LENGTH = 10;
 
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
@@ -70,9 +72,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ValidationException("Contact number is required and cannot be empty.");
         }
 
-        if (requestDTO.getContact().trim().length() != 10) {
+        if (requestDTO.getContact().trim().length() != VALID_CONTACT_LENGTH) {
             logger.warn("Appointment booking failed: Invalid contact length for doctorId: {}, contact: {}", doctorId, requestDTO.getContact());
-            throw new ValidationException("Contact number must be exactly 10 digits.");
+            throw new ValidationException("Contact number must be exactly " + VALID_CONTACT_LENGTH + " digits.");
         }
 
         Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();
@@ -148,7 +150,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         title("New Emergency Appointment Alert").
                         message("A new emergency appointment has been registered. Please check and take immediate action.").
                         build();
-                notificationService.createNotification(notification);
+                notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+                    logger.error("Failed to create emergency notification asynchronously: appointmentId: {}, doctorId: {}, error: {}", 
+                            appointmentId, appointmentEntity.getDoctorId(), ex.getMessage(), ex);
+                    return null;
+                });
             }
         }
         AppointmentDTO appointmentDTO = modelMapper.map(newAppointmentEntity, AppointmentDTO.class);
@@ -190,9 +196,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         logger.debug("Found {} appointments for doctorId: {}, date: {}", appointments.size(), currentDoctor, date);
         return appointments
-                .stream()
+                .parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -433,9 +439,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         logger.debug("Found {} appointments for doctorId: {}, dateRange: {} to {}", 
                 appointments.size(), doctorId, fromDate, toDate);
-        return appointments.stream()
+        return appointments.parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                .toList();
+                .collect(Collectors.toList());
     }
 
 

@@ -30,6 +30,10 @@ import java.time.Instant;
 })
 public class NotificationEntity {
 
+    private static final int NOTIFICATION_EXPIRY_DAYS = 7;
+    private static final int SECONDS_PER_HOUR = 60 * 60;
+    private static final int HOURS_PER_DAY = 24;
+
     @Id
     private String id;
 
@@ -56,5 +60,5 @@ public class NotificationEntity {
 
     @Indexed(name = "expiration_time_index", expireAfter = "0s")
     @Builder.Default
-    private Instant expiryDate = Instant.now().plusSeconds(7L * 24 * 60 * 60);
+    private Instant expiryDate = Instant.now().plusSeconds((long) NOTIFICATION_EXPIRY_DAYS * HOURS_PER_DAY * SECONDS_PER_HOUR);
 }
