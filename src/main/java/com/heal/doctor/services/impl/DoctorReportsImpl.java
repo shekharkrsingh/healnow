@@ -9,6 +9,9 @@ import com.heal.doctor.services.IDoctorReports;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IEmailService;
 import com.heal.doctor.utils.CurrentUserName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -22,6 +25,8 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +38,7 @@ public class DoctorReportsImpl implements IDoctorReports {
     private final IDoctorService doctorService;
     private final IAppointmentService appointmentService;
     private final IEmailService emailService;
+    private final Executor taskExecutor;
 
     @Value("${company.name}")
     private String companyName;
@@ -42,11 +48,14 @@ public class DoctorReportsImpl implements IDoctorReports {
 
     public DoctorReportsImpl(TemplateEngine templateEngine,
                              IDoctorService doctorService,
-                             IAppointmentService appointmentService, IEmailService emailService) {
+                             IAppointmentService appointmentService, 
+                             IEmailService emailService,
+                             @Qualifier("emailTaskExecutor") Executor taskExecutor) {
         this.templateEngine = templateEngine;
         this.doctorService = doctorService;
         this.appointmentService = appointmentService;
         this.emailService = emailService;
+        this.taskExecutor = taskExecutor;
     }
 
     @Override
@@ -55,13 +64,20 @@ public class DoctorReportsImpl implements IDoctorReports {
             String finalFromDate = validateOrDefaultFromDate(fromDate);
             String finalToDate = validateOrDefaultToDate(toDate);
 
-            DoctorDTO doctor = doctorService.getDoctorProfile();
+            String currentDoctorId = CurrentUserName.getCurrentDoctorId();
+            
+            CompletableFuture<DoctorDTO> doctorFuture = CompletableFuture.supplyAsync(
+                    () -> doctorService.getDoctorProfile(), taskExecutor);
+            
+            CompletableFuture<List<AppointmentDTO>> appointmentsFuture = CompletableFuture.supplyAsync(
+                    () -> appointmentService.getAppointmentsByDoctorAndDateRange(
+                            currentDoctorId, finalFromDate, finalToDate),
+                    taskExecutor);
 
-            List<AppointmentDTO> appointments = appointmentService.getAppointmentsByDoctorAndDateRange(
-                    doctor.getDoctorId(),
-                    finalFromDate,
-                    finalToDate
-            );
+            CompletableFuture.allOf(doctorFuture, appointmentsFuture).join();
+            
+            DoctorDTO doctor = doctorFuture.join();
+            List<AppointmentDTO> appointments = appointmentsFuture.join();
 
             Map<String, Object> variables = new HashMap<>();
             variables.put("companyName", companyName);
@@ -75,7 +91,7 @@ public class DoctorReportsImpl implements IDoctorReports {
             variables.put("appointments", appointments);
             variables.put("totalAppointments", appointments.size());
             
-            Map<String, Long> appointmentStats = appointments.stream()
+            Map<String, Long> appointmentStats = appointments.parallelStream()
                     .collect(Collectors.groupingBy(
                             a -> {
                                 if (Boolean.TRUE.equals(a.getTreated())) return "treated";

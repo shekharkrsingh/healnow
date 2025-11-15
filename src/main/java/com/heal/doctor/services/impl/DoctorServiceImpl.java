@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,6 +62,26 @@ public class DoctorServiceImpl implements IDoctorService {
     private final OtpServiceImpl otpService;
     private final INotificationService notificationService;
     private final IDoctorAccountMailService doctorAccountMailService;
+    private final Executor taskExecutor;
+
+    public DoctorServiceImpl(DoctorRepository doctorRepository, ModelMapper modelMapper,
+                            PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
+                            AuthenticationManager authenticationManager,
+                            UserDetailsService userDetailsService, OtpServiceImpl otpService,
+                            INotificationService notificationService,
+                            IDoctorAccountMailService doctorAccountMailService,
+                            @Qualifier("emailTaskExecutor") Executor taskExecutor) {
+        this.doctorRepository = doctorRepository;
+        this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
+        this.otpService = otpService;
+        this.notificationService = notificationService;
+        this.doctorAccountMailService = doctorAccountMailService;
+        this.taskExecutor = taskExecutor;
+    }
 
     @Transactional
     @Override
@@ -153,7 +176,7 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public List<DoctorDTO> getAllDoctors() {
         logger.debug("Fetching all doctors");
-        List<DoctorDTO> doctors = doctorRepository.findAll().stream()
+        List<DoctorDTO> doctors = doctorRepository.findAll().parallelStream()
                 .map(doctor -> modelMapper.map(doctor, DoctorDTO.class))
                 .collect(Collectors.toList());
         logger.debug("Retrieved {} doctors", doctors.size());
@@ -320,18 +343,22 @@ public class DoctorServiceImpl implements IDoctorService {
                     savedDoctor.getDoctorId(), ex.getMessage(), ex);
             return null;
         });
-        doctorAccountMailService.doctorLoginEmailChangedMail(
-                oldMail,
-                doctor.getFirstName(),
-                oldMail,
-                updateEmailDTO.getNewEmail()
-        );
-        doctorAccountMailService.doctorLoginEmailChangedMail(
-                updateEmailDTO.getNewEmail(),
-                doctor.getFirstName(),
-                oldMail,
-                updateEmailDTO.getNewEmail()
-        );
+        
+        CompletableFuture<Void> oldEmailFuture = CompletableFuture.runAsync(() ->
+                doctorAccountMailService.doctorLoginEmailChangedMail(
+                        oldMail, doctor.getFirstName(), oldMail, updateEmailDTO.getNewEmail()),
+                taskExecutor);
+        
+        CompletableFuture<Void> newEmailFuture = CompletableFuture.runAsync(() ->
+                doctorAccountMailService.doctorLoginEmailChangedMail(
+                        updateEmailDTO.getNewEmail(), doctor.getFirstName(), oldMail, updateEmailDTO.getNewEmail()),
+                taskExecutor);
+        
+        CompletableFuture.allOf(oldEmailFuture, newEmailFuture).exceptionally(ex -> {
+            logger.error("Failed to send email change notifications in parallel: error: {}", ex.getMessage(), ex);
+            return null;
+        });
+        
         return loginDoctor(updateEmailDTO.getNewEmail(), updateEmailDTO.getPassword());
     }
 
