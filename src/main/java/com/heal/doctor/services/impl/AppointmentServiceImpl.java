@@ -326,13 +326,17 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     @Override
     public List<AppointmentDTO> getAppointmentsByDoctorAndDateRange(String doctorId, String fromDate, String toDate) {
+        Date[] fromDateRange = DateUtils.getStartAndEndOfDay(fromDate);
+        Date[] toDateRange = DateUtils.getStartAndEndOfDay(toDate);
 
+        Date startDate = fromDateRange[0];
+        Date endDate = toDateRange[1];
 
         List<AppointmentEntity> appointments = appointmentRepository
                 .findByDoctorIdAndAppointmentDateTimeBetween(
                         doctorId,
-                        DateUtils.parseToDate("2025-11-01"),
-                        DateUtils.parseToDate("2025-11-10")
+                        startDate,
+                        endDate
                 );
 
         return appointments.stream()
