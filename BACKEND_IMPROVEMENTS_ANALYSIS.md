@@ -582,9 +582,14 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
    - `MimeMessageHelper` setup repeated in all methods
    - **Fix:** Extract to helper method
 
-7. **No Logging**
+7. ~~**No Logging**~~ ✅ **COMPLETED**
    - Email failures not logged
-   - **Fix:** Add comprehensive logging
+   - **Status:** Added comprehensive logging for all email operations:
+     - DEBUG logs before sending
+     - INFO logs for successful sends
+     - ERROR logs for failures with full exception stack traces
+     - All email operations include recipient, subject, and attachment details
+   - ~~**Fix:** Add comprehensive logging~~ ✅ **COMPLETED**
 
 #### 7. OtpServiceImpl.java
 
@@ -1175,10 +1180,12 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
 
 2. ~~**No Logging**~~ ✅ **COMPLETED**
    - Exceptions not logged
-   - **Status:** Added comprehensive logging:
-     - `logger.warn()` for business exceptions
-     - `logger.error()` for system exceptions
-     - All exceptions now logged with context
+   - **Status:** Added comprehensive logging across entire application:
+     - **GlobalExceptionHandler**: `logger.warn()` for business exceptions, `logger.error()` for system exceptions
+     - **All Services**: INFO/DEBUG/WARN/ERROR logging for all operations
+     - **Security Layer**: Authentication and authorization logging
+     - **All exceptions logged with context** (doctorId, appointmentId, etc.)
+   - **Files Updated**: AppointmentServiceImpl, DoctorServiceImpl, OtpServiceImpl, EmailServiceImpl, NotificationService, JwtAuthenticationFilter, DoctorHandshakeInterceptor
    - ~~**Fix:** Add logging~~ ✅ **COMPLETED**
 
 3. **Information Leakage**
@@ -1446,18 +1453,94 @@ private static final ThreadLocal<Calendar> CALENDAR_CACHE =
 - Create custom validators for business rules
 - Validate at controller level
 
-### 4. Logging
+### 4. Logging - COMPLETED ✅
 
-**Issues:**
-- No structured logging
-- No request/response logging
-- No performance logging
+**Summary of Logging Implementation:**
 
-**Recommendations:**
-- Add SLF4J with structured logging (JSON format)
-- Log all requests/responses (excluding sensitive data)
-- Log slow queries (>100ms)
-- Use MDC for request tracking
+**Service Layer Logging:**
+- ✅ **AppointmentServiceImpl** - Comprehensive logging for:
+  - Appointment booking (INFO for success, WARN for failures)
+  - Appointment updates (status, payment, treated, availability, emergency)
+  - Appointment cancellation
+  - Appointment retrieval (DEBUG level)
+  - Unauthorized access attempts (WARN with context)
+  - WebSocket notifications (DEBUG level)
+  
+- ✅ **DoctorServiceImpl** - Complete logging for:
+  - Doctor registration (INFO for success, WARN for validation failures)
+  - Authentication/login (INFO for success, WARN for failures)
+  - Profile updates (INFO)
+  - Password changes (INFO)
+  - Email updates (INFO with old/new email)
+  - Password reset (INFO)
+  - Account deletion (WARN - critical operation)
+  - Profile retrieval (DEBUG)
+
+- ✅ **OtpServiceImpl** - Logging for:
+  - OTP generation (INFO with email)
+  - OTP validation (INFO for success, WARN for failures)
+  - Email sending status (INFO/ERROR)
+  - Expired/invalid OTP attempts (WARN)
+
+- ✅ **EmailServiceImpl** - Detailed logging for all email operations:
+  - HTML email sending (DEBUG/INFO/ERROR)
+  - HTML email with attachments (DEBUG/INFO/ERROR)
+  - Simple email sending (DEBUG/INFO/ERROR)
+  - Simple email with attachments (DEBUG/INFO/ERROR)
+  - All failures logged with context and stack traces
+
+- ✅ **NotificationService** - Logging for:
+  - Notification creation (DEBUG/INFO)
+  - Notification retrieval (DEBUG with counts)
+  - Mark as read operations (INFO)
+  - Mark all as read (INFO with counts)
+  - WebSocket notifications (DEBUG)
+
+**Security Layer Logging:**
+- ✅ **JwtAuthenticationFilter** - Authentication logging:
+  - Successful JWT authentication (DEBUG with username, doctorId, path)
+  - Failed token validation (WARN with username, path)
+  - Authentication errors (WARN with error details)
+
+- ✅ **DoctorHandshakeInterceptor** - WebSocket authentication logging:
+  - Successful handshake (INFO with doctorId, username)
+  - Failed handshake - no token (WARN)
+  - Failed handshake - invalid token (WARN with username)
+  - Authentication errors (WARN with error message)
+  - Invalid request type (WARN)
+
+**Exception Handling:**
+- ✅ **GlobalExceptionHandler** - Already has comprehensive exception logging:
+  - Business exceptions (WARN)
+  - System exceptions (ERROR with stack traces)
+  - All exceptions logged with error codes and messages
+
+**Logging Best Practices Implemented:**
+- ✅ **SLF4J** with LoggerFactory for all classes
+- ✅ **Appropriate log levels**:
+  - INFO: Successful business operations
+  - DEBUG: Detailed operation tracking, WebSocket operations
+  - WARN: Validation failures, unauthorized access, business rule violations
+  - ERROR: Critical failures with stack traces
+- ✅ **No sensitive data** - Passwords and tokens excluded from logs
+- ✅ **Contextual information** - doctorId, appointmentId, email, usernames included
+- ✅ **Structured logging** - Parameters passed separately for better searchability
+- ✅ **Exception logging** - Stack traces included for ERROR level logs
+
+**Remaining Recommendations:**
+- ⚠️ **Request/Response Logging** - Could add controller-level request/response logging (optional)
+- ⚠️ **Performance Logging** - Could add slow query logging (>100ms) - requires additional configuration
+- ⚠️ **MDC for Request Tracking** - Could add Mapped Diagnostic Context for request correlation (optional)
+- ⚠️ **JSON Format Logging** - Could configure structured JSON logging for log aggregation tools (optional)
+
+**Files Modified:**
+1. `AppointmentServiceImpl.java` - Added logger and comprehensive logging
+2. `DoctorServiceImpl.java` - Added logger and comprehensive logging
+3. `OtpServiceImpl.java` - Added logger and comprehensive logging
+4. `EmailServiceImpl.java` - Added logger and comprehensive logging
+5. `NotificationService.java` - Added logger and comprehensive logging
+6. `JwtAuthenticationFilter.java` - Added logger and authentication logging
+7. `DoctorHandshakeInterceptor.java` - Added logger and WebSocket authentication logging
 
 ### 5. Testing
 
