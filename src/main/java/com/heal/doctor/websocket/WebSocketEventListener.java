@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import java.util.Map;
+
 @Component
 public class WebSocketEventListener {
 
@@ -16,8 +18,20 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
         StompHeaderAccessor headers = StompHeaderAccessor.wrap(event.getMessage());
-        String doctorId = headers.getFirstNativeHeader("doctorId");
         String sessionId = headers.getSessionId();
+
+        if (sessionId == null) {
+            return;
+        }
+
+        String doctorId = headers.getFirstNativeHeader("doctorId");
+        
+        if (doctorId == null) {
+            Map<String, Object> sessionAttributes = headers.getSessionAttributes();
+            if (sessionAttributes != null) {
+                doctorId = (String) sessionAttributes.get("doctorId");
+            }
+        }
 
         if (doctorId != null && sessionId != null) {
             sessionRegistry.registerSession(doctorId, sessionId);
