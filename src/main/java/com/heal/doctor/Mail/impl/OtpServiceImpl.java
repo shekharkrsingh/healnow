@@ -26,6 +26,8 @@ import java.util.Map;
 public class OtpServiceImpl implements IOtpService {
 
     private static final Logger logger = LoggerFactory.getLogger(OtpServiceImpl.class);
+    private static final int MILLISECONDS_PER_MINUTE = 60 * 1000;
+    private static final int BASE_10 = 10;
 
     private final OtpRepository otpRepository;
     private final IEmailService emailService;
@@ -44,8 +46,8 @@ public class OtpServiceImpl implements IOtpService {
     @Override
     public OtpResponseDTO generateOtp(OtpRequestDTO otpRequestDTO) {
         logger.info("Generating OTP for email: {}", otpRequestDTO.getEmail());
-        String otp=String.format("%0"+ otpLength + "d", secureRandom.nextInt((int)Math.pow(10,otpLength)));
-        Date expirationTime = new Date(System.currentTimeMillis() + (long) otpExpirationMinutes * 60 * 1000);
+        String otp=String.format("%0"+ otpLength + "d", secureRandom.nextInt((int)Math.pow(BASE_10, otpLength)));
+        Date expirationTime = new Date(System.currentTimeMillis() + (long) otpExpirationMinutes * MILLISECONDS_PER_MINUTE);
 
         OtpEntity otpEntity=new OtpEntity(otpRequestDTO.getEmail(), otp, expirationTime);
         otpRepository.deleteByIdentifier(otpRequestDTO.getEmail());

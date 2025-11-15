@@ -43,6 +43,10 @@ import java.util.stream.Collectors;
 public class DoctorServiceImpl implements IDoctorService {
 
     private static final Logger logger = LoggerFactory.getLogger(DoctorServiceImpl.class);
+    private static final String DOCTOR_ID_PREFIX = "DOC";
+    private static final String DOCTOR_ID_DATE_FORMAT = "yyMMdd-HHmm";
+    private static final String DOCTOR_ID_RANDOM_FORMAT = "%03d";
+    private static final int DOCTOR_ID_RANDOM_RANGE = 1000;
 
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
@@ -338,9 +342,9 @@ public class DoctorServiceImpl implements IDoctorService {
 
 
     private String generateDoctorId() {
-        String prefix = "DOC";
-        String timestamp = new SimpleDateFormat("yyMMdd-HHmm").format(new Date());
-        String randomNumber = String.format("%03d", new Random().nextInt(1000));
+        String prefix = DOCTOR_ID_PREFIX;
+        String timestamp = new SimpleDateFormat(DOCTOR_ID_DATE_FORMAT).format(new Date());
+        String randomNumber = String.format(DOCTOR_ID_RANDOM_FORMAT, new Random().nextInt(DOCTOR_ID_RANDOM_RANGE));
         return String.format("%s-%s-%s", prefix, timestamp, randomNumber);
     }
 
