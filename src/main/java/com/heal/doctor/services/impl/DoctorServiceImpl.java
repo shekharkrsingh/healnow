@@ -19,7 +19,6 @@ import com.heal.doctor.exception.UnauthorizedException;
 import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.EmailValidatorUtil;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,6 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DoctorServiceImpl implements IDoctorService {
 
     private static final Logger logger = LoggerFactory.getLogger(DoctorServiceImpl.class);
