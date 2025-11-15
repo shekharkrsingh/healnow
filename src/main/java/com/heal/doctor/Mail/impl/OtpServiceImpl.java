@@ -54,23 +54,21 @@ public class OtpServiceImpl implements IOtpService {
         otpRepository.save(otpEntity);
         logger.debug("OTP saved for email: {}, expires in {} minutes", otpRequestDTO.getEmail(), otpExpirationMinutes);
         
-        try {
-            emailService.sendHtmlEmail(
-                    otpRequestDTO.getEmail(),
-                    "Your One-Time Password (OTP)",
-                    "email.template",
-                    Map.of(
-                            "companyName", companyName,
-                            "otp", otp,
-                            "message", "Use the OTP below to complete your verification. This OTP will expire in "
-                                    + otpExpirationMinutes + " minutes. Please do not share it with anyone."
-                    )
-            );
-            logger.info("OTP email sent successfully to: {}", otpRequestDTO.getEmail());
-        } catch (Exception e) {
-            logger.error("Failed to send OTP email to: {}, error: {}", otpRequestDTO.getEmail(), e.getMessage(), e);
-            throw e;
-        }
+        emailService.sendHtmlEmail(
+                otpRequestDTO.getEmail(),
+                "Your One-Time Password (OTP)",
+                "email.template",
+                Map.of(
+                        "companyName", companyName,
+                        "otp", otp,
+                        "message", "Use the OTP below to complete your verification. This OTP will expire in "
+                                + otpExpirationMinutes + " minutes. Please do not share it with anyone."
+                )
+        ).exceptionally(ex -> {
+            logger.error("Failed to send OTP email to: {}, error: {}", otpRequestDTO.getEmail(), ex.getMessage(), ex);
+            return null;
+        });
+        logger.info("OTP email sending initiated asynchronously for: {}", otpRequestDTO.getEmail());
 
         return new OtpResponseDTO(otpRequestDTO.getEmail());
     }
