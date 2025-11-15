@@ -20,6 +20,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DoctorReportsImpl implements IDoctorReports {
@@ -69,12 +70,19 @@ public class DoctorReportsImpl implements IDoctorReports {
             variables.put("reportGeneratedOn", LocalDate.now().format(DISPLAY_FORMATTER));
             variables.put("appointments", appointments);
             variables.put("totalAppointments", appointments.size());
-            variables.put("treatedAppointments", appointments.stream()
-                    .filter(a -> a.getTreated().equals(true))
-                    .count());
-            variables.put("cancelledAppointments", appointments.stream()
-                    .filter(a -> a.getStatus() != null && a.getStatus().name().equals("CANCELLED"))
-                    .count());
+            
+            Map<String, Long> appointmentStats = appointments.stream()
+                    .collect(Collectors.groupingBy(
+                            a -> {
+                                if (Boolean.TRUE.equals(a.getTreated())) return "treated";
+                                if (a.getStatus() != null && a.getStatus().name().equals("CANCELLED")) return "cancelled";
+                                return "other";
+                            },
+                            Collectors.counting()
+                    ));
+            
+            variables.put("treatedAppointments", appointmentStats.getOrDefault("treated", 0L));
+            variables.put("cancelledAppointments", appointmentStats.getOrDefault("cancelled", 0L));
 
             Context context = new Context();
             context.setVariables(variables);
