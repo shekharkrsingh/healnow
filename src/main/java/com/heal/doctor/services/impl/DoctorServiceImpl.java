@@ -47,6 +47,8 @@ public class DoctorServiceImpl implements IDoctorService {
     private static final String DOCTOR_ID_DATE_FORMAT = "yyMMdd-HHmm";
     private static final String DOCTOR_ID_RANDOM_FORMAT = "%03d";
     private static final int DOCTOR_ID_RANDOM_RANGE = 1000;
+    private static final int VALID_PHONE_LENGTH = 10;
+    private static final String PHONE_PATTERN = "^\\d{10}$";
 
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
@@ -171,7 +173,16 @@ public class DoctorServiceImpl implements IDoctorService {
             existingDoctor.setSpecialization(updateDoctorDetailsDTO.getSpecialization());
         }
         if (updateDoctorDetailsDTO.getPhoneNumber() != null && !updateDoctorDetailsDTO.getPhoneNumber().isEmpty()) {
-            existingDoctor.setPhoneNumber(updateDoctorDetailsDTO.getPhoneNumber());
+            String phoneNumber = updateDoctorDetailsDTO.getPhoneNumber().trim();
+            if (phoneNumber.length() != VALID_PHONE_LENGTH) {
+                logger.warn("Phone number update failed - invalid length: email: {}, phoneNumber length: {}", username, phoneNumber.length());
+                throw new ValidationException("Phone number must be exactly " + VALID_PHONE_LENGTH + " digits.");
+            }
+            if (!phoneNumber.matches(PHONE_PATTERN)) {
+                logger.warn("Phone number update failed - invalid format: email: {}", username);
+                throw new ValidationException("Phone number must contain exactly " + VALID_PHONE_LENGTH + " digits.");
+            }
+            existingDoctor.setPhoneNumber(phoneNumber);
         }
         if (updateDoctorDetailsDTO.getAvailableDays() != null) {
             validateAvailableDays(updateDoctorDetailsDTO.getAvailableDays());
