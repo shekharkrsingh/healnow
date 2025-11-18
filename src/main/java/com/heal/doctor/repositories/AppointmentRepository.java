@@ -26,6 +26,14 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             AppointmentStatus status
     );
 
+    List<AppointmentEntity> findByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
+            String doctorId,
+            String patientName,
+            String contact,
+            Date startDate,
+            Date endDate,
+            AppointmentStatus status
+    );
 
     List<AppointmentEntity> findByDoctorIdAndAppointmentDateTimeBetween(
             String doctorId, Date fromDate, Date toDate

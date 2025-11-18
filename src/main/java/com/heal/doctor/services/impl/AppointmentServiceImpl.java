@@ -78,7 +78,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
         Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();
-        Date[] date = DateUtils.getStartAndEndOfDay(new Date());
+        Date[] date = DateUtils.getStartAndEndOfDay(appointmentDate);
 
         boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
                 doctorId,
@@ -411,6 +411,113 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
             logger.debug("Sending WebSocket notification for cancellation: appointmentId: {}", appointmentId);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
+        }
+
+        return appointmentDTO;
+    }
+
+    @Transactional
+    @Override
+    public AppointmentDTO updateAppointmentDetails(String appointmentId, String patientName, String contact, String email, String description, Date appointmentDateTime) {
+        logger.info("Updating appointment details: appointmentId: {}", appointmentId);
+        AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
+        
+        String currentDoctorId = appointmentEntity.getDoctorId();
+        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
+        if (!currentDoctorId.equals(requestingDoctorId)) {
+            logger.warn("Unauthorized appointment details update attempt: appointmentId: {}, owner: {}, requester: {}", 
+                    appointmentId, currentDoctorId, requestingDoctorId);
+            throw new ForbiddenException("appointment", "update");
+        }
+
+        if (appointmentEntity.getTreated()) {
+            logger.warn("Appointment details update failed - already treated: appointmentId: {}, doctorId: {}", 
+                    appointmentId, currentDoctorId);
+            throw new BusinessRuleException("update appointment details", "Patient is already treated");
+        }
+
+        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED)) {
+            logger.warn("Appointment details update failed - appointment cancelled: appointmentId: {}, doctorId: {}", 
+                    appointmentId, currentDoctorId);
+            throw new BusinessRuleException("update appointment details", "Cannot update cancelled appointment");
+        }
+
+        Date newAppointmentDate = appointmentDateTime != null ? appointmentDateTime : appointmentEntity.getAppointmentDateTime();
+        
+        if (appointmentDateTime != null && !newAppointmentDate.equals(appointmentEntity.getAppointmentDateTime())) {
+            Date[] date = DateUtils.getStartAndEndOfDay(newAppointmentDate);
+            List<AppointmentEntity> existingAppointments = appointmentRepository
+                    .findByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
+                            currentDoctorId,
+                            patientName != null ? patientName : appointmentEntity.getPatientName(),
+                            contact != null ? contact : appointmentEntity.getContact(),
+                            date[0],
+                            date[1],
+                            AppointmentStatus.ACCEPTED);
+            
+            AppointmentEntity duplicate = existingAppointments.stream()
+                    .filter(a -> !a.getAppointmentId().equals(appointmentId))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (duplicate != null) {
+                logger.warn("Appointment details update failed - duplicate appointment exists: appointmentId: {}, doctorId: {}", 
+                        appointmentId, currentDoctorId);
+                throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
+            }
+        }
+
+        if (patientName != null && !patientName.trim().isEmpty()) {
+            String trimmed = patientName.trim();
+            if (trimmed.length() < 2 || trimmed.length() > 100) {
+                throw new ValidationException("Patient name must be between 2 and 100 characters.");
+            }
+            if (!trimmed.matches("^[a-zA-Z\\s\\-']+$")) {
+                throw new ValidationException("Patient name can only contain letters, spaces, hyphens, and apostrophes.");
+            }
+            appointmentEntity.setPatientName(trimmed);
+        }
+        if (contact != null && !contact.trim().isEmpty()) {
+            if (contact.trim().length() != VALID_CONTACT_LENGTH) {
+                throw new ValidationException("Contact number must be exactly " + VALID_CONTACT_LENGTH + " digits.");
+            }
+            appointmentEntity.setContact(contact.trim());
+        }
+        if (email != null) {
+            String trimmedEmail = email.trim();
+            if (!trimmedEmail.isEmpty()) {
+                if (!trimmedEmail.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                    throw new ValidationException("Invalid email format.");
+                }
+                appointmentEntity.setEmail(trimmedEmail);
+            } else {
+                appointmentEntity.setEmail(null);
+            }
+        }
+        if (description != null) {
+            String trimmed = description.trim();
+            if (trimmed.length() > 1000) {
+                throw new ValidationException("Description must not exceed 1000 characters.");
+            }
+            appointmentEntity.setDescription(trimmed.isEmpty() ? null : trimmed);
+        }
+        if (appointmentDateTime != null) {
+            appointmentEntity.setAppointmentDateTime(appointmentDateTime);
+        }
+
+        AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
+        logger.info("Appointment details updated: appointmentId: {}, doctorId: {}", appointmentId, currentDoctorId);
+
+        AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
+
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            logger.debug("Sending WebSocket notification for appointment details update: appointmentId: {}", appointmentId);
             messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
                     WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
                             .type(WebSocketResponseType.APPOINTMENT)
