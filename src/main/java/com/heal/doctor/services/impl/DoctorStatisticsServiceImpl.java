@@ -68,24 +68,23 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
                 () -> getProcessedDailyTreatedPatients(startOfWeek, endOfYesterday, doctorId),
                 taskExecutor);
         
-        CompletableFuture<Integer> lastActiveDayAppointmentsFuture = CompletableFuture.supplyAsync(
-                () -> statisticsRepository.getLastActiveDayAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0),
-                taskExecutor);
-        
-        CompletableFuture<Integer> lastActiveDayTreatedFuture = CompletableFuture.supplyAsync(
-                () -> statisticsRepository.getLastActiveDayTreatedAppointments(doctorId, startOfWeek, endOfYesterday).orElse(0),
+        CompletableFuture<DoctorStatisticsRepository.LastActiveDayStats> lastActiveDayStatsFuture = CompletableFuture.supplyAsync(
+                () -> statisticsRepository.getLastActiveDayStats(doctorId, startOfWeek, endOfYesterday).orElse(null),
                 taskExecutor);
 
         CompletableFuture.allOf(totalAppointmentsFuture, untreatedNotAvailableFuture, treatedAppointmentsFuture,
-                availableAtClinicFuture, dailyTreatedFuture, lastActiveDayAppointmentsFuture, lastActiveDayTreatedFuture).join();
+                availableAtClinicFuture, dailyTreatedFuture, lastActiveDayStatsFuture).join();
 
         Integer totalAppointmentsToday = totalAppointmentsFuture.join();
         Integer totalUntreatedAppointmentsTodayAndNotAvailable = untreatedNotAvailableFuture.join();
         Integer totalTreatedAppointmentsToday = treatedAppointmentsFuture.join();
         Integer totalAvailableAtClinic = availableAtClinicFuture.join();
         List<DailyTreatedPatients> dailyTreatedPatientsLastWeek = dailyTreatedFuture.join();
-        Integer lastActiveDayAppointments = lastActiveDayAppointmentsFuture.join();
-        Integer lastActiveDayTreatedAppointments = lastActiveDayTreatedFuture.join();
+        DoctorStatisticsRepository.LastActiveDayStats lastActiveDayStats = lastActiveDayStatsFuture.join();
+        Integer lastActiveDayAppointments = lastActiveDayStats != null && lastActiveDayStats.getTotalCount() != null 
+                ? lastActiveDayStats.getTotalCount() : 0;
+        Integer lastActiveDayTreatedAppointments = lastActiveDayStats != null && lastActiveDayStats.getTreatedCount() != null 
+                ? lastActiveDayStats.getTreatedCount() : 0;
 
         DoctorStatisticsDTO doctorStatisticsDTO = new DoctorStatisticsDTO();
         doctorStatisticsDTO.setTotalAppointment(totalAppointmentsToday);
@@ -96,10 +95,14 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
         doctorStatisticsDTO.setLastActiveDayAppointments(lastActiveDayAppointments);
         doctorStatisticsDTO.setLastActiveDayTreatedAppointments(lastActiveDayTreatedAppointments);
         
-        double percentage = lastActiveDayAppointments > 0
-                ? ((double)lastActiveDayTreatedAppointments / lastActiveDayAppointments) * 100
-                : 0.0;
+        double percentage = 0.0;
+        if (lastActiveDayAppointments != null && lastActiveDayAppointments > 0 && lastActiveDayTreatedAppointments != null) {
+            percentage = ((double) lastActiveDayTreatedAppointments / lastActiveDayAppointments) * 100.0;
+        }
         doctorStatisticsDTO.setLastActiveDayPercentageTreatedAppointments(percentage);
+        
+        logger.debug("Last active day statistics - Total: {}, Treated: {}, Percentage: {}%", 
+                lastActiveDayAppointments, lastActiveDayTreatedAppointments, percentage);
 
         logger.debug("Statistics fetched successfully: totalAppointments: {}, treatedAppointments: {}",
                 doctorStatisticsDTO.getTotalAppointment(), doctorStatisticsDTO.getTotalTreatedAppointment());

@@ -71,21 +71,17 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
 
     @Aggregation(pipeline = {
             "{ $match: { doctorId: ?0, appointmentDateTime: { $gte: ?1, $lte: ?2 } } }",
-            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, count: { $sum: 1 } } }",
+            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, totalCount: { $sum: 1 }, treatedCount: { $sum: { $cond: [{ $eq: ['$treated', true] }, 1, 0] } } } }",
             "{ $sort: { _id: -1 } }",
             "{ $limit: 1 }",
-            "{ $project: { _id: 0, count: 1 } }"
+            "{ $project: { _id: 0, totalCount: { $ifNull: ['$totalCount', 0] }, treatedCount: { $ifNull: ['$treatedCount', 0] } } }"
     })
-    Optional<Integer> getLastActiveDayAppointments(String doctorId, Date startOfLast7Days, Date endOfYesterday);
+    Optional<LastActiveDayStats> getLastActiveDayStats(String doctorId, Date startOfLast7Days, Date endOfYesterday);
 
-    @Aggregation(pipeline = {
-            "{ $match: { doctorId: ?0, treated: true, appointmentDateTime: { $gte: ?1, $lte: ?2 } } }",
-            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, count: { $sum: 1 } } }",
-            "{ $sort: { _id: -1 } }",
-            "{ $limit: 1 }",
-            "{ $project: { _id: 0, count: 1 } }"
-    })
-    Optional<Integer> getLastActiveDayTreatedAppointments(String doctorId, Date startOfLast7Days, Date endOfYesterday);
+    interface LastActiveDayStats {
+        Integer getTotalCount();
+        Integer getTreatedCount();
+    }
 
 
 }
