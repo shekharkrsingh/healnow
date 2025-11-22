@@ -65,9 +65,10 @@ public class DoctorReportsImpl implements IDoctorReports {
             String finalToDate = validateOrDefaultToDate(toDate);
 
             String currentDoctorId = CurrentUserName.getCurrentDoctorId();
+            String currentUsername = CurrentUserName.getCurrentUsername();
             
             CompletableFuture<DoctorDTO> doctorFuture = CompletableFuture.supplyAsync(
-                    () -> doctorService.getDoctorProfile(), taskExecutor);
+                    () -> doctorService.getDoctorById(currentDoctorId), taskExecutor);
             
             CompletableFuture<List<AppointmentDTO>> appointmentsFuture = CompletableFuture.supplyAsync(
                     () -> appointmentService.getAppointmentsByDoctorAndDateRange(
@@ -118,7 +119,7 @@ public class DoctorReportsImpl implements IDoctorReports {
                 byte[] pdfBytes = outputStream.toByteArray();
                 
                 emailService.sendSimpleEmailWithAttachment(
-                        CurrentUserName.getCurrentUsername(),
+                        currentUsername,
                         "Doctor Appointment Report - " + LocalDate.now().format(DISPLAY_FORMATTER),
                         "Please find your appointment report attached.",
                         pdfBytes,
@@ -128,7 +129,7 @@ public class DoctorReportsImpl implements IDoctorReports {
                     logger.error("Failed to send report email asynchronously: error: {}", ex.getMessage(), ex);
                     return null;
                 });
-                logger.info("Report email sending initiated asynchronously for: {}", CurrentUserName.getCurrentUsername());
+                logger.info("Report email sending initiated asynchronously for: {}", currentUsername);
 
                 return pdfBytes;
             }
