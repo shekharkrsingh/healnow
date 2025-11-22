@@ -4,11 +4,14 @@ import com.heal.doctor.dto.SupportTicketRequestDTO;
 import com.heal.doctor.dto.SupportTicketResponseDTO;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.exception.UnauthorizedException;
+import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.SupportTicketEntity;
+import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.SupportTicketRepository;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.services.ISupportTicketService;
 import com.heal.doctor.services.IEmailService;
+import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.CurrentUserName;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -19,9 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
     private final IEmailService emailService;
+    private final INotificationService notificationService;
 
     @Value("${spring.mail.username}")
     private String supportEmail;
@@ -43,11 +45,13 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
             SupportTicketRepository supportTicketRepository,
             DoctorRepository doctorRepository,
             ModelMapper modelMapper,
-            IEmailService emailService) {
+            IEmailService emailService,
+            INotificationService notificationService) {
         this.supportTicketRepository = supportTicketRepository;
         this.doctorRepository = doctorRepository;
         this.modelMapper = modelMapper;
         this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -80,6 +84,7 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
         logger.info("Support ticket created successfully: ticketId: {}, doctorId: {}", ticketId, doctorId);
 
         sendSupportTicketEmails(savedTicket);
+        createSupportTicketNotification(savedTicket);
 
         return modelMapper.map(savedTicket, SupportTicketResponseDTO.class);
     }
@@ -149,15 +154,6 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
 
     private void sendSupportTicketEmails(SupportTicketEntity ticket) {
         try {
-            Map<String, Object> emailVariables = new HashMap<>();
-            emailVariables.put("ticketId", ticket.getTicketId());
-            emailVariables.put("doctorId", ticket.getDoctorId());
-            emailVariables.put("doctorEmail", ticket.getDoctorEmail());
-            emailVariables.put("subject", ticket.getSubject());
-            emailVariables.put("message", ticket.getMessage());
-            emailVariables.put("category", ticket.getCategory());
-            emailVariables.put("createdAt", ticket.getCreatedAt().toString());
-
             String doctorSubject = "Support Ticket Created - " + ticket.getTicketId();
             String doctorBody = String.format(
                 "Dear Doctor,\n\n" +
@@ -196,6 +192,40 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
             logger.info("Support ticket emails sent successfully: ticketId: {}", ticket.getTicketId());
         } catch (Exception e) {
             logger.error("Failed to send support ticket emails: ticketId: {}, error: {}", 
+                    ticket.getTicketId(), e.getMessage(), e);
+        }
+    }
+
+    private void createSupportTicketNotification(SupportTicketEntity ticket) {
+        try {
+            String notificationTitle = "Support Ticket Created";
+            String notificationMessage = String.format(
+                "Your support ticket %s has been created successfully. Subject: %s. We'll respond within 24 hours.",
+                ticket.getTicketId(), ticket.getSubject()
+            );
+
+            if (notificationMessage.length() > 2000) {
+                notificationMessage = notificationMessage.substring(0, 1997) + "...";
+            }
+
+            NotificationEntity notification = NotificationEntity.builder()
+                    .doctorId(ticket.getDoctorId())
+                    .type(NotificationType.SUPPORT)
+                    .title(notificationTitle)
+                    .message(notificationMessage)
+                    .isRead(false)
+                    .build();
+
+            notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+                logger.error("Failed to create support ticket notification: ticketId: {}, error: {}", 
+                        ticket.getTicketId(), ex.getMessage(), ex);
+                return null;
+            });
+
+            logger.info("Support ticket notification created: ticketId: {}, doctorId: {}", 
+                    ticket.getTicketId(), ticket.getDoctorId());
+        } catch (Exception e) {
+            logger.error("Failed to create support ticket notification: ticketId: {}, error: {}", 
                     ticket.getTicketId(), e.getMessage(), e);
         }
     }
