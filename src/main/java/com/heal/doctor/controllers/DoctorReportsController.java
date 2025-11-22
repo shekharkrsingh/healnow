@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 
 
 @RestController
-@RequestMapping("/reports")
+@RequestMapping("/api/v1/reports")
 public class DoctorReportsController {
 
     private final IDoctorReports doctorReports;
