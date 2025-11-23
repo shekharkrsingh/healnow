@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -159,7 +160,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ForbiddenException("appointment", "update");
         }
         AppointmentEntity newAppointmentEntity = appointmentEntity;
-        if (!appointmentEntity.getIsEmergency().equals(isEmergency)) {
+        if (!Objects.equals(appointmentEntity.getIsEmergency(), isEmergency)) {
             appointmentEntity.setIsEmergency(isEmergency);
             newAppointmentEntity = appointmentRepository.save(appointmentEntity);
             logger.info("Emergency status updated: appointmentId: {}, isEmergency: {}, doctorId: {}", 
