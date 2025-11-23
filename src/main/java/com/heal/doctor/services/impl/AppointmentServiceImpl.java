@@ -80,6 +80,24 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
         Date appointmentDate = requestDTO.getAppointmentDateTime() != null ? requestDTO.getAppointmentDateTime() : new Date();
+        Date currentTime = new Date();
+        
+        if (!Boolean.TRUE.equals(requestDTO.getAvailableAtClinic())) {
+            if (appointmentDate.before(currentTime) || appointmentDate.equals(currentTime)) {
+                logger.warn("Scheduled appointment cannot be in the past or present: doctorId: {}, appointmentDate: {}, currentTime: {}", 
+                    doctorId, appointmentDate, currentTime);
+                throw new ValidationException("Scheduled appointments must be in the future.");
+            }
+        } else {
+            long oneHourInMillis = 60 * 60 * 1000;
+            Date oneHourAgo = new Date(currentTime.getTime() - oneHourInMillis);
+            if (appointmentDate.before(oneHourAgo)) {
+                logger.info("Walk-in appointment date adjusted from {} to current time: doctorId: {}", 
+                    appointmentDate, doctorId);
+                appointmentDate = new Date();
+            }
+        }
+        
         Date[] date = DateUtils.getStartAndEndOfDay(new Date());
 
         boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
