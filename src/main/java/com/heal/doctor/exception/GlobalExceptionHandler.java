@@ -12,6 +12,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.mongodb.UncategorizedMongoException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -159,6 +161,42 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage() != null ? ex.getMessage() : "Security violation", "SECURITY_ERROR"));
     }
 
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataAccessException(DataAccessException ex) {
+        logger.error("Database access error: {}", ex.getMessage(), ex);
+        
+        Throwable cause = ex.getCause();
+        String message = ex.getMessage();
+        
+        if (isDuplicateKeyError(message, cause)) {
+            String userMessage = extractDuplicateKeyMessage(message);
+            logger.warn("Duplicate key violation: {}", message);
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(userMessage, "DUPLICATE_KEY"));
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Database operation failed. Please try again later.", "DATABASE_ERROR"));
+    }
+
+    @ExceptionHandler(UncategorizedMongoException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUncategorizedMongoException(UncategorizedMongoException ex) {
+        logger.error("Uncategorized MongoDB error: {}", ex.getMessage(), ex);
+        
+        String message = ex.getMessage();
+        Throwable cause = ex.getCause();
+        
+        if (isDuplicateKeyError(message, cause)) {
+            String userMessage = extractDuplicateKeyMessage(message);
+            logger.warn("Duplicate key violation: {}", message);
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(userMessage, "DUPLICATE_KEY"));
+        }
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Database operation failed. Please try again later.", "DATABASE_ERROR"));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
         logger.error("Runtime exception: {}", ex.getMessage(), ex);
@@ -169,7 +207,72 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         logger.error("Unexpected error: {}", ex.getMessage(), ex);
+        
+        String message = ex.getMessage();
+        Throwable cause = ex.getCause();
+        
+        if (isDuplicateKeyError(message, cause)) {
+            String userMessage = extractDuplicateKeyMessage(message);
+            logger.warn("Duplicate key violation: {}", message);
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(userMessage, "DUPLICATE_KEY"));
+        }
+        
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred. Please contact support if the problem persists.", "INTERNAL_SERVER_ERROR"));
+    }
+
+    private boolean isDuplicateKeyError(String message, Throwable cause) {
+        if (message != null) {
+            String lowerMessage = message.toLowerCase();
+            if (lowerMessage.contains("duplicate key") || 
+                lowerMessage.contains("e11000") ||
+                lowerMessage.contains("11000") ||
+                lowerMessage.contains("duplicatekeyexception")) {
+                return true;
+            }
+        }
+        
+        if (cause != null) {
+            String causeMessage = cause.getMessage();
+            if (causeMessage != null) {
+                String lowerCauseMessage = causeMessage.toLowerCase();
+                if (lowerCauseMessage.contains("duplicate key") || 
+                    lowerCauseMessage.contains("e11000") ||
+                    lowerCauseMessage.contains("11000")) {
+                    return true;
+                }
+            }
+            
+            String causeClassName = cause.getClass().getSimpleName();
+            if (causeClassName.contains("DuplicateKey") || 
+                causeClassName.contains("MongoWriteException")) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    private String extractDuplicateKeyMessage(String message) {
+        if (message == null) {
+            return "A record with this information already exists.";
+        }
+        
+        String lowerMessage = message.toLowerCase();
+        
+        if (lowerMessage.contains("email")) {
+            return "A doctor with this email already exists.";
+        } else if (lowerMessage.contains("appointmentid") || lowerMessage.contains("appointment_id")) {
+            return "An appointment with this ID already exists.";
+        } else if (lowerMessage.contains("doctorid") || lowerMessage.contains("doctor_id")) {
+            return "A doctor with this ID already exists.";
+        } else if (lowerMessage.contains("contact")) {
+            return "An appointment with this contact number already exists for this date.";
+        } else if (lowerMessage.contains("ticketid") || lowerMessage.contains("ticket_id")) {
+            return "A support ticket with this ID already exists.";
+        }
+        
+        return "A record with this information already exists.";
     }
 }
