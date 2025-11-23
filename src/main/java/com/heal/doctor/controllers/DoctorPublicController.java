@@ -6,8 +6,12 @@ import com.heal.doctor.Mail.IOtpService;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/public")
@@ -17,6 +21,21 @@ public class DoctorPublicController {
     private final IDoctorService doctorService;
     private final IOtpService otpService;
     private final IDoctorStatisticsService appointmentStatisticsService;
+
+    @Value("${app.version.minimum}")
+    private String minimumVersion;
+
+    @Value("${app.version.latest}")
+    private String latestVersion;
+
+    @Value("${app.version.forceUpdate}")
+    private boolean forceUpdate;
+
+    @Value("${app.version.websiteUrl}")
+    private String websiteUrl;
+
+    @Value("${app.version.message}")
+    private String updateMessage;
 
     @GetMapping
     public String test(){
@@ -53,5 +72,29 @@ public class DoctorPublicController {
     public ResponseEntity<ApiResponse<OtpResponseDTO>> sendOtp(@RequestBody OtpRequestDTO otpRequestDTO){
         OtpResponseDTO otpResponseDTO= otpService.generateOtp(otpRequestDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "OTP is generated successfully", otpResponseDTO));
+    }
+
+    @GetMapping("/app/version-check")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkAppVersion() {
+        if (minimumVersion == null || minimumVersion.trim().isEmpty()) {
+            throw new IllegalArgumentException("Minimum version is not configured");
+        }
+        
+        if (websiteUrl == null || websiteUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("Website URL is not configured");
+        }
+        
+        Map<String, Object> versionData = new HashMap<>();
+        versionData.put("minimumVersion", minimumVersion.trim());
+        versionData.put("latestVersion", (latestVersion != null && !latestVersion.trim().isEmpty()) 
+            ? latestVersion.trim() 
+            : minimumVersion.trim());
+        versionData.put("forceUpdate", forceUpdate);
+        versionData.put("websiteUrl", websiteUrl.trim());
+        versionData.put("message", (updateMessage != null && !updateMessage.trim().isEmpty()) 
+            ? updateMessage.trim() 
+            : String.format("A new version is available. Please update to version %s or higher to continue using the app.", minimumVersion));
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, "Version check successful", versionData));
     }
 }
