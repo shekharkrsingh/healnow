@@ -223,7 +223,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         List<AppointmentDTO> allAppointments = appointments
                 .parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
-                .collect(Collectors.toList());
+                .toList();
         
         List<AppointmentDTO> activeAppointments = allAppointments.stream()
                 .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
@@ -233,7 +233,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         List<AppointmentDTO> cancelledAppointments = allAppointments.stream()
                 .filter(appointment -> appointment.getStatus() == AppointmentStatus.CANCELLED)
                 .sorted((a, b) -> b.getBookingDateTime().compareTo(a.getBookingDateTime()))
-                .collect(Collectors.toList());
+                .toList();
         
         activeAppointments.addAll(cancelledAppointments);
         return activeAppointments;
