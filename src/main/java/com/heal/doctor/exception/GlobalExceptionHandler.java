@@ -13,7 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.mongodb.UncategorizedMongoException;
+import org.springframework.data.mongodb.UncategorizedMongoDbException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -179,8 +179,8 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Database operation failed. Please try again later.", "DATABASE_ERROR"));
     }
 
-    @ExceptionHandler(UncategorizedMongoException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUncategorizedMongoException(UncategorizedMongoException ex) {
+    @ExceptionHandler(UncategorizedMongoDbException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUncategorizedMongoException(UncategorizedMongoDbException ex) {
         logger.error("Uncategorized MongoDB error: {}", ex.getMessage(), ex);
         
         String message = ex.getMessage();
