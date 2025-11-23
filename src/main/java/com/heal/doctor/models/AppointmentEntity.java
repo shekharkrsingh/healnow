@@ -76,6 +76,9 @@ public class AppointmentEntity {
     @NotNull(message = "Available at clinic status is required")
     private Boolean availableAtClinic;
 
+    @Indexed(name = "available_at_clinic_date_idx")
+    private Date availableAtClinicDateTime;
+
     @NotNull(message = "Treated status is required")
     private Boolean treated;
 

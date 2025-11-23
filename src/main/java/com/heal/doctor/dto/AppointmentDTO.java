@@ -16,6 +16,7 @@ public class AppointmentDTO {
     private Date appointmentDateTime;
     private Date bookingDateTime;
     private Boolean availableAtClinic;
+    private Date availableAtClinicDateTime;
     private Boolean treated;
     private Date treatedDateTime;
     private AppointmentStatus status;

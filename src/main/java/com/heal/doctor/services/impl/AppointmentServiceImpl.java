@@ -29,8 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -103,6 +105,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
         appointmentEntity.setIsEmergency(false);
+        if (Boolean.TRUE.equals(requestDTO.getAvailableAtClinic())) {
+            appointmentEntity.setAvailableAtClinicDateTime(new Date());
+        }
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
 
         logger.info("Appointment booked successfully: appointmentId: {}, doctorId: {}, patientName: {}", 
@@ -195,9 +200,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 findByDoctorIdAndBookingDateTimeBetween(currentDoctor, startAndEnd[0], startAndEnd[1]);
 
         logger.debug("Found {} appointments for doctorId: {}, date: {}", appointments.size(), currentDoctor, date);
+        Date currentTime = new Date();
         return appointments
                 .parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
+                .sorted(createFairQueueComparator(currentTime))
                 .collect(Collectors.toList());
     }
 
@@ -357,6 +365,13 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new BusinessRuleException("mark as available", "Appointment must be in ACCEPTED status");
         }
         Boolean oldAvailableAtClinic = appointmentEntity.getAvailableAtClinic();
+        
+        if (availableAtClinicStatus && !oldAvailableAtClinic) {
+            appointmentEntity.setAvailableAtClinicDateTime(new Date());
+        } else if (!availableAtClinicStatus && oldAvailableAtClinic) {
+            appointmentEntity.setAvailableAtClinicDateTime(null);
+        }
+        
         appointmentEntity.setAvailableAtClinic(availableAtClinicStatus);
 
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
@@ -445,6 +460,77 @@ public class AppointmentServiceImpl implements IAppointmentService {
     }
 
 
+
+    private Comparator<AppointmentDTO> createFairQueueComparator(Date currentTime) {
+        return Comparator
+                .comparing(AppointmentDTO::getTreated)
+                .thenComparing(AppointmentDTO::getIsEmergency, Comparator.reverseOrder())
+                .thenComparing((a, b) -> compareStatus(a.getStatus(), b.getStatus()))
+                .thenComparing((a, b) -> {
+                    boolean aOverdue = currentTime.after(a.getAppointmentDateTime());
+                    boolean bOverdue = currentTime.after(b.getAppointmentDateTime());
+                    
+                    long aTimeDiff = a.getAppointmentDateTime().getTime() - currentTime.getTime();
+                    long bTimeDiff = b.getAppointmentDateTime().getTime() - currentTime.getTime();
+                    boolean aCurrent = !aOverdue && aTimeDiff <= 5 * 60 * 1000;
+                    boolean bCurrent = !bOverdue && bTimeDiff <= 5 * 60 * 1000;
+                    
+                    int aGroup = aOverdue ? 1 : (aCurrent ? 2 : 3);
+                    int bGroup = bOverdue ? 1 : (bCurrent ? 2 : 3);
+                    
+                    if (aGroup != bGroup) {
+                        return Integer.compare(aGroup, bGroup);
+                    }
+                    
+                    if (aGroup == 1 || aGroup == 2) {
+                        int apptCompare = a.getAppointmentDateTime().compareTo(b.getAppointmentDateTime());
+                        if (apptCompare != 0) return apptCompare;
+                        
+                        int availCompare = Boolean.compare(b.getAvailableAtClinic(), a.getAvailableAtClinic());
+                        if (availCompare != 0) return availCompare;
+                        
+                        if (a.getAvailableAtClinic() && b.getAvailableAtClinic()) {
+                            Date aArrival = a.getAvailableAtClinicDateTime();
+                            Date bArrival = b.getAvailableAtClinicDateTime();
+                            if (aArrival != null && bArrival != null) {
+                                return aArrival.compareTo(bArrival);
+                            } else if (aArrival != null) return -1;
+                            else if (bArrival != null) return 1;
+                        }
+                    } else {
+                        int availCompare = Boolean.compare(b.getAvailableAtClinic(), a.getAvailableAtClinic());
+                        if (availCompare != 0) return availCompare;
+                        
+                        if (a.getAvailableAtClinic() && b.getAvailableAtClinic()) {
+                            Date aArrival = a.getAvailableAtClinicDateTime();
+                            Date bArrival = b.getAvailableAtClinicDateTime();
+                            if (aArrival != null && bArrival != null) {
+                                long aWaiting = currentTime.getTime() - aArrival.getTime();
+                                long bWaiting = currentTime.getTime() - bArrival.getTime();
+                                return Long.compare(bWaiting, aWaiting);
+                            } else if (aArrival != null) return -1;
+                            else if (bArrival != null) return 1;
+                        }
+                        
+                        return a.getAppointmentDateTime().compareTo(b.getAppointmentDateTime());
+                    }
+                    
+                    return 0;
+                })
+                .thenComparing(AppointmentDTO::getBookingDateTime);
+    }
+
+    private int compareStatus(AppointmentStatus a, AppointmentStatus b) {
+        Map<AppointmentStatus, Integer> priority = Map.of(
+                AppointmentStatus.ACCEPTED, 1,
+                AppointmentStatus.BOOKED, 2,
+                AppointmentStatus.CANCELLED, 3
+        );
+        return Integer.compare(
+                priority.getOrDefault(a, 99),
+                priority.getOrDefault(b, 99)
+        );
+    }
 
     private Date removeTime(Date date) {
         Calendar cal = Calendar.getInstance();

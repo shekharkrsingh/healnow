@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
@@ -52,12 +50,6 @@ public class AppointmentController {
         if (date == null || date.trim().isEmpty()) {
             appointments = appointmentService
                     .getAppointmentsByBookingDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-            appointments = appointments.stream()
-                    .sorted(
-                            Comparator.comparing(AppointmentDTO::getIsEmergency, Comparator.reverseOrder())
-                                    .thenComparing(AppointmentDTO::getAppointmentDateTime)
-                    )
-                    .collect(Collectors.toList());
         } else {
             appointments = appointmentService.getAppointmentsByBookingDate(date);
         }
