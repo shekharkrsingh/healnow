@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -159,7 +160,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ForbiddenException("appointment", "update");
         }
         AppointmentEntity newAppointmentEntity = appointmentEntity;
-        if (!appointmentEntity.getIsEmergency().equals(isEmergency)) {
+        if (!Objects.equals(appointmentEntity.getIsEmergency(), isEmergency)) {
             appointmentEntity.setIsEmergency(isEmergency);
             newAppointmentEntity = appointmentRepository.save(appointmentEntity);
             logger.info("Emergency status updated: appointmentId: {}, isEmergency: {}, doctorId: {}", 
@@ -219,12 +220,23 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         logger.debug("Found {} appointments for doctorId: {}, date: {}", appointments.size(), currentDoctor, date);
         Date currentTime = new Date();
-        return appointments
+        List<AppointmentDTO> allAppointments = appointments
                 .parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
+                .toList();
+        
+        List<AppointmentDTO> activeAppointments = allAppointments.stream()
                 .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
                 .sorted(createFairQueueComparator(currentTime))
                 .collect(Collectors.toList());
+        
+        List<AppointmentDTO> cancelledAppointments = allAppointments.stream()
+                .filter(appointment -> appointment.getStatus() == AppointmentStatus.CANCELLED)
+                .sorted((a, b) -> b.getBookingDateTime().compareTo(a.getBookingDateTime()))
+                .toList();
+        
+        activeAppointments.addAll(cancelledAppointments);
+        return activeAppointments;
     }
 
     @Transactional
@@ -241,6 +253,20 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ForbiddenException("appointment", "update");
         }
         AppointmentStatus oldStatus = appointmentEntity.getStatus();
+        
+        if (oldStatus.equals(AppointmentStatus.CANCELLED) && status.equals(AppointmentStatus.ACCEPTED)) {
+            if (Boolean.TRUE.equals(appointmentEntity.getPaymentStatus())) {
+                logger.warn("Cannot restore cancelled appointment with payment: appointmentId: {}, doctorId: {}", 
+                        appointmentId, currentDoctorId);
+                throw new BusinessRuleException("restore appointment", "Cannot restore cancelled appointment with payment already received");
+            }
+            if (appointmentEntity.getTreated()) {
+                logger.warn("Cannot restore cancelled appointment that was treated: appointmentId: {}, doctorId: {}", 
+                        appointmentId, currentDoctorId);
+                throw new BusinessRuleException("restore appointment", "Cannot restore cancelled appointment that was already treated");
+            }
+        }
+        
         appointmentEntity.setStatus(status);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
         logger.info("Appointment status updated: appointmentId: {}, oldStatus: {}, newStatus: {}, doctorId: {}", 
@@ -558,5 +584,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
+
     }
 }
