@@ -558,5 +558,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
+
     }
 }
