@@ -29,8 +29,8 @@ public class JwtUtil {
         long expirationTime = 1000L * 60 * 60 * EXPIRY_HOUR;
 
         return Jwts.builder()
-                .subject(username) // Store email as subject
-                .claims(Map.of("doctorId", doctorId)) // Add doctorId in claims
+                .subject(username)
+                .claims(Map.of("doctorId", doctorId))
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSecretKey())
@@ -38,11 +38,11 @@ public class JwtUtil {
     }
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject); // Extracts email
+        return extractClaim(token, Claims::getSubject);
     }
 
     public String extractDoctorId(String token) {
-        return extractClaim(token, claims -> claims.get("doctorId", String.class)); // Extract doctorId
+        return extractClaim(token, claims -> claims.get("doctorId", String.class));
     }
 
     public Date extractExpiration(String token) {

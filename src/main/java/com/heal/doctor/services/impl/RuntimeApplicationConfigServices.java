@@ -7,6 +7,7 @@ import com.heal.doctor.services.IRuntimeApplicationConfigService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import static com.heal.doctor.utils.SetIfNotEmpty.setIfNotEmpty;
 
 import java.util.Date;
 
@@ -33,18 +34,26 @@ public class RuntimeApplicationConfigServices implements IRuntimeApplicationConf
     }
 
     @Override
-    public RuntimeApplicationConfigDTO updateRuntimeApplicationConfig(RuntimeApplicationConfigDTO runtimeApplication) {
+    public RuntimeApplicationConfigDTO updateRuntimeApplicationConfig(RuntimeApplicationConfigDTO dto) {
         RuntimeApplicationConfig config = runtimeApplicationConfigRepository
                 .findById(RuntimeApplicationConfig.SINGLETON_ID)
                 .orElseGet(RuntimeApplicationConfig::new);
 
-        modelMapper.map(runtimeApplication, config);
 
+        setIfNotEmpty(dto.getMinVersion(), config::setMinVersion);
+        setIfNotEmpty(dto.getLatestVersion(), config::setLatestVersion);
+        setIfNotEmpty(dto.getAppWebUrl(), config::setAppWebUrl);
+        setIfNotEmpty(dto.getGooglePlayStoreUrl(), config::setGooglePlayStoreUrl);
+        setIfNotEmpty(dto.getApplePlayStoreUrl(), config::setApplePlayStoreUrl);
+        setIfNotEmpty(dto.getLastUpdatedBy(), config::setLastUpdatedBy);
+        setIfNotEmpty(dto.getLastUpdatedById(), config::setLastUpdatedById);
+        setIfNotEmpty(dto.getAppName(), config::setAppName);
+        setIfNotEmpty(dto.getAppSlogan(), config::setAppSlogan);
+        setIfNotEmpty(dto.getSupportEmail(), config::setSupportEmail);
         config.setId(RuntimeApplicationConfig.SINGLETON_ID);
         config.setUpdatedAt(new Date());
 
-        RuntimeApplicationConfig runtimeApplicationConfig= runtimeApplicationConfigRepository.save(config);
-
-        return modelMapper.map(runtimeApplicationConfig, RuntimeApplicationConfigDTO.class);
+        return modelMapper.map(runtimeApplicationConfigRepository.save(config), RuntimeApplicationConfigDTO.class);
     }
+
 }
