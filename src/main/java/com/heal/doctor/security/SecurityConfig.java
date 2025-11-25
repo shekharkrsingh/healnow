@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/test/send-test/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/v1/admin/**").permitAll()
                         .requestMatchers("/topic/**").authenticated()
                         .requestMatchers("/app/**").authenticated()
                         .anyRequest().authenticated()
