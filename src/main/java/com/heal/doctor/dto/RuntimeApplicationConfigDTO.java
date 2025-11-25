@@ -1,10 +1,14 @@
 package com.heal.doctor.dto;
 
+import lombok.Builder;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Date;
 
 @Data
+@Builder
+@RequiredArgsConstructor
 public class RuntimeApplicationConfigDTO {
 
     private String id;
