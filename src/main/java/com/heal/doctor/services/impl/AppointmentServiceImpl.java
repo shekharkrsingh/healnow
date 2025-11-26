@@ -212,14 +212,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public List<AppointmentDTO> getAppointmentsByBookingDate(String date) {
         String currentDoctor = CurrentUserName.getCurrentDoctorId();
-        logger.debug("Fetching appointments by booking date: doctorId: {}, date: {}", currentDoctor, date);
+        logger.debug("Fetching appointments by appointment date: doctorId: {}, date: {}", currentDoctor, date);
 
         Date[] startAndEnd = DateUtils.getStartAndEndOfDay(date);
+        Date currentTime = new Date();
+        
         List<AppointmentEntity> appointments = appointmentRepository.
-                findByDoctorIdAndBookingDateTimeBetween(currentDoctor, startAndEnd[0], startAndEnd[1]);
+                findByDoctorIdAndAppointmentDateTimeBetween(currentDoctor, startAndEnd[0], startAndEnd[1]);
 
         logger.debug("Found {} appointments for doctorId: {}, date: {}", appointments.size(), currentDoctor, date);
-        Date currentTime = new Date();
+        
         List<AppointmentDTO> allAppointments = appointments
                 .parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
