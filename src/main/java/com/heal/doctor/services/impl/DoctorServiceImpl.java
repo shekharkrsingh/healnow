@@ -31,6 +31,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -50,6 +53,10 @@ public class DoctorServiceImpl implements IDoctorService {
     private static final int DOCTOR_ID_RANDOM_RANGE = 1000;
     private static final int VALID_PHONE_LENGTH = 10;
     private static final String PHONE_PATTERN = "^\\d{10}$";
+    private static final int MIN_IMAGE_WIDTH = 200;
+    private static final int MIN_IMAGE_HEIGHT = 200;
+    private static final int MAX_IMAGE_WIDTH = 4096;
+    private static final int MAX_IMAGE_HEIGHT = 4096;
 
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
@@ -399,30 +406,91 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Transactional
     @Override
-    public String changeProfilePicture(MultipartFile image){
-        logger.info("Profile picture is service");
-        String imageUrl=savePictureToCloud(image);
-        DoctorEntity doctor=doctorRepository.findByDoctorId(CurrentUserName.getCurrentDoctorId())
-                .orElseThrow(()->new ResourceNotFoundException("Doctor "+ CurrentUserName.getCurrentDoctorId()));
+    public String changeProfilePicture(MultipartFile file) {
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        logger.info("Changing profile picture: doctorId: {}", doctorId);
+
+        validateImageFile(file);
+
+        String imageUrl = savePictureToCloud(file);
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         doctor.setProfilePicture(imageUrl);
+        doctor.setUpdatedAt(new Date());
         doctorRepository.save(doctor);
-        logger.info("Profile picture of doctor with id: {} is changed", CurrentUserName.getCurrentDoctorId());
+
+        logger.info("Profile picture updated successfully: doctorId: {}", doctorId);
         return imageUrl;
     }
 
     @Transactional
     @Override
-    public String changeCoverPicture(MultipartFile image){
-        logger.info("Cover Picture change service");
-        String imageUrl=savePictureToCloud(image);
-        DoctorEntity doctor=doctorRepository.findByDoctorId(CurrentUserName.getCurrentDoctorId())
-                .orElseThrow(()->new ResourceNotFoundException("Doctor "+ CurrentUserName.getCurrentDoctorId()));
+    public String changeCoverPicture(MultipartFile file) {
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        logger.info("Changing cover picture: doctorId: {}", doctorId);
+
+        validateImageFile(file);
+
+        String imageUrl = savePictureToCloud(file);
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         doctor.setCoverPicture(imageUrl);
+        doctor.setUpdatedAt(new Date());
         doctorRepository.save(doctor);
-        logger.info("Cover picture of doctor with id: {} is changed", CurrentUserName.getCurrentDoctorId());
+
+        logger.info("Cover picture updated successfully: doctorId: {}", doctorId);
         return imageUrl;
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            logger.warn("Image file validation failed: file is null or empty");
+            throw new ValidationException("Image file is required");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            logger.warn("Image file validation failed: invalid content type: {}", contentType);
+            throw new ValidationException("File must be an image");
+        }
+
+        long maxSize = 5 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            logger.warn("Image file validation failed: file size exceeds limit: {} bytes", file.getSize());
+            throw new ValidationException("Image file size must not exceed 5MB");
+        }
+
+        try {
+            BufferedImage image = ImageIO.read(file.getInputStream());
+            if (image == null) {
+                logger.warn("Image file validation failed: unable to read image");
+                throw new ValidationException("Invalid image file format");
+            }
+
+            int width = image.getWidth();
+            int height = image.getHeight();
+
+            if (width < MIN_IMAGE_WIDTH || height < MIN_IMAGE_HEIGHT) {
+                logger.warn("Image file validation failed: resolution too low: {}x{}", width, height);
+                throw new ValidationException(
+                        String.format("Image resolution must be at least %dx%d pixels", MIN_IMAGE_WIDTH, MIN_IMAGE_HEIGHT)
+                );
+            }
+
+            if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+                logger.warn("Image file validation failed: resolution too high: {}x{}", width, height);
+                throw new ValidationException(
+                        String.format("Image resolution must not exceed %dx%d pixels", MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT)
+                );
+            }
+
+            logger.debug("Image file validation passed: {}x{}, size: {} bytes", width, height, file.getSize());
+        } catch (IOException e) {
+            logger.error("Image file validation failed: error reading image: {}", e.getMessage());
+            throw new ValidationException("Failed to process image file");
+        }
     }
 
     private String savePictureToCloud(MultipartFile file){

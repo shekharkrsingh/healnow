@@ -49,44 +49,21 @@ public class DoctorController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile retrieved successfully", doctorDTO));
     }
 
-    @PostMapping(value = "/changeProfilePicture", consumes = "multipart/form-data")
+    @PutMapping(value = "/profile/picture", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<String>> changeProfilePicture(
             @RequestParam("file") MultipartFile file) {
-
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "file is required", null));
-        }
-
-        String url = doctorService.changeProfilePicture(file);
-
+        String imageUrl = doctorService.changeProfilePicture(file);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
-                        "Profile Picture updated successfully",
-                        url
-                )
+                new ApiResponse<>(true, "Profile picture updated successfully", imageUrl)
         );
     }
 
-
-    @PostMapping(value = "/changeCoverPicture", consumes = "multipart/form-data")
+    @PutMapping(value = "/cover/picture", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<String>> changeCoverPicture(
             @RequestParam("file") MultipartFile file) {
-
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "file is required", null));
-        }
-
-        String url = doctorService.changeCoverPicture(file);
-
+        String imageUrl = doctorService.changeCoverPicture(file);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
-                        "Cover Picture updated successfully",
-                        url
-                )
+                new ApiResponse<>(true, "Cover picture updated successfully", imageUrl)
         );
     }
 
