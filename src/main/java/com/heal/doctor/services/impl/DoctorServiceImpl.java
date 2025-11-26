@@ -25,12 +25,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.print.Doc;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -138,7 +139,7 @@ public class DoctorServiceImpl implements IDoctorService {
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(username, password);
 
-            Authentication authentication = authenticationManager.authenticate(authenticationToken);
+            authenticationManager.authenticate(authenticationToken);
 
             DoctorUserDetails userDetails = (DoctorUserDetails) userDetailsService.loadUserByUsername(username);
 
@@ -181,6 +182,7 @@ public class DoctorServiceImpl implements IDoctorService {
         return doctors;
     }
 
+    @Transactional
     @Override
     public DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
         String username = CurrentUserName.getCurrentUsername();
@@ -262,6 +264,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
 
     @Override
+    @Transactional
     public void deleteDoctor(String doctorId) {
         logger.warn("Deleting doctor account: doctorId: {}", doctorId);
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
@@ -273,6 +276,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
 
     @Override
+    @Transactional
     public void changePassword(ChangePasswordDTO changePasswordDTO) {
         String username = CurrentUserName.getCurrentUsername();
         logger.info("Changing password: email: {}", username);
@@ -302,6 +306,7 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
+    @Transactional
     public String updateEmail(UpdateEmailDTO updateEmailDTO) {
         String username = CurrentUserName.getCurrentUsername();
         logger.info("Updating email: oldEmail: {}, newEmail: {}", username, updateEmailDTO.getNewEmail());
@@ -361,6 +366,7 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
+    @Transactional
     public void forgotPassword(ForgotPasswordDTO forgotPasswordDTO) {
         logger.info("Password reset request: email: {}", forgotPasswordDTO.getEmail());
         DoctorEntity doctor = doctorRepository.findByEmail(forgotPasswordDTO.getEmail())
@@ -392,12 +398,43 @@ public class DoctorServiceImpl implements IDoctorService {
             );
     }
 
+    @Transactional
+    @Override
+    public String changeProfilePicture(MultipartFile image){
+        logger.info("Profile picture is service");
+        String imageUrl=savePictureToCloud(image);
+        DoctorEntity doctor=doctorRepository.findByDoctorId(CurrentUserName.getCurrentDoctorId())
+                .orElseThrow(()->new ResourceNotFoundException("Doctor "+ CurrentUserName.getCurrentDoctorId()));
+
+        doctor.setProfilePicture(imageUrl);
+        doctorRepository.save(doctor);
+        logger.info("Profile picture of doctor with id: {} is changed", CurrentUserName.getCurrentDoctorId());
+        return imageUrl;
+    }
+
+    @Transactional
+    @Override
+    public String changeCoverPicture(MultipartFile image){
+        logger.info("Cover Picture change service");
+        String imageUrl=savePictureToCloud(image);
+        DoctorEntity doctor=doctorRepository.findByDoctorId(CurrentUserName.getCurrentDoctorId())
+                .orElseThrow(()->new ResourceNotFoundException("Doctor "+ CurrentUserName.getCurrentDoctorId()));
+
+        doctor.setCoverPicture(imageUrl);
+        doctorRepository.save(doctor);
+        logger.info("Cover picture of doctor with id: {} is changed", CurrentUserName.getCurrentDoctorId());
+        return imageUrl;
+    }
+
+    private String savePictureToCloud(MultipartFile file){
+        return "www.google.com";
+    }
+
 
     private String generateDoctorId() {
-        String prefix = DOCTOR_ID_PREFIX;
         String timestamp = new SimpleDateFormat(DOCTOR_ID_DATE_FORMAT).format(new Date());
         String randomNumber = String.format(DOCTOR_ID_RANDOM_FORMAT, new Random().nextInt(DOCTOR_ID_RANDOM_RANGE));
-        return String.format("%s-%s-%s", prefix, timestamp, randomNumber);
+        return String.format("%s-%s-%s", DOCTOR_ID_PREFIX, timestamp, randomNumber);
     }
 
     private void validateAvailableDays(List<AvailableDayEnum> availableDays) {
