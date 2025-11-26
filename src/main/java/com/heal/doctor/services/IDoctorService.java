@@ -1,6 +1,7 @@
 package com.heal.doctor.services;
 
 import com.heal.doctor.dto.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface IDoctorService {
     String updateEmail( UpdateEmailDTO updateEmailDTO);
     void changePassword(ChangePasswordDTO changePasswordDTO);
     String loginDoctor(String username, String password);
+    String changeProfilePicture(MultipartFile file);
+    String changeCoverPicture(MultipartFile fiel);
 }
