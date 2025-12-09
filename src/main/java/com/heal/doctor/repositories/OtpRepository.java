@@ -3,6 +3,7 @@ package com.heal.doctor.repositories;
 import com.heal.doctor.models.OtpEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import java.util.Date;
 import java.util.Optional;
 
 
@@ -12,4 +13,6 @@ public interface OtpRepository extends MongoRepository<OtpEntity, Long> {
     void deleteByIdentifier(String identifier);
     
     long countByIdentifier(String identifier);
+
+    void deleteByCreatedAtBefore(Date cutoffDate);
 }
