@@ -19,5 +19,5 @@ public interface IDoctorService {
     void changePassword(ChangePasswordDTO changePasswordDTO);
     String loginDoctor(String username, String password);
     String changeProfilePicture(MultipartFile file);
-    String changeCoverPicture(MultipartFile fiel);
+    String changeCoverPicture(MultipartFile file);
 }
