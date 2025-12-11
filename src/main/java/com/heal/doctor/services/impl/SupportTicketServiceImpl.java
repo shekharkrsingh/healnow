@@ -13,6 +13,7 @@ import com.heal.doctor.services.ISupportTicketService;
 import com.heal.doctor.services.IEmailService;
 import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.CurrentUserName;
+import com.heal.doctor.utils.RoleUtils;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +97,8 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
                 .orElseThrow(() -> new ResourceNotFoundException("Support ticket", ticketId));
 
         String currentDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!ticket.getDoctorId().equals(currentDoctorId)) {
+        String ticketOwnerId = ticket.getDoctorId();
+        if (!RoleUtils.isAdminOrOwner(ticketOwnerId, currentDoctorId)) {
             throw new UnauthorizedException("You do not have access to this support ticket");
         }
 

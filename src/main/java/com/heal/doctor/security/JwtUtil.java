@@ -25,16 +25,21 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, String doctorId) {
+    public String generateToken(String username, String doctorId, String role) {
         long expirationTime = 1000L * 60 * 60 * EXPIRY_HOUR;
 
         return Jwts.builder()
                 .subject(username)
-                .claims(Map.of("doctorId", doctorId))
+                .claims(Map.of("doctorId", doctorId, "role", role != null ? role : "DOCTOR"))
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSecretKey())
                 .compact();
+    }
+
+    // Overloaded method for backward compatibility (defaults to DOCTOR role)
+    public String generateToken(String username, String doctorId) {
+        return generateToken(username, doctorId, "DOCTOR");
     }
 
     public String extractUsername(String token) {
@@ -43,6 +48,14 @@ public class JwtUtil {
 
     public String extractDoctorId(String token) {
         return extractClaim(token, claims -> claims.get("doctorId", String.class));
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> {
+            String role = claims.get("role", String.class);
+            // Default to DOCTOR if role is null (for backward compatibility with old tokens)
+            return role != null ? role : "DOCTOR";
+        });
     }
 
     public Date extractExpiration(String token) {

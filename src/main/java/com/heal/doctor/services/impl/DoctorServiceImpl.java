@@ -7,6 +7,7 @@ import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.RolesEnum;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
@@ -119,6 +120,7 @@ public class DoctorServiceImpl implements IDoctorService {
         doctor.setCreatedAt(new Date());
         doctor.setUpdatedAt(new Date());
         doctor.setDoctorId(generateDoctorId());
+        doctor.setRolesEnum(RolesEnum.DOCTOR); // Set default role for new registrations
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
         logger.info("Doctor account created successfully: doctorId: {}, email: {}, firstName: {}", 
                 savedDoctor.getDoctorId(), savedDoctor.getEmail(), savedDoctor.getFirstName());
@@ -148,9 +150,14 @@ public class DoctorServiceImpl implements IDoctorService {
             authenticationManager.authenticate(authenticationToken);
 
             DoctorUserDetails userDetails = (DoctorUserDetails) userDetailsService.loadUserByUsername(username);
+            
+            // Get role from doctor entity (default to DOCTOR if null for backward compatibility)
+            String role = userDetails.getDoctor().getRolesEnum() != null 
+                    ? userDetails.getDoctor().getRolesEnum().name() 
+                    : "DOCTOR";
 
-            String token = jwtUtil.generateToken(userDetails.getUsername(), userDetails.getDoctorId());
-            logger.info("Login successful: username: {}, doctorId: {}", username, userDetails.getDoctorId());
+            String token = jwtUtil.generateToken(userDetails.getUsername(), userDetails.getDoctorId(), role);
+            logger.info("Login successful: username: {}, doctorId: {}, role: {}", username, userDetails.getDoctorId(), role);
             return token;
         } catch (Exception e) {
             logger.warn("Login failed: username: {}, error: {}", username, e.getMessage());

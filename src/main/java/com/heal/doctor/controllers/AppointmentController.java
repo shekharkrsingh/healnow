@@ -8,6 +8,7 @@ import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.utils.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
 public class AppointmentController {
 
     private final IAppointmentService appointmentService;

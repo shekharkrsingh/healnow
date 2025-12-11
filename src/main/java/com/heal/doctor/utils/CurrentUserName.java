@@ -22,4 +22,8 @@ public class CurrentUserName {
         }
         throw new RuntimeException("No authenticated user found or doctor ID is missing.");
     }
+
+    public static String getCurrentUserRole() {
+        return RoleUtils.getCurrentUserRole();
+    }
 }

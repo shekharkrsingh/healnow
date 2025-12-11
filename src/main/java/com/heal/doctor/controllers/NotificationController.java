@@ -5,6 +5,7 @@ import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.utils.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/notification")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
 public class NotificationController {
 
     private final INotificationService notificationService;

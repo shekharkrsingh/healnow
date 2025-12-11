@@ -4,6 +4,7 @@ import com.heal.doctor.services.IDoctorReports;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLEncoder;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api/v1/reports")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
 public class DoctorReportsController {
 
     private final IDoctorReports doctorReports;
