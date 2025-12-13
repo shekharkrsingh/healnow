@@ -4,4 +4,5 @@ public enum RolesEnum {
     DOCTOR,
     ADMIN,
     USER,
+    COLLABORATOR,
 }

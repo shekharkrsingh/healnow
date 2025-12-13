@@ -154,10 +154,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized emergency status update attempt: appointmentId: {}, owner: {}, requester: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId);
+                    appointmentId, currentDoctorId, requestingUserId);
             throw new ForbiddenException("appointment", "update");
         }
         AppointmentEntity newAppointmentEntity = appointmentEntity;
@@ -200,10 +200,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized appointment access attempt: appointmentId: {}, owner: {}, requester: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId);
+                    appointmentId, currentDoctorId, requestingUserId);
             throw new ForbiddenException("appointment", "view");
         }
         logger.debug("Appointment retrieved: appointmentId: {}, doctorId: {}", appointmentId, currentDoctorId);
@@ -249,8 +249,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized status update attempt: appointmentId: {}, owner: {}, requester: {}, status: {}", 
                     appointmentId, currentDoctorId, requestingDoctorId, status);
             throw new ForbiddenException("appointment", "update");
@@ -295,10 +295,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized payment status update attempt: appointmentId: {}, owner: {}, requester: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId);
+                    appointmentId, currentDoctorId, requestingUserId);
             throw new ForbiddenException("appointment", "update");
         }
 
@@ -339,10 +339,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized treated status update attempt: appointmentId: {}, owner: {}, requester: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId);
+                    appointmentId, currentDoctorId, requestingUserId);
             throw new ForbiddenException("appointment", "update");
         }
 
@@ -393,10 +393,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized availability update attempt: appointmentId: {}, owner: {}, requester: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId);
+                    appointmentId, currentDoctorId, requestingUserId);
             throw new ForbiddenException("appointment", "update");
         }
 
@@ -446,10 +446,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointmentEntity = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointmentEntity.getDoctorId();
-        String requestingDoctorId = CurrentUserName.getCurrentDoctorId();
-        if (!RoleUtils.isAdminOrOwner(currentDoctorId, requestingDoctorId)) {
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized cancellation attempt: appointmentId: {}, owner: {}, requester: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId);
+                    appointmentId, currentDoctorId, requestingUserId);
             throw new ForbiddenException("appointment", "cancel");
         }
         if (appointmentEntity.getTreated()) {

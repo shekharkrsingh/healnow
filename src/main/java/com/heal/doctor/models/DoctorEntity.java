@@ -1,11 +1,8 @@
 package com.heal.doctor.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.GenderEnum;
-import com.heal.doctor.models.enums.RolesEnum;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -42,13 +39,6 @@ public class DoctorEntity {
     @NotBlank(message = "Doctor ID is required")
     @Size(max = 50, message = "Doctor ID must not exceed 50 characters")
     private String doctorId;
-
-    @Indexed(unique = true)
-    @UniqueElements
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be a valid email address")
-    @Size(max = 255, message = "Email must not exceed 255 characters")
-    private String email;
 
     @NotBlank(message = "First name is required")
     @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
@@ -101,13 +91,6 @@ public class DoctorEntity {
     private Integer yearsOfExperience;
 
     private GenderEnum gender;
-
-    @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters")
-    @JsonIgnore
-    private String password;
-
-    private RolesEnum rolesEnum;
 
     @Size(max = 500, message = "Cover picture URL must not exceed 500 characters")
     @Pattern(regexp = "^(https?://.*|/.*|)$", message = "Cover picture must be a valid URL or file path")

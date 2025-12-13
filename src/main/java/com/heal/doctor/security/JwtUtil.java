@@ -25,16 +25,26 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, String doctorId, String role) {
+    public String generateToken(String username, String userId, String doctorId, String role) {
         long expirationTime = 1000L * 60 * 60 * EXPIRY_HOUR;
+
+        Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("userId", userId);
+        claims.put("doctorId", doctorId);
+        claims.put("role", role != null ? role : "DOCTOR");
 
         return Jwts.builder()
                 .subject(username)
-                .claims(Map.of("doctorId", doctorId, "role", role != null ? role : "DOCTOR"))
+                .claims(claims)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSecretKey())
                 .compact();
+    }
+
+    // Overloaded method for backward compatibility (for DOCTOR role where userId = doctorId)
+    public String generateToken(String username, String doctorId, String role) {
+        return generateToken(username, doctorId, doctorId, role);
     }
 
     // Overloaded method for backward compatibility (defaults to DOCTOR role)
@@ -44,6 +54,10 @@ public class JwtUtil {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", String.class));
     }
 
     public String extractDoctorId(String token) {
