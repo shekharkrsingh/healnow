@@ -9,6 +9,7 @@ import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.NotificationTargetType;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
@@ -170,6 +171,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         appointmentId, currentDoctorId);
                 NotificationEntity notification = NotificationEntity.builder().
                         doctorId(appointmentEntity.getDoctorId()).
+                        userId(null).
+                        targetType(NotificationTargetType.DOCTOR_AND_COLLABORATORS).
                         type(NotificationType.EMERGENCY).
                         title("New Emergency Appointment Alert").
                         message("A new emergency appointment has been registered. Please check and take immediate action.").

@@ -7,6 +7,7 @@ import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.NotificationTargetType;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
@@ -124,6 +125,8 @@ public class DoctorServiceImpl implements IDoctorService {
                 savedDoctor.getDoctorId(), savedDoctor.getEmail(), savedDoctor.getFirstName());
         NotificationEntity notification=NotificationEntity.builder().
                 doctorId(savedDoctor.getDoctorId()).
+                userId(null).
+                targetType(com.heal.doctor.models.enums.NotificationTargetType.DOCTOR_ONLY).
                 type(NotificationType.SYSTEM).
                 title("Welcome "+ savedDoctor.getFirstName()).
                 message("Your account has been successfully created. Complete your profile to start managing appointments and providing care.").
@@ -299,6 +302,8 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.info("Password changed successfully: doctorId: {}, email: {}", savedDoctor.getDoctorId(), username);
         NotificationEntity notification=NotificationEntity.builder()
                 .doctorId(savedDoctor.getDoctorId())
+                .userId(null)
+                .targetType(com.heal.doctor.models.enums.NotificationTargetType.DOCTOR_ONLY)
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
@@ -389,6 +394,8 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.info("Password reset successfully: doctorId: {}, email: {}", savedDoctor.getDoctorId(), forgotPasswordDTO.getEmail());
         NotificationEntity notification=NotificationEntity.builder()
                 .doctorId(savedDoctor.getDoctorId())
+                .userId(null)
+                .targetType(com.heal.doctor.models.enums.NotificationTargetType.DOCTOR_ONLY)
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")

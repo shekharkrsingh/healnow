@@ -1,6 +1,7 @@
 package com.heal.doctor.models;
 
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.NotificationTargetType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -39,10 +40,18 @@ public class NotificationEntity {
 
     @Indexed(name = "doctor_id_idx")
     @Size(max = 50, message = "Doctor ID must not exceed 50 characters")
-    private String doctorId;
+    private String doctorId; // Required for DOCTOR_ONLY, DOCTOR_AND_COLLABORATORS, ALL_COLLABORATORS, USER_SPECIFIC
+
+    @Indexed(name = "user_id_idx")
+    @Size(max = 50, message = "User ID must not exceed 50 characters")
+    private String userId; // Required for USER_SPECIFIC, null for others
 
     @NotNull(message = "Notification type is required")
     private NotificationType type;
+
+    @Builder.Default
+    @NotNull(message = "Target type is required")
+    private NotificationTargetType targetType = NotificationTargetType.DOCTOR_AND_COLLABORATORS; // Default: visible to doctor and all collaborators
 
     @Size(max = 200, message = "Title must not exceed 200 characters")
     private String title;
