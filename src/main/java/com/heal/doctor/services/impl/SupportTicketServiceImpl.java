@@ -62,9 +62,7 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
         logger.info("Creating support ticket: doctorId: {}, category: {}, subject: {}", 
                 doctorId, requestDTO.getCategory(), requestDTO.getSubject());
 
-        String doctorEmail = doctorRepository.findByDoctorId(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId))
-                .getEmail();
+        String doctorEmail = CurrentUserName.getCurrentUsername();
 
         String ticketId = generateUniqueTicketId();
 

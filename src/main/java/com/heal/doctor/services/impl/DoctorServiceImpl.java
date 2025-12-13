@@ -479,9 +479,9 @@ public class DoctorServiceImpl implements IDoctorService {
                     savedUser.getUserId(), ex.getMessage(), ex);
             return null;
         });
-        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
+        DoctorEntity doctor = doctorRepository.findByDoctorId(savedUser.getUserId()).orElse(null);
         if (doctor != null) {
-            doctorAccountMailService.doctorPasswordChangeMail(doctor.getFirstName(), username);
+            doctorAccountMailService.doctorPasswordChangeMail(doctor.getFirstName(), savedUser.getEmail());
         }
     }
 

@@ -252,7 +252,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         String requestingUserId = CurrentUserName.getCurrentUserId();
         if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized status update attempt: appointmentId: {}, owner: {}, requester: {}, status: {}", 
-                    appointmentId, currentDoctorId, requestingDoctorId, status);
+                    appointmentId, currentDoctorId, requestingUserId, status);
             throw new ForbiddenException("appointment", "update");
         }
         AppointmentStatus oldStatus = appointmentEntity.getStatus();
