@@ -1,6 +1,8 @@
 package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.CollaboratorDTO;
+import com.heal.doctor.dto.DoctorDTO;
+import com.heal.doctor.dto.UpdateCollaboratorProfileDTO;
 import com.heal.doctor.exception.BadRequestException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
@@ -8,6 +10,7 @@ import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.repositories.CollaboratorProfileRepository;
 import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.services.ICollaboratorService;
+import com.heal.doctor.utils.CurrentUserName;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -15,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -100,5 +104,69 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         // collaboratorProfileRepository.delete(profile);
         
         logger.info("Collaborator removed (deactivated): {}", collaboratorId);
+    }
+
+    @Override
+    public DoctorDTO getCollaboratorProfile() {
+        String username = CurrentUserName.getCurrentUsername();
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        String userId = CurrentUserName.getCurrentUserId();
+        
+        logger.debug("Fetching collaborator profile: email: {}, userId: {}, doctorId: {}", username, userId, doctorId);
+        
+        CollaboratorProfileEntity collaboratorProfile = collaboratorProfileRepository.findByCollaboratorId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", userId));
+        UserEntity user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", username));
+        
+        // Map collaborator profile to DoctorDTO (for compatibility with frontend)
+        DoctorDTO doctorDTO = DoctorDTO.builder()
+                .firstName(collaboratorProfile.getFirstName())
+                .lastName(collaboratorProfile.getLastName())
+                .doctorId(doctorId) // Associated doctor's ID
+                .email(user.getEmail())
+                .build();
+        
+        logger.debug("Collaborator profile retrieved: collaboratorId: {}, doctorId: {}", 
+                collaboratorProfile.getCollaboratorId(), doctorId);
+        return doctorDTO;
+    }
+
+    @Override
+    @Transactional
+    public DoctorDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO) {
+        String username = CurrentUserName.getCurrentUsername();
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        String userId = CurrentUserName.getCurrentUserId();
+        
+        logger.info("Updating collaborator profile: email: {}, userId: {}, doctorId: {}", username, userId, doctorId);
+        
+        CollaboratorProfileEntity collaboratorProfile = collaboratorProfileRepository.findByCollaboratorId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", userId));
+        
+        // Only allow firstName and lastName updates
+        if (updateDTO.getFirstName() != null && !updateDTO.getFirstName().isEmpty()) {
+            collaboratorProfile.setFirstName(updateDTO.getFirstName());
+        }
+        if (updateDTO.getLastName() != null && !updateDTO.getLastName().isEmpty()) {
+            collaboratorProfile.setLastName(updateDTO.getLastName());
+        }
+        
+        collaboratorProfile.setUpdatedAt(new Date());
+        CollaboratorProfileEntity updatedProfile = collaboratorProfileRepository.save(collaboratorProfile);
+        
+        UserEntity user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", username));
+        
+        // Return DoctorDTO with collaborator data (for compatibility with frontend)
+        DoctorDTO doctorDTO = DoctorDTO.builder()
+                .firstName(updatedProfile.getFirstName())
+                .lastName(updatedProfile.getLastName())
+                .doctorId(doctorId) // Associated doctor's ID
+                .email(user.getEmail())
+                .build();
+        
+        logger.info("Collaborator profile updated: collaboratorId: {}, doctorId: {}", userId, doctorId);
+        return doctorDTO;
     }
 }
