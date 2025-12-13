@@ -59,7 +59,7 @@ public class InvitationServiceImpl implements IInvitationService {
     @Value("${company.name:HealNow}")
     private String companyName;
 
-    @Value("${app.websiteUrl:http://localhost:3000}")
+    @Value("${frontend.domain:http://localhost:8081}")
     private String websiteUrl;
 
     @Override
