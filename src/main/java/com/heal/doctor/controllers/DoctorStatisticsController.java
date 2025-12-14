@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @RestController
 @RequestMapping("/api/v1/doctor/statistics")
-@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN', 'COLLABORATOR')")
 public class DoctorStatisticsController {
 
     private final IDoctorStatisticsService appointmentStatisticsService;

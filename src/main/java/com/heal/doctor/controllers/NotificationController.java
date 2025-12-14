@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/notification")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN', 'COLLABORATOR')")
 public class NotificationController {
 
     private final INotificationService notificationService;

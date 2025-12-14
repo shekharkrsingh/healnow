@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/support")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN', 'COLLABORATOR')")
 public class SupportTicketController {
 
     private static final Logger logger = LoggerFactory.getLogger(SupportTicketController.class);
