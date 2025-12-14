@@ -7,5 +7,4 @@ import java.util.Optional;
 
 public interface DoctorRepository extends MongoRepository<DoctorEntity, String> {
     Optional<DoctorEntity> findByDoctorId(String doctorId);
-    Optional<DoctorEntity> findByEmail(String email);
 }

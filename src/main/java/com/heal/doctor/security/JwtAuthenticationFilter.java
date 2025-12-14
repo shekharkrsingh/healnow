@@ -40,16 +40,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String username = jwtUtil.extractUsername(token);
                 String doctorId = jwtUtil.extractDoctorId(token);
+                String role = jwtUtil.extractRole(token);
 
                 if (jwtUtil.validateToken(token, username)) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
+                    // Authorities are now properly set from UserDetails (which includes role-based authorities)
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(userDetails, doctorId, userDetails.getAuthorities());
 
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    logger.debug("JWT authentication successful: username: {}, doctorId: {}, path: {}", 
-                            username, doctorId, request.getRequestURI());
+                    logger.debug("JWT authentication successful: username: {}, doctorId: {}, role: {}, path: {}", 
+                            username, doctorId, role, request.getRequestURI());
                 } else {
                     logger.warn("JWT token validation failed: username: {}, path: {}", username, request.getRequestURI());
                 }

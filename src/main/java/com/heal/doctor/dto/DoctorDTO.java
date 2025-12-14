@@ -19,6 +19,7 @@ import java.util.List;
 public class DoctorDTO {
     private String firstName;
     private String lastName;
+    private String email;
     private String doctorId;
     private String specialization;
     private String phoneNumber;

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborator Invitation</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --secondary: #6c757d;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .email-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .email-header {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .email-subheader {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .invitation-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .invitation-button {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .invitation-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .expiry-notice {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        .info-section {
+            background: var(--background);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+            border-left: 4px solid var(--primary);
+        }
+
+        .info-section h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .info-section p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 8px 0;
+            text-align: left;
+        }
+
+        .email-footer {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .support-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 15px 0;
+        }
+
+        .email-body {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 20px 15px;
+                background: var(--background);
+            }
+
+            .email-container {
+                width: 95%;
+                padding: 30px 20px;
+                border-radius: 12px;
+            }
+
+            .email-header {
+                font-size: 24px;
+            }
+
+            .email-subheader {
+                font-size: 15px;
+            }
+
+            .invitation-button {
+                padding: 14px 28px;
+                font-size: 15px;
+            }
+
+            .info-section {
+                padding: 15px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .email-container {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <div class="email-header">You're Invited! 🎉</div>
+
+    <div class="email-subheader">
+        <p>Hello <span th:text="${firstName}">John</span>,</p>
+    </div>
+
+    <div class="email-body">
+        <p>You have been invited by <strong th:text="${doctorName}">Dr. Smith</strong> to collaborate and manage appointments on their behalf.</p>
+    </div>
+
+    <div class="invitation-section">
+        <a th:href="${invitationLink}" class="invitation-button">Accept Invitation</a>
+        <div class="expiry-notice">⏰ This invitation expires in <span th:text="${expiresIn}">72 hours</span></div>
+    </div>
+
+    <div class="info-section">
+        <h3>What you'll be able to do:</h3>
+        <p>✓ Manage appointments on behalf of the doctor</p>
+        <p>✓ Update appointment status and details</p>
+        <p>✓ View and manage patient appointments</p>
+        <p>✓ Access real-time appointment updates</p>
+    </div>
+
+    <div class="email-footer">
+        <p>If you did not expect this invitation, please ignore this email.</p>
+        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span></p>
+        <div class="support-info">
+            © 2024 <span th:text="${companyName}">Company Name</span>. All rights reserved.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

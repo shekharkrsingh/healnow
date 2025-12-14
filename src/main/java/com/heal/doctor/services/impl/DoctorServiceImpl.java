@@ -7,7 +7,11 @@ import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.RolesEnum;
+import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.repositories.UserRepository;
+import com.heal.doctor.security.CollaboratorUserDetails;
 import com.heal.doctor.security.DoctorUserDetails;
 import com.heal.doctor.security.JwtUtil;
 import com.heal.doctor.services.IDoctorService;
@@ -59,6 +63,7 @@ public class DoctorServiceImpl implements IDoctorService {
     private static final int MAX_IMAGE_HEIGHT = 4096;
 
     private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -69,7 +74,8 @@ public class DoctorServiceImpl implements IDoctorService {
     private final IDoctorAccountMailService doctorAccountMailService;
     private final Executor taskExecutor;
 
-    public DoctorServiceImpl(DoctorRepository doctorRepository, ModelMapper modelMapper,
+    public DoctorServiceImpl(DoctorRepository doctorRepository, UserRepository userRepository,
+                            ModelMapper modelMapper,
                             PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
                             AuthenticationManager authenticationManager,
                             UserDetailsService userDetailsService, OtpServiceImpl otpService,
@@ -77,6 +83,7 @@ public class DoctorServiceImpl implements IDoctorService {
                             IDoctorAccountMailService doctorAccountMailService,
                             @Qualifier("emailTaskExecutor") Executor taskExecutor) {
         this.doctorRepository = doctorRepository;
+        this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -98,7 +105,7 @@ public class DoctorServiceImpl implements IDoctorService {
             logger.warn("Doctor registration failed: Invalid email format: {}", doctorRegistrationDTO.getEmail());
             throw new ValidationException("Invalid email format");
         }
-        if (doctorRepository.findByEmail(doctorRegistrationDTO.getEmail()).isPresent()) {
+        if (userRepository.existsByEmail(doctorRegistrationDTO.getEmail())) {
             logger.warn("Doctor registration failed: Email already exists: {}", doctorRegistrationDTO.getEmail());
             throw new ConflictException("Doctor", "A doctor with this email already exists");
         }
@@ -114,14 +121,31 @@ public class DoctorServiceImpl implements IDoctorService {
         otpService.validateOtp(doctorRegistrationDTO.getEmail(), doctorRegistrationDTO.getOtp());
         logger.debug("OTP validated successfully for email: {}", doctorRegistrationDTO.getEmail());
 
+        // Generate doctor ID (this will be used as userId)
+        String doctorId = generateDoctorId();
+
+        // Create UserEntity for authentication
+        UserEntity user = UserEntity.builder()
+                .userId(doctorId)
+                .email(doctorRegistrationDTO.getEmail())
+                .password(passwordEncoder.encode(doctorRegistrationDTO.getPassword()))
+                .rolesEnum(RolesEnum.DOCTOR)
+                .isActive(true)
+                .emailVerified(false)
+                .createdAt(new Date())
+                .updatedAt(new Date())
+                .build();
+        UserEntity savedUser = userRepository.save(user);
+        logger.info("User created for doctor: userId: {}, email: {}", doctorId, doctorRegistrationDTO.getEmail());
+
+        // Create DoctorEntity profile
         DoctorEntity doctor = modelMapper.map(doctorRegistrationDTO, DoctorEntity.class);
-        doctor.setPassword(passwordEncoder.encode(doctorRegistrationDTO.getPassword()));
+        doctor.setDoctorId(doctorId); // Link to UserEntity.userId
         doctor.setCreatedAt(new Date());
         doctor.setUpdatedAt(new Date());
-        doctor.setDoctorId(generateDoctorId());
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
         logger.info("Doctor account created successfully: doctorId: {}, email: {}, firstName: {}", 
-                savedDoctor.getDoctorId(), savedDoctor.getEmail(), savedDoctor.getFirstName());
+                savedDoctor.getDoctorId(), savedUser.getEmail(), savedDoctor.getFirstName());
         NotificationEntity notification=NotificationEntity.builder().
                 doctorId(savedDoctor.getDoctorId()).
                 type(NotificationType.SYSTEM).
@@ -133,7 +157,7 @@ public class DoctorServiceImpl implements IDoctorService {
                     savedDoctor.getDoctorId(), ex.getMessage(), ex);
             return null;
         });
-        doctorAccountMailService.doctorWelcomeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
+        doctorAccountMailService.doctorWelcomeMail(savedDoctor.getFirstName(), savedUser.getEmail());
         
         return modelMapper.map(savedDoctor, DoctorDTO.class);
     }
@@ -147,10 +171,35 @@ public class DoctorServiceImpl implements IDoctorService {
 
             authenticationManager.authenticate(authenticationToken);
 
-            DoctorUserDetails userDetails = (DoctorUserDetails) userDetailsService.loadUserByUsername(username);
+            org.springframework.security.core.userdetails.UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            
+            String userId;
+            String doctorId;
+            String role;
 
-            String token = jwtUtil.generateToken(userDetails.getUsername(), userDetails.getDoctorId());
-            logger.info("Login successful: username: {}, doctorId: {}", username, userDetails.getDoctorId());
+            if (userDetails instanceof DoctorUserDetails) {
+                DoctorUserDetails doctorUserDetails = (DoctorUserDetails) userDetails;
+                userId = doctorUserDetails.getDoctorId();
+                doctorId = doctorUserDetails.getDoctorId(); // For doctors, userId = doctorId
+                role = doctorUserDetails.getUser().getRolesEnum() != null 
+                        ? doctorUserDetails.getUser().getRolesEnum().name() 
+                        : "DOCTOR";
+            } else if (userDetails instanceof CollaboratorUserDetails) {
+                CollaboratorUserDetails collaboratorUserDetails = (CollaboratorUserDetails) userDetails;
+                userId = collaboratorUserDetails.getUserId();
+                doctorId = collaboratorUserDetails.getDoctorId(); // For collaborators, doctorId is the associated doctor
+                role = collaboratorUserDetails.getUser().getRolesEnum() != null 
+                        ? collaboratorUserDetails.getUser().getRolesEnum().name() 
+                        : "COLLABORATOR";
+            } else {
+                // Fallback for other roles (ADMIN, USER)
+                userId = userDetails.getUsername(); // Use email as fallback
+                doctorId = null;
+                role = "USER";
+            }
+
+            String token = jwtUtil.generateToken(userDetails.getUsername(), userId, doctorId, role);
+            logger.info("Login successful: username: {}, userId: {}, doctorId: {}, role: {}", username, userId, doctorId, role);
             return token;
         } catch (Exception e) {
             logger.warn("Login failed: username: {}, error: {}", username, e.getMessage());
@@ -164,18 +213,31 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.debug("Fetching doctor by ID: doctorId: {}", doctorId);
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
-        logger.debug("Doctor retrieved: doctorId: {}, email: {}", doctorId, doctor.getEmail());
-        return modelMapper.map(doctor, DoctorDTO.class);
+        UserEntity user = userRepository.findByUserId(doctorId)
+                .orElse(null);
+        logger.debug("Doctor retrieved: doctorId: {}, email: {}", doctorId, user != null ? user.getEmail() : "N/A");
+        DoctorDTO doctorDTO = modelMapper.map(doctor, DoctorDTO.class);
+        if (user != null) {
+            doctorDTO.setEmail(user.getEmail());
+        }
+        return doctorDTO;
     }
 
     @Override
     public DoctorDTO getDoctorProfile(){
         String username = CurrentUserName.getCurrentUsername();
-        logger.debug("Fetching doctor profile: email: {}", username);
-        DoctorEntity doctor = doctorRepository.findByEmail(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor profile", username));
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        logger.debug("Fetching doctor profile: email: {}, doctorId: {}", username, doctorId);
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor profile", doctorId));
+        UserEntity user = userRepository.findByEmail(username)
+                .orElse(null);
         logger.debug("Doctor profile retrieved: doctorId: {}, email: {}", doctor.getDoctorId(), username);
-        return modelMapper.map(doctor, DoctorDTO.class);
+        DoctorDTO doctorDTO = modelMapper.map(doctor, DoctorDTO.class);
+        if (user != null) {
+            doctorDTO.setEmail(user.getEmail());
+        }
+        return doctorDTO;
     }
 
     @Override
@@ -192,9 +254,10 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
         String username = CurrentUserName.getCurrentUsername();
-        logger.info("Updating doctor profile: email: {}", username);
-        DoctorEntity existingDoctor = doctorRepository.findByEmail(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", username));
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        logger.info("Updating doctor profile: email: {}, doctorId: {}", username, doctorId);
+        DoctorEntity existingDoctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         if (updateDoctorDetailsDTO.getFirstName() != null && !updateDoctorDetailsDTO.getFirstName().isEmpty()) {
             existingDoctor.setFirstName(updateDoctorDetailsDTO.getFirstName());
@@ -261,6 +324,12 @@ public class DoctorServiceImpl implements IDoctorService {
 
         DoctorDTO doctorDTO = new DoctorDTO();
         modelMapper.map(updatedDoctor, doctorDTO);
+        
+        // Add email from UserEntity
+        UserEntity user = userRepository.findByUserId(doctorId).orElse(null);
+        if (user != null) {
+            doctorDTO.setEmail(user.getEmail());
+        }
 
         return doctorDTO;
     }
@@ -275,8 +344,13 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.warn("Deleting doctor account: doctorId: {}", doctorId);
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
-        String email = doctor.getEmail();
+        UserEntity user = userRepository.findByUserId(doctorId)
+                .orElse(null);
+        String email = user != null ? user.getEmail() : "N/A";
         doctorRepository.delete(doctor);
+        if (user != null) {
+            userRepository.delete(user);
+        }
         logger.warn("Doctor account deleted: doctorId: {}, email: {}", doctorId, email);
     }
 
@@ -285,48 +359,52 @@ public class DoctorServiceImpl implements IDoctorService {
     @Transactional
     public void changePassword(ChangePasswordDTO changePasswordDTO) {
         String username = CurrentUserName.getCurrentUsername();
-        logger.info("Changing password: email: {}", username);
-        DoctorEntity doctor = doctorRepository.findByEmail(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", username));
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        logger.info("Changing password: email: {}, doctorId: {}", username, doctorId);
+        UserEntity user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", username));
 
-        if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), doctor.getPassword())) {
+        if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
             logger.warn("Password change failed - invalid old password: email: {}", username);
             throw new UnauthorizedException("Invalid old password");
         }
-        doctor.setUpdatedAt(new Date());
-        doctor.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
-        DoctorEntity savedDoctor= doctorRepository.save(doctor);
-        logger.info("Password changed successfully: doctorId: {}, email: {}", savedDoctor.getDoctorId(), username);
+        user.setUpdatedAt(new Date());
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        UserEntity savedUser = userRepository.save(user);
+        logger.info("Password changed successfully: userId: {}, email: {}", savedUser.getUserId(), username);
         NotificationEntity notification=NotificationEntity.builder()
-                .doctorId(savedDoctor.getDoctorId())
+                .doctorId(doctorId)
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
         notificationService.createNotificationAsync(notification).exceptionally(ex -> {
             logger.error("Failed to create password change notification asynchronously: doctorId: {}, error: {}", 
-                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+                    doctorId, ex.getMessage(), ex);
             return null;
         });
-        doctorAccountMailService.doctorPasswordChangeMail(savedDoctor.getFirstName(), savedDoctor.getEmail());
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
+        if (doctor != null) {
+            doctorAccountMailService.doctorPasswordChangeMail(doctor.getFirstName(), username);
+        }
     }
 
     @Override
     @Transactional
     public String updateEmail(UpdateEmailDTO updateEmailDTO) {
         String username = CurrentUserName.getCurrentUsername();
-        logger.info("Updating email: oldEmail: {}, newEmail: {}", username, updateEmailDTO.getNewEmail());
-        DoctorEntity doctor = doctorRepository.findByEmail(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", username));
-        Optional<DoctorEntity> doctorIsAlreadyAvailable = doctorRepository.findByEmail(updateEmailDTO.getNewEmail());
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        logger.info("Updating email: oldEmail: {}, newEmail: {}, doctorId: {}", username, updateEmailDTO.getNewEmail(), doctorId);
+        UserEntity user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", username));
 
-        if (doctorIsAlreadyAvailable.isPresent()) {
+        if (userRepository.existsByEmail(updateEmailDTO.getNewEmail())) {
             logger.warn("Email update failed - new email already exists: oldEmail: {}, newEmail: {}", 
                     username, updateEmailDTO.getNewEmail());
-            throw new ConflictException("Email", "A doctor with email '" + updateEmailDTO.getNewEmail() + "' already exists");
+            throw new ConflictException("Email", "A user with email '" + updateEmailDTO.getNewEmail() + "' already exists");
         }
 
-        if (!passwordEncoder.matches(updateEmailDTO.getPassword(), doctor.getPassword())) {
+        if (!passwordEncoder.matches(updateEmailDTO.getPassword(), user.getPassword())) {
             logger.warn("Email update failed - invalid password: email: {}", username);
             throw new UnauthorizedException("Invalid password");
         }
@@ -335,32 +413,35 @@ public class DoctorServiceImpl implements IDoctorService {
             logger.warn("Email update failed - invalid OTP: newEmail: {}", updateEmailDTO.getNewEmail());
             throw new BadRequestException("Invalid OTP");
         }
-        String oldMail=doctor.getEmail();
-        doctor.setEmail(updateEmailDTO.getNewEmail());
-        doctor.setUpdatedAt(new Date());
-        DoctorEntity savedDoctor =doctorRepository.save(doctor);
-        logger.info("Email updated successfully: doctorId: {}, oldEmail: {}, newEmail: {}", 
-                savedDoctor.getDoctorId(), oldMail, updateEmailDTO.getNewEmail());
+        String oldMail = user.getEmail();
+        user.setEmail(updateEmailDTO.getNewEmail());
+        user.setUpdatedAt(new Date());
+        UserEntity savedUser = userRepository.save(user);
+        logger.info("Email updated successfully: userId: {}, oldEmail: {}, newEmail: {}", 
+                savedUser.getUserId(), oldMail, updateEmailDTO.getNewEmail());
         NotificationEntity notification=NotificationEntity.builder()
-                .doctorId(savedDoctor.getDoctorId())
+                .doctorId(doctorId)
                 .type(NotificationType.INFO)
                 .title("Security Update")
                 .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
                 .build();
         notificationService.createNotificationAsync(notification).exceptionally(ex -> {
             logger.error("Failed to create email change notification asynchronously: doctorId: {}, error: {}", 
-                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+                    doctorId, ex.getMessage(), ex);
             return null;
         });
         
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
+        String firstName = doctor != null ? doctor.getFirstName() : "User";
+        
         CompletableFuture<Void> oldEmailFuture = CompletableFuture.runAsync(() ->
                 doctorAccountMailService.doctorLoginEmailChangedMail(
-                        oldMail, doctor.getFirstName(), oldMail, updateEmailDTO.getNewEmail()),
+                        oldMail, firstName, oldMail, updateEmailDTO.getNewEmail()),
                 taskExecutor);
         
         CompletableFuture<Void> newEmailFuture = CompletableFuture.runAsync(() ->
                 doctorAccountMailService.doctorLoginEmailChangedMail(
-                        updateEmailDTO.getNewEmail(), doctor.getFirstName(), oldMail, updateEmailDTO.getNewEmail()),
+                        updateEmailDTO.getNewEmail(), firstName, oldMail, updateEmailDTO.getNewEmail()),
                 taskExecutor);
         
         CompletableFuture.allOf(oldEmailFuture, newEmailFuture).exceptionally(ex -> {
@@ -375,33 +456,33 @@ public class DoctorServiceImpl implements IDoctorService {
     @Transactional
     public void forgotPassword(ForgotPasswordDTO forgotPasswordDTO) {
         logger.info("Password reset request: email: {}", forgotPasswordDTO.getEmail());
-        DoctorEntity doctor = doctorRepository.findByEmail(forgotPasswordDTO.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", forgotPasswordDTO.getEmail()));
+        UserEntity user = userRepository.findByEmail(forgotPasswordDTO.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", forgotPasswordDTO.getEmail()));
 
         if (!otpService.validateOtp(forgotPasswordDTO.getEmail(), forgotPasswordDTO.getOtp())) {
             logger.warn("Password reset failed - invalid OTP: email: {}", forgotPasswordDTO.getEmail());
             throw new BadRequestException("Invalid OTP");
         }
 
-        doctor.setPassword(passwordEncoder.encode(forgotPasswordDTO.getNewPassword()));
-        doctor.setUpdatedAt(new Date());
-        DoctorEntity savedDoctor= doctorRepository.save(doctor);
-        logger.info("Password reset successfully: doctorId: {}, email: {}", savedDoctor.getDoctorId(), forgotPasswordDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(forgotPasswordDTO.getNewPassword()));
+        user.setUpdatedAt(new Date());
+        UserEntity savedUser = userRepository.save(user);
+        logger.info("Password reset successfully: userId: {}, email: {}", savedUser.getUserId(), forgotPasswordDTO.getEmail());
         NotificationEntity notification=NotificationEntity.builder()
-                .doctorId(savedDoctor.getDoctorId())
+                .doctorId(savedUser.getUserId())
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
                 .build();
         notificationService.createNotificationAsync(notification).exceptionally(ex -> {
             logger.error("Failed to create password reset notification asynchronously: doctorId: {}, error: {}", 
-                    savedDoctor.getDoctorId(), ex.getMessage(), ex);
+                    savedUser.getUserId(), ex.getMessage(), ex);
             return null;
         });
-        doctorAccountMailService.doctorPasswordChangeMail(
-                savedDoctor.getFirstName(),
-                savedDoctor.getEmail()
-            );
+        DoctorEntity doctor = doctorRepository.findByDoctorId(savedUser.getUserId()).orElse(null);
+        if (doctor != null) {
+            doctorAccountMailService.doctorPasswordChangeMail(doctor.getFirstName(), savedUser.getEmail());
+        }
     }
 
     @Transactional

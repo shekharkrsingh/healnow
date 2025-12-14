@@ -1,6 +1,6 @@
 package com.heal.doctor.security;
 
-import com.heal.doctor.models.DoctorEntity;
+import com.heal.doctor.models.CollaboratorProfileEntity;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.enums.RolesEnum;
 import lombok.Getter;
@@ -12,24 +12,24 @@ import java.util.Collection;
 import java.util.List;
 
 @Getter
-public class DoctorUserDetails implements UserDetails {
+public class CollaboratorUserDetails implements UserDetails {
 
     private final UserEntity user;
-    private final DoctorEntity doctorProfile;
+    private final CollaboratorProfileEntity profile;
 
-    public DoctorUserDetails(UserEntity user, DoctorEntity doctorProfile) {
+    public CollaboratorUserDetails(UserEntity user, CollaboratorProfileEntity profile) {
         this.user = user;
-        this.doctorProfile = doctorProfile;
+        this.profile = profile;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         RolesEnum role = user.getRolesEnum();
-        // Default to DOCTOR role if role is null (for backward compatibility with existing records)
+        // Default to COLLABORATOR role if role is null (for backward compatibility)
         if (role == null) {
-            role = RolesEnum.DOCTOR;
+            role = RolesEnum.COLLABORATOR;
         }
-        // Convert RolesEnum to Spring Security authority format (ROLE_DOCTOR, ROLE_ADMIN, etc.)
+        // Convert RolesEnum to Spring Security authority format (ROLE_COLLABORATOR)
         String authority = "ROLE_" + role.name();
         return List.of(new SimpleGrantedAuthority(authority));
     }
@@ -44,8 +44,12 @@ public class DoctorUserDetails implements UserDetails {
         return user.getEmail();
     }
 
-    public String getDoctorId() {
+    public String getUserId() {
         return user.getUserId();
+    }
+
+    public String getDoctorId() {
+        return profile.getDoctorId();
     }
 
     @Override

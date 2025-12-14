@@ -68,7 +68,9 @@ public class DoctorHandshakeInterceptor implements HandshakeInterceptor {
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 String doctorId = jwtUtil.extractDoctorId(token);
+                String role = jwtUtil.extractRole(token);
 
+                // Authorities are now properly set from UserDetails (which includes role-based authorities)
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(userDetails, doctorId, userDetails.getAuthorities());
 
@@ -78,9 +80,10 @@ public class DoctorHandshakeInterceptor implements HandshakeInterceptor {
 
                 attributes.put("doctorId", extractedDoctorId);
                 attributes.put("username", username);
+                attributes.put("role", role);
                 attributes.put("token", token);
 
-                logger.info("WebSocket handshake successful: doctorId: {}, username: {}", extractedDoctorId, username);
+                logger.info("WebSocket handshake successful: doctorId: {}, username: {}, role: {}", extractedDoctorId, username, role);
                 return true;
             } catch (Exception e) {
                 logger.warn("WebSocket handshake failed - authentication error: {}", e.getMessage());

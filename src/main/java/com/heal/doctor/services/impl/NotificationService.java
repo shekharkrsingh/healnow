@@ -41,21 +41,21 @@ public class NotificationService implements INotificationService {
 
     @Override
     public NotificationResponseDTO createNotification(NotificationEntity notification) {
-        logger.debug("Creating notification: doctorId: {}, type: {}, title: {}", 
+        logger.debug("Creating notification: doctorId: {}, type: {}, title: {}",
                 notification.getDoctorId(), notification.getType(), notification.getTitle());
-        NotificationEntity savedNotification= notificationRepository.save(notification);
-        logger.info("Notification created: notificationId: {}, doctorId: {}, type: {}", 
+        NotificationEntity savedNotification = notificationRepository.save(notification);
+        logger.info("Notification created: notificationId: {}, doctorId: {}, type: {}",
                 savedNotification.getId(), savedNotification.getDoctorId(), savedNotification.getType());
-        NotificationResponseDTO notificationResponseDTO=modelMapper.map(savedNotification, NotificationResponseDTO.class);
-        if(!notification.getType().equals(NotificationType.SYSTEM)){
+        NotificationResponseDTO notificationResponseDTO = modelMapper.map(savedNotification, NotificationResponseDTO.class);
+        if (!notification.getType().equals(NotificationType.SYSTEM)) {
             String doctorId = CurrentUserName.getCurrentDoctorId();
-            logger.debug("Sending WebSocket notification: doctorId: {}, notificationId: {}", 
+            logger.debug("Sending WebSocket notification: doctorId: {}, notificationId: {}",
                     doctorId, savedNotification.getId());
             messagingTemplate.convertAndSend("/topic/appointments/" + doctorId,
                     WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
-                    .type(WebSocketResponseType.NOTIFICATION)
-                    .payload(notificationResponseDTO)
-                    .build());
+                            .type(WebSocketResponseType.NOTIFICATION)
+                            .payload(notificationResponseDTO)
+                            .build());
         }
         return notificationResponseDTO;
     }
@@ -63,26 +63,26 @@ public class NotificationService implements INotificationService {
     @Override
     @Async("notificationTaskExecutor")
     public CompletableFuture<Void> createNotificationAsync(NotificationEntity notification) {
-        logger.debug("Creating notification asynchronously: doctorId: {}, type: {}, title: {}", 
+        logger.debug("Creating notification asynchronously: doctorId: {}, type: {}, title: {}",
                 notification.getDoctorId(), notification.getType(), notification.getTitle());
         try {
             NotificationEntity savedNotification = notificationRepository.save(notification);
-            logger.info("Notification created asynchronously: notificationId: {}, doctorId: {}, type: {}", 
+            logger.info("Notification created asynchronously: notificationId: {}, doctorId: {}, type: {}",
                     savedNotification.getId(), savedNotification.getDoctorId(), savedNotification.getType());
             NotificationResponseDTO notificationResponseDTO = modelMapper.map(savedNotification, NotificationResponseDTO.class);
-            if(!notification.getType().equals(NotificationType.SYSTEM)){
+            if (!notification.getType().equals(NotificationType.SYSTEM)) {
                 String doctorId = savedNotification.getDoctorId();
-                logger.debug("Sending WebSocket notification asynchronously: doctorId: {}, notificationId: {}", 
+                logger.debug("Sending WebSocket notification asynchronously: doctorId: {}, notificationId: {}",
                         doctorId, savedNotification.getId());
                 messagingTemplate.convertAndSend("/topic/appointments/" + doctorId,
                         WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
-                        .type(WebSocketResponseType.NOTIFICATION)
-                        .payload(notificationResponseDTO)
-                        .build());
+                                .type(WebSocketResponseType.NOTIFICATION)
+                                .payload(notificationResponseDTO)
+                                .build());
             }
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
-            logger.error("Failed to create notification asynchronously: doctorId: {}, type: {}, error: {}", 
+            logger.error("Failed to create notification asynchronously: doctorId: {}, type: {}, error: {}",
                     notification.getDoctorId(), notification.getType(), e.getMessage(), e);
             CompletableFuture<Void> future = new CompletableFuture<>();
             future.completeExceptionally(e);
@@ -119,7 +119,7 @@ public class NotificationService implements INotificationService {
         NotificationEntity notification = notificationRepository.findByIdAndDoctorId(notificationId, doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", notificationId));
         notification.setIsRead(true);
-        NotificationEntity updatedNotification= notificationRepository.save(notification);
+        NotificationEntity updatedNotification = notificationRepository.save(notification);
         logger.debug("Notification marked as read: notificationId: {}, doctorId: {}", notificationId, doctorId);
         return modelMapper.map(updatedNotification, NotificationResponseDTO.class);
     }
