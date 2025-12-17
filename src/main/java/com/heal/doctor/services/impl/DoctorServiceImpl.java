@@ -6,6 +6,7 @@ import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AvailableDayEnum;
+import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.models.enums.RolesEnum;
 import com.heal.doctor.models.UserEntity;
@@ -147,7 +148,8 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.info("Doctor account created successfully: doctorId: {}, email: {}, firstName: {}", 
                 savedDoctor.getDoctorId(), savedUser.getEmail(), savedDoctor.getFirstName());
         NotificationEntity notification=NotificationEntity.builder().
-                doctorId(savedDoctor.getDoctorId()).
+                targetId(CurrentUserName.getCurrentUserId()).
+                recipientType(NotificationRecipientType.INDIVIDUAL).
                 type(NotificationType.SYSTEM).
                 title("Welcome "+ savedDoctor.getFirstName()).
                 message("Your account has been successfully created. Complete your profile to start managing appointments and providing care.").
@@ -373,7 +375,8 @@ public class DoctorServiceImpl implements IDoctorService {
         UserEntity savedUser = userRepository.save(user);
         logger.info("Password changed successfully: userId: {}, email: {}", savedUser.getUserId(), username);
         NotificationEntity notification=NotificationEntity.builder()
-                .doctorId(doctorId)
+                .targetId(CurrentUserName.getCurrentUserId())
+                .recipientType(NotificationRecipientType.INDIVIDUAL)
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")
@@ -420,7 +423,8 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.info("Email updated successfully: userId: {}, oldEmail: {}, newEmail: {}", 
                 savedUser.getUserId(), oldMail, updateEmailDTO.getNewEmail());
         NotificationEntity notification=NotificationEntity.builder()
-                .doctorId(doctorId)
+                .targetId(CurrentUserName.getCurrentUserId())
+                .recipientType(NotificationRecipientType.INDIVIDUAL)
                 .type(NotificationType.INFO)
                 .title("Security Update")
                 .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
@@ -469,7 +473,8 @@ public class DoctorServiceImpl implements IDoctorService {
         UserEntity savedUser = userRepository.save(user);
         logger.info("Password reset successfully: userId: {}, email: {}", savedUser.getUserId(), forgotPasswordDTO.getEmail());
         NotificationEntity notification=NotificationEntity.builder()
-                .doctorId(savedUser.getUserId())
+                .targetId(CurrentUserName.getCurrentUserId())
+                .recipientType(NotificationRecipientType.INDIVIDUAL)
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
                 .message("Your login credentials have been updated.")

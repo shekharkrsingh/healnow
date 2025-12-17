@@ -6,6 +6,7 @@ import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.exception.UnauthorizedException;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.SupportTicketEntity;
+import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.SupportTicketRepository;
 import com.heal.doctor.repositories.DoctorRepository;
@@ -209,11 +210,11 @@ public class SupportTicketServiceImpl implements ISupportTicketService {
             }
 
             NotificationEntity notification = NotificationEntity.builder()
-                    .doctorId(ticket.getDoctorId())
+                    .targetId(CurrentUserName.getCurrentUserId())
+                    .recipientType(NotificationRecipientType.INDIVIDUAL)
                     .type(NotificationType.SUPPORT)
                     .title(notificationTitle)
                     .message(notificationMessage)
-                    .isRead(false)
                     .build();
 
             notificationService.createNotificationAsync(notification).exceptionally(ex -> {
