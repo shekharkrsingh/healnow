@@ -24,17 +24,14 @@ public class WebSocketEventListener {
             return;
         }
 
-        String doctorId = headers.getFirstNativeHeader("doctorId");
-        
-        if (doctorId == null) {
-            Map<String, Object> sessionAttributes = headers.getSessionAttributes();
-            if (sessionAttributes != null) {
-                doctorId = (String) sessionAttributes.get("doctorId");
-            }
+        String userId = null;
+        Map<String, Object> sessionAttributes = headers.getSessionAttributes();
+        if (sessionAttributes != null) {
+            userId = (String) sessionAttributes.get("userId");
         }
 
-        if (doctorId != null && sessionId != null) {
-            sessionRegistry.registerSession(doctorId, sessionId);
+        if (userId != null) {
+            sessionRegistry.registerSession(userId, sessionId);
         }
     }
 

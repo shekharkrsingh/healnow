@@ -11,5 +11,7 @@ public interface UserRepository extends MongoRepository<UserEntity, String> {
     Optional<UserEntity> findByEmail(String email);
     Optional<UserEntity> findByUserId(String userId);
     List<UserEntity> findByRolesEnum(RolesEnum rolesEnum);
+    List<UserEntity> findByRolesEnumAndIsActiveTrue(RolesEnum rolesEnum);
+    List<UserEntity> findAllByIsActiveTrue();
     boolean existsByEmail(String email);
 }

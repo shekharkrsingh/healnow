@@ -1,50 +1,33 @@
 package com.heal.doctor.models;
 
+import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.config.EnableMongoAuditing;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 
-@Document(collection = "notification")
+@Document(collection = "notifications")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@CompoundIndexes({
-    @CompoundIndex(name = "doctor_read_created_idx", def = "{'doctorId': 1, 'isRead': 1, 'createdAt': -1}"),
-    @CompoundIndex(name = "doctor_read_idx", def = "{'doctorId': 1, 'isRead': 1}")
-})
 public class NotificationEntity {
-
-    private static final int NOTIFICATION_EXPIRY_DAYS = 7;
-    private static final int SECONDS_PER_HOUR = 60 * 60;
-    private static final int HOURS_PER_DAY = 24;
 
     @Id
     private String id;
 
-    @Indexed(name = "doctor_id_idx")
-    @Size(max = 50, message = "Doctor ID must not exceed 50 characters")
-    private String doctorId;
+    @Size(max = 100, message = "Target ID must not exceed 100 characters")
+    private String targetId;
 
-    @NotNull(message = "Notification type is required")
-    private NotificationType type;
-
-    @Size(max = 200, message = "Title must not exceed 200 characters")
+    @Size(max = 50, message = "Title must not exceed 50 characters")
     private String title;
 
     @NotNull(message = "Message is required")
@@ -52,13 +35,18 @@ public class NotificationEntity {
     @Size(min = 1, max = 2000, message = "Message must be between 1 and 2000 characters")
     private String message;
 
-    @Builder.Default
-    private Boolean isRead = false;
+    @NotNull(message = "Notification type is required")
+    private NotificationType type;
 
-    @CreatedDate
+    @Size(max = 100, message = "Sender ID must not exceed 100 characters")
+    private String senderId;
+
+    @NotNull(message = "Recipient type is required")
+    private NotificationRecipientType recipientType;
+
+    private String link;
+
     private Instant createdAt;
 
-    @Indexed(name = "expiration_time_index", expireAfter = "0s")
-    @Builder.Default
-    private Instant expiryDate = Instant.now().plusSeconds((long) NOTIFICATION_EXPIRY_DAYS * HOURS_PER_DAY * SECONDS_PER_HOUR);
+    private Instant expiryDate;
 }

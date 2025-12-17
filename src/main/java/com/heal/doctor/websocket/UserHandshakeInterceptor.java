@@ -1,7 +1,6 @@
 package com.heal.doctor.websocket;
 
 import com.heal.doctor.security.JwtUtil;
-import com.heal.doctor.utils.CurrentUserName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +19,9 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 @Component
-public class DoctorHandshakeInterceptor implements HandshakeInterceptor {
+public class UserHandshakeInterceptor implements HandshakeInterceptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(DoctorHandshakeInterceptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserHandshakeInterceptor.class);
     private static final String BEARER_PREFIX = "Bearer ";
     private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
 
@@ -76,14 +75,18 @@ public class DoctorHandshakeInterceptor implements HandshakeInterceptor {
 
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-                String extractedDoctorId = CurrentUserName.getCurrentDoctorId();
+                String extractedUserId = jwtUtil.extractUserId(token);
+                if (extractedUserId == null) {
+                    extractedUserId = doctorId;
+                }
 
-                attributes.put("doctorId", extractedDoctorId);
+                attributes.put("userId", extractedUserId);
+                attributes.put("doctorId", doctorId); // Keep doctorId for backward compat if needed
                 attributes.put("username", username);
                 attributes.put("role", role);
                 attributes.put("token", token);
 
-                logger.info("WebSocket handshake successful: doctorId: {}, username: {}, role: {}", extractedDoctorId, username, role);
+                logger.info("WebSocket handshake successful: userId: {}, role: {}", extractedUserId, role);
                 return true;
             } catch (Exception e) {
                 logger.warn("WebSocket handshake failed - authentication error: {}", e.getMessage());
