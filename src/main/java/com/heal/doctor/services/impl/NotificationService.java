@@ -73,13 +73,11 @@ public class NotificationService implements INotificationService {
                     .build();
             userNotifications.add(userNotification);
 
-            if (!webSocketSessionRegistry.getSessionsByUserId(userId).isEmpty()) {
-                 messagingTemplate.convertAndSend("/topic/notifications/" + userId,
-                         WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
-                                 .type(WebSocketResponseType.NOTIFICATION)
-                                 .payload(responseDTO)
-                                 .build());
-            }
+            messagingTemplate.convertAndSend("/topic/notifications/" + userId,
+                    WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
+                            .type(WebSocketResponseType.NOTIFICATION)
+                            .payload(responseDTO)
+                            .build());
         }
         
         if (!userNotifications.isEmpty()) {
@@ -128,6 +126,8 @@ public class NotificationService implements INotificationService {
                 break;
             case DOCTOR_COLLABORATORS:
                 if (targetId != null) {
+                    // Required new NotificationRecipent as DOCTOR_AND_COLLABORATORS for seprate funcnality doctor and collaborator
+                     recipientIds.add(targetId); // Include the doctor themselves
                      List<CollaboratorProfileEntity> collaborators = collaboratorProfileRepository.findByDoctorId(targetId);
                      collaborators.forEach(c -> recipientIds.add(c.getCollaboratorId()));
                 }
@@ -169,8 +169,17 @@ public class NotificationService implements INotificationService {
         NotificationEntity notificationEntity = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("NotificationMaster", notificationId));
 
+
+
         NotificationResponseDTO dto = modelMapper.map(notificationEntity, NotificationResponseDTO.class);
         dto.setIsRead(true);
+
+        messagingTemplate.convertAndSend("/topic/notifications/" + userId,
+                WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
+                        .type(WebSocketResponseType.NOTIFICATION)
+                        .payload(dto)
+                        .build());
+
         return dto;
     }
 
@@ -185,7 +194,16 @@ public class NotificationService implements INotificationService {
         });
         userNotificationRepository.saveAll(unread);
         
-        return mapToDTOs(unread);
+        List<NotificationResponseDTO> updatedDTOs = mapToDTOs(unread);
+        updatedDTOs.forEach(dto -> 
+            messagingTemplate.convertAndSend("/topic/notifications/" + userId,
+                WebsocketResponseDTO.<NotificationResponseDTO>builderGeneric()
+                        .type(WebSocketResponseType.NOTIFICATION)
+                        .payload(dto)
+                        .build())
+        );
+
+        return updatedDTOs;
     }
 
     private List<NotificationResponseDTO> mapToDTOs(List<UserNotification> userNotifications) {
