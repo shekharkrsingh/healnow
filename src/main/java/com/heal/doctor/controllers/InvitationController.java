@@ -27,7 +27,7 @@ public class InvitationController {
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<InvitationResponseDTO>> sendInvitation(
             @Valid @RequestBody InvitationRequestDTO requestDTO) {
-        String doctorId = CurrentUserName.getCurrentDoctorId();
+        String doctorId = CurrentUserName.getCurrentUserId();
         InvitationResponseDTO invitation = invitationService.sendInvitation(doctorId, requestDTO);
         return ResponseEntity.ok(ApiResponse.<InvitationResponseDTO>builder()
                 .success(true)
@@ -39,7 +39,7 @@ public class InvitationController {
     @GetMapping("/doctors/invitations")
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<List<InvitationResponseDTO>>> getInvitations() {
-        String doctorId = CurrentUserName.getCurrentDoctorId();
+        String doctorId = CurrentUserName.getCurrentUserId();
         List<InvitationResponseDTO> invitations = invitationService.getInvitationsByDoctor(doctorId);
         return ResponseEntity.ok(ApiResponse.<List<InvitationResponseDTO>>builder()
                 .success(true)
