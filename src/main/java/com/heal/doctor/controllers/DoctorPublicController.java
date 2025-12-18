@@ -24,14 +24,14 @@ public class DoctorPublicController {
 
 
     @GetMapping("/{doctorId}")
-    public ResponseEntity<ApiResponse<DoctorDTO>> getDoctorById(@PathVariable String doctorId) {
-        DoctorDTO doctorDTO = doctorService.getDoctorById(doctorId);
+    public ResponseEntity<ApiResponse<UserDTO>> getDoctorById(@PathVariable String doctorId) {
+        UserDTO doctorDTO = doctorService.getDoctorById(doctorId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor retrieved successfully", doctorDTO));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<DoctorDTO>> createDoctor(@RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
-        DoctorDTO doctorDTO = doctorService.createDoctor(doctorRegistrationDTO);
+    public ResponseEntity<ApiResponse<UserDTO>> createDoctor(@RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
+        UserDTO doctorDTO = doctorService.createDoctor(doctorRegistrationDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor created successfully", doctorDTO));
     }
 

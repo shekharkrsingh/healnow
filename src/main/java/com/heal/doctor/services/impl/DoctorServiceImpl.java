@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -98,7 +97,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Transactional
     @Override
-    public DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
+    public UserDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO) {
         logger.info("Creating doctor account: email: {}, firstName: {}", 
                 doctorRegistrationDTO.getEmail(), doctorRegistrationDTO.getFirstName());
 
@@ -161,7 +160,7 @@ public class DoctorServiceImpl implements IDoctorService {
         });
         doctorAccountMailService.doctorWelcomeMail(savedDoctor.getFirstName(), savedUser.getEmail());
         
-        return modelMapper.map(savedDoctor, DoctorDTO.class);
+        return modelMapper.map(savedDoctor, UserDTO.class);
     }
 
 
@@ -211,14 +210,14 @@ public class DoctorServiceImpl implements IDoctorService {
 
 
     @Override
-    public DoctorDTO getDoctorById(String doctorId) {
+    public UserDTO getDoctorById(String doctorId) {
         logger.debug("Fetching doctor by ID: doctorId: {}", doctorId);
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
         UserEntity user = userRepository.findByUserId(doctorId)
                 .orElse(null);
         logger.debug("Doctor retrieved: doctorId: {}, email: {}", doctorId, user != null ? user.getEmail() : "N/A");
-        DoctorDTO doctorDTO = modelMapper.map(doctor, DoctorDTO.class);
+        UserDTO doctorDTO = modelMapper.map(doctor, UserDTO.class);
         if (user != null) {
             doctorDTO.setEmail(user.getEmail());
         }
@@ -226,7 +225,7 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
-    public DoctorDTO getDoctorProfile(){
+    public UserDTO getDoctorProfile(){
         String username = CurrentUserName.getCurrentUsername();
         String doctorId = CurrentUserName.getCurrentDoctorId();
         logger.debug("Fetching doctor profile: email: {}, doctorId: {}", username, doctorId);
@@ -235,7 +234,7 @@ public class DoctorServiceImpl implements IDoctorService {
         UserEntity user = userRepository.findByEmail(username)
                 .orElse(null);
         logger.debug("Doctor profile retrieved: doctorId: {}, email: {}", doctor.getDoctorId(), username);
-        DoctorDTO doctorDTO = modelMapper.map(doctor, DoctorDTO.class);
+        UserDTO doctorDTO = modelMapper.map(doctor, UserDTO.class);
         if (user != null) {
             doctorDTO.setEmail(user.getEmail());
         }
@@ -243,10 +242,10 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
-    public List<DoctorDTO> getAllDoctors() {
+    public List<UserDTO> getAllDoctors() {
         logger.debug("Fetching all doctors");
-        List<DoctorDTO> doctors = doctorRepository.findAll().parallelStream()
-                .map(doctor -> modelMapper.map(doctor, DoctorDTO.class))
+        List<UserDTO> doctors = doctorRepository.findAll().parallelStream()
+                .map(doctor -> modelMapper.map(doctor, UserDTO.class))
                 .collect(Collectors.toList());
         logger.debug("Retrieved {} doctors", doctors.size());
         return doctors;
@@ -254,7 +253,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
     @Transactional
     @Override
-    public DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
+    public UserDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
         String username = CurrentUserName.getCurrentUsername();
         String doctorId = CurrentUserName.getCurrentDoctorId();
         logger.info("Updating doctor profile: email: {}, doctorId: {}", username, doctorId);
@@ -324,7 +323,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
         DoctorEntity updatedDoctor = doctorRepository.save(existingDoctor);
 
-        DoctorDTO doctorDTO = new DoctorDTO();
+        UserDTO doctorDTO = new UserDTO();
         modelMapper.map(updatedDoctor, doctorDTO);
         
         // Add email from UserEntity

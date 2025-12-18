@@ -25,8 +25,8 @@ public class DoctorController {
 
 
     @PutMapping()
-    public ResponseEntity<ApiResponse<DoctorDTO>> updateDoctor(@Valid @RequestBody UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
-        DoctorDTO savedDoctorDTO = doctorService.updateDoctor(updateDoctorDetailsDTO);
+    public ResponseEntity<ApiResponse<UserDTO>> updateDoctor(@Valid @RequestBody UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
+        UserDTO savedDoctorDTO = doctorService.updateDoctor(updateDoctorDetailsDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor updated successfully", savedDoctorDTO));
     }
 
@@ -45,8 +45,8 @@ public class DoctorController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<DoctorDTO>> getDoctorProfile() {
-        DoctorDTO doctorDTO = doctorService.getDoctorProfile();
+    public ResponseEntity<ApiResponse<UserDTO>> getDoctorProfile() {
+        UserDTO doctorDTO = doctorService.getDoctorProfile();
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile retrieved successfully", doctorDTO));
     }
 

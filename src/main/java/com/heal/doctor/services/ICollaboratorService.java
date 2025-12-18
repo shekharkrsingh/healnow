@@ -1,7 +1,7 @@
 package com.heal.doctor.services;
 
 import com.heal.doctor.dto.CollaboratorDTO;
-import com.heal.doctor.dto.DoctorDTO;
+import com.heal.doctor.dto.UserDTO;
 import com.heal.doctor.dto.UpdateCollaboratorProfileDTO;
 
 import java.util.List;
@@ -11,6 +11,6 @@ public interface ICollaboratorService {
     void deactivateCollaborator(String collaboratorId);
     void activateCollaborator(String collaboratorId);
     void removeCollaborator(String collaboratorId);
-    DoctorDTO getCollaboratorProfile();
-    DoctorDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO);
+    UserDTO getCollaboratorProfile();
+    UserDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO);
 }
