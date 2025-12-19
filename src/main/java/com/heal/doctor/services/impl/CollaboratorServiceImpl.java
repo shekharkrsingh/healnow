@@ -48,6 +48,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         List<CollaboratorProfileEntity> profiles = collaboratorProfileRepository.findByDoctorId(doctorId);
         
         return profiles.stream()
+                .filter(profile -> profile.getStatus() != CollaboratorStatus.INVITED)
                 .map(profile -> modelMapper.map(profile, CollaboratorDTO.class))
                 .collect(Collectors.toList());
     }

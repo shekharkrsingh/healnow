@@ -270,6 +270,17 @@ public class InvitationServiceImpl implements IInvitationService {
         logger.debug("Fetching invitations for doctor: {}", doctorId);
         List<InvitationEntity> invitations = invitationRepository.findByDoctorId(doctorId);
         return invitations.stream()
+                .filter(invitation -> {
+                    if (invitation.getStatus() == InvitationStatus.REVOKED) {
+                        return false;
+                    }
+                    if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+                        return collaboratorProfileRepository.findByCollaboratorId(invitation.getCollaboratorId())
+                                .map(profile -> profile.getStatus() != CollaboratorStatus.REMOVED)
+                                .orElse(true);
+                    }
+                    return true;
+                })
                 .map(invitation -> modelMapper.map(invitation, InvitationResponseDTO.class))
                 .collect(Collectors.toList());
     }
