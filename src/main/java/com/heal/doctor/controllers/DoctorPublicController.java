@@ -2,6 +2,7 @@ package com.heal.doctor.controllers;
 
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.Mail.IOtpService;
+import com.heal.doctor.services.impl.RuntimeApplicationConfigServices;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ public class DoctorPublicController {
 
     private final IDoctorService doctorService;
     private final IOtpService otpService;
+    private final RuntimeApplicationConfigServices runtimeApplicationConfigService;
 
 
     @GetMapping
@@ -52,6 +54,20 @@ public class DoctorPublicController {
     public ResponseEntity<ApiResponse<OtpResponseDTO>> sendOtp(@RequestBody OtpRequestDTO otpRequestDTO){
         OtpResponseDTO otpResponseDTO= otpService.generateOtp(otpRequestDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "OTP is generated successfully", otpResponseDTO));
+    }
+
+
+    @GetMapping("/app/runtime")
+    public ResponseEntity<ApiResponse<RuntimeApplicationConfigDTO>> getRuntimeApplicationConfig(){
+        RuntimeApplicationConfigDTO runtimeApplicationConfigDTO= runtimeApplicationConfigService.getRuntimeApplicationConfig();
+        return ResponseEntity
+                .ok(
+                        new ApiResponse<>(
+                                true,
+                                "Runtime Application config Fetched successfully",
+                                runtimeApplicationConfigDTO
+                        )
+                );
     }
 
 

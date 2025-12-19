@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborator Account Status Update</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --secondary: #6c757d;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .email-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .email-header {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .status-ACTIVATED { background-color: #d4edda; color: var(--success); }
+        .status-DEACTIVATED { background-color: #fff3cd; color: #856404; }
+        .status-REMOVED { background-color: #f8d7da; color: var(--danger); }
+
+        .email-body {
+            font-size: 16px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .email-footer {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <div class="email-header">Account Status Update</div>
+    
+    <div th:class="'status-badge status-' + ${status}" th:text="${status}">STATUS</div>
+
+    <div class="email-body">
+        <p>Hello,</p>
+        <p>This is to inform you that the collaborator account for <strong><span th:text="${collaboratorName}">Collaborator</span></strong> associated with <strong><span th:text="${doctorName}">Dr. Name</span></strong> has been <strong th:text="${status}">updated</strong>.</p>
+        
+        <div th:if="${status == 'REMOVED'}">
+            <p>Access to this doctor's dashboard has been revoked. If you need to collaborate with another doctor, you can be re-invited at any time using this email address.</p>
+        </div>
+        <div th:if="${status == 'DEACTIVATED'}">
+            <p>The account is currently inactive. Please contact the doctor if you believe this is an error.</p>
+        </div>
+        <div th:if="${status == 'ACTIVATED'}">
+            <p>The account is now active. You can log in to manage appointments as usual.</p>
+        </div>
+    </div>
+
+    <div class="email-footer">
+        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span></p>
+        <div class="support-info">
+            © 2024 <span th:text="${companyName}">Company Name</span>. All rights reserved.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

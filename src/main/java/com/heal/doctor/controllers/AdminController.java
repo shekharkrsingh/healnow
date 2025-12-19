@@ -33,18 +33,6 @@ public class AdminController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor deleted successfully", null));
     }
 
-    @GetMapping("/app/runtime")
-    public ResponseEntity<ApiResponse<RuntimeApplicationConfigDTO>> getRuntimeApplicationConfig(){
-        RuntimeApplicationConfigDTO runtimeApplicationConfigDTO= runtimeApplicationConfigService.getRuntimeApplicationConfig();
-        return ResponseEntity
-                .ok(
-                        new ApiResponse<>(
-                                true,
-                                "Runtime Application config Fetched successfully",
-                                runtimeApplicationConfigDTO
-                        )
-                );
-    }
 
     @PostMapping("/app/runtime")
     public ResponseEntity<ApiResponse<RuntimeApplicationConfigDTO>> updateRuntimeApplicationConfig(
