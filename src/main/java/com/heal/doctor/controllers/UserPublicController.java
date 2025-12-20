@@ -2,6 +2,7 @@ package com.heal.doctor.controllers;
 
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.Mail.IOtpService;
+import com.heal.doctor.services.IUserService;
 import com.heal.doctor.services.impl.RuntimeApplicationConfigServices;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
@@ -12,9 +13,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/public")
 @RequiredArgsConstructor
-public class DoctorPublicController {
+public class UserPublicController {
 
     private final IDoctorService doctorService;
+    private final IUserService userService;
     private final IOtpService otpService;
     private final RuntimeApplicationConfigServices runtimeApplicationConfigService;
 
@@ -39,13 +41,13 @@ public class DoctorPublicController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody ForgotPasswordDTO forgotPasswordDTO) {
-        doctorService.forgotPassword(forgotPasswordDTO);
+        userService.forgotPassword(forgotPasswordDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Password reset successfully", null));
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@RequestBody LoginRequestDTO loginRequestDTO) {
-        String token = doctorService.loginDoctor(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
+        String token = userService.login(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
         LoginResponseDTO loginResponseDTO = new LoginResponseDTO(token);
         return ResponseEntity.ok(new ApiResponse<>(true, "login successfully", loginResponseDTO));
     }

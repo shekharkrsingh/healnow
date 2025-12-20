@@ -9,14 +9,12 @@ import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.UserNotification;
 import com.heal.doctor.models.enums.NotificationRecipientType;
-import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.models.enums.RolesEnum;
 import com.heal.doctor.repositories.CollaboratorProfileRepository;
 import com.heal.doctor.repositories.NotificationRepository;
 import com.heal.doctor.repositories.UserNotificationRepository;
 import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.services.INotificationService;
-import com.heal.doctor.websocket.WebSocketSessionRegistry;
 import com.heal.doctor.utils.CurrentUserName;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -43,7 +41,6 @@ public class NotificationService implements INotificationService {
     private final CollaboratorProfileRepository collaboratorProfileRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
-    private final WebSocketSessionRegistry webSocketSessionRegistry;
 
     @Override
     public NotificationResponseDTO createNotification(NotificationEntity notification) {
@@ -62,7 +59,7 @@ public class NotificationService implements INotificationService {
 
         List<UserNotification> userNotifications = new ArrayList<>();
         NotificationResponseDTO responseDTO = modelMapper.map(savedNotification, NotificationResponseDTO.class);
-        responseDTO.setIsRead(false); // Default
+        responseDTO.setIsRead(false);
 
         for (String userId : recipientIds) {
             UserNotification userNotification = UserNotification.builder()

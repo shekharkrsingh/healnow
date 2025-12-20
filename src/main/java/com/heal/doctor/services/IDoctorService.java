@@ -14,10 +14,4 @@ public interface IDoctorService {
     UserDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
 
     void deleteDoctor(String doctorId);
-    void forgotPassword(ForgotPasswordDTO forgotPasswordDTO);
-    String updateEmail( UpdateEmailDTO updateEmailDTO);
-    void changePassword(ChangePasswordDTO changePasswordDTO);
-    String loginDoctor(String username, String password);
-    String changeProfilePicture(MultipartFile file);
-    String changeCoverPicture(MultipartFile file);
 }
