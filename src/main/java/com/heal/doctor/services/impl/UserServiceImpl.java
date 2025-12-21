@@ -12,6 +12,8 @@ import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.RolesEnum;
+import com.heal.doctor.repositories.CollaboratorProfileRepository;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.security.CollaboratorUserDetails;
@@ -50,6 +52,7 @@ public class UserServiceImpl implements IUserService {
 
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
+    private final CollaboratorProfileRepository collaboratorProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -61,7 +64,7 @@ public class UserServiceImpl implements IUserService {
 
     public UserServiceImpl(
             DoctorRepository doctorRepository,
-            UserRepository userRepository,
+            UserRepository userRepository, CollaboratorProfileRepository collaboratorProfileRepository,
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil,
             AuthenticationManager authenticationManager,
@@ -72,6 +75,7 @@ public class UserServiceImpl implements IUserService {
             @Qualifier("notificationTaskExecutor") Executor taskExecutor) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
+        this.collaboratorProfileRepository = collaboratorProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
@@ -243,7 +247,7 @@ public class UserServiceImpl implements IUserService {
         UserEntity savedUser = userRepository.save(user);
         logger.info("Password reset successfully: userId: {}, email: {}", savedUser.getUserId(), forgotPasswordDTO.getEmail());
         NotificationEntity notification=NotificationEntity.builder()
-                .targetId(CurrentUserName.getCurrentUserId())
+                .targetId(savedUser.getUserId())
                 .recipientType(NotificationRecipientType.INDIVIDUAL)
                 .type(NotificationType.INFO)
                 .title("Password Updated.")
@@ -254,10 +258,17 @@ public class UserServiceImpl implements IUserService {
                     savedUser.getUserId(), ex.getMessage(), ex);
             return null;
         });
+        if(savedUser.getRolesEnum().equals(RolesEnum.DOCTOR))
         doctorRepository.findByDoctorId(savedUser.getUserId())
                 .ifPresent(doctor -> userAccountEmailService.passwordChangeMail(
                         doctor.getFirstName(), savedUser.getEmail()
                 ));
+        else{
+            collaboratorProfileRepository.findByCollaboratorId(savedUser.getUserId())
+                    .ifPresent(collaborator -> userAccountEmailService.passwordChangeMail(
+                            collaborator.getFirstName(), savedUser.getEmail()
+                    ));
+        }
     }
 
 
