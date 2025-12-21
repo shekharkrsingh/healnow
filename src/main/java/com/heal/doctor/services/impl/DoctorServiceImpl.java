@@ -115,7 +115,7 @@ public class DoctorServiceImpl implements IDoctorService {
         logger.info("Doctor account created successfully: doctorId: {}, email: {}, firstName: {}", 
                 savedDoctor.getDoctorId(), savedUser.getEmail(), savedDoctor.getFirstName());
         NotificationEntity notification=NotificationEntity.builder().
-                targetId(CurrentUserName.getCurrentUserId()).
+                targetId(doctor.getDoctorId()).
                 recipientType(NotificationRecipientType.INDIVIDUAL).
                 type(NotificationType.SYSTEM).
                 title("Welcome "+ savedDoctor.getFirstName()).
