@@ -263,7 +263,7 @@ public class UserServiceImpl implements IUserService {
                 .ifPresent(doctor -> userAccountEmailService.passwordChangeMail(
                         doctor.getFirstName(), savedUser.getEmail()
                 ));
-        else{
+        else if(savedUser.getRolesEnum().equals(RolesEnum.COLLABORATOR)){
             collaboratorProfileRepository.findByCollaboratorId(savedUser.getUserId())
                     .ifPresent(collaborator -> userAccountEmailService.passwordChangeMail(
                             collaborator.getFirstName(), savedUser.getEmail()
