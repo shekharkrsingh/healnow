@@ -83,8 +83,8 @@ public class InvitationServiceImpl implements IInvitationService {
         });
 
         // Check if there's already a pending invitation for this email
-        List<InvitationEntity> existingInvitations = invitationRepository.findByEmailAndStatusAndDoctorId(
-                requestDTO.getEmail(), InvitationStatus.PENDING,  doctorId);
+        List<InvitationEntity> existingInvitations = invitationRepository.findByEmailAndStatusAndDoctorIdAndExpiresAtGreaterThan(
+                requestDTO.getEmail(), InvitationStatus.PENDING,  doctorId, new Date());
         if (!existingInvitations.isEmpty()) {
             logger.warn("Invitation failed - pending invitation already exists: {}", requestDTO.getEmail());
             throw new ConflictException("Invitation", "A pending invitation for this email already exists");
