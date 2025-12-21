@@ -70,10 +70,12 @@ public class InvitationServiceImpl implements IInvitationService {
     public InvitationResponseDTO sendInvitation(String doctorId, InvitationRequestDTO requestDTO) {
         logger.info("Sending invitation: doctorId: {}, email: {}", doctorId, requestDTO.getEmail());
 
-        // Check if email already exists in UserRepository
         userRepository.findByEmail(requestDTO.getEmail()).ifPresent(user -> {
             CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(user.getUserId()).orElse(null);
-            if (user.getRolesEnum() != RolesEnum.COLLABORATOR || (profile != null && profile.getStatus() != CollaboratorStatus.REMOVED)) {
+            if (user.getRolesEnum() != RolesEnum.COLLABORATOR || (profile != null
+                    && !(profile.getStatus() == CollaboratorStatus.REMOVED
+                    || profile.getStatus() == CollaboratorStatus.INVITED)
+            ) ) {
                 logger.warn("Invitation failed - email already exists and is active or not a collaborator: {}", requestDTO.getEmail());
                 throw new ConflictException("User", "A user with this email already exists and is either active or not a collaborator");
             }
@@ -81,22 +83,20 @@ public class InvitationServiceImpl implements IInvitationService {
         });
 
         // Check if there's already a pending invitation for this email
-        List<InvitationEntity> existingInvitations = invitationRepository.findByEmailAndStatus(
-                requestDTO.getEmail(), InvitationStatus.PENDING);
+        List<InvitationEntity> existingInvitations = invitationRepository.findByEmailAndStatusAndDoctorId(
+                requestDTO.getEmail(), InvitationStatus.PENDING,  doctorId);
         if (!existingInvitations.isEmpty()) {
             logger.warn("Invitation failed - pending invitation already exists: {}", requestDTO.getEmail());
             throw new ConflictException("Invitation", "A pending invitation for this email already exists");
         }
 
-        // Generate unique invitation token
-        String invitationToken = generateInvitationToken();
 
-        // Generate invitation ID
-        // Calculate expiration date
+        String invitationToken = COLLABORATOR_ID_PREFIX + generateInvitationToken();
+
+
         Date expiresAt = new Date(System.currentTimeMillis() + (INVITATION_EXPIRY_HOURS * 60 * 60 * 1000L));
 
-        // Create invitation entity
-        // Generate or get existing collaboratorId
+
         String collaboratorId;
         UserEntity existingUser = userRepository.findByEmail(requestDTO.getEmail()).orElse(null);
         if (existingUser != null) {
