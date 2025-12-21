@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -151,6 +153,9 @@ public class InvitationServiceImpl implements IInvitationService {
             logger.warn("Failed to fetch doctor name for invitation email: {}", e.getMessage());
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+
         // Send invitation email
         String invitationLink = websiteUrl + "/accept-invitation?token=" + invitationToken;
         emailService.sendHtmlEmail(
@@ -162,7 +167,8 @@ public class InvitationServiceImpl implements IInvitationService {
                         "doctorName", doctorName,
                         "invitationLink", invitationLink,
                         "expiresIn", INVITATION_EXPIRY_HOURS + " hours",
-                        "companyName", companyName
+                        "companyName", companyName,
+                        "invitationDate", formattedDate
                 )
         ).exceptionally(ex -> {
             logger.error("Failed to send invitation email: email: {}, error: {}", requestDTO.getEmail(), ex.getMessage(), ex);
