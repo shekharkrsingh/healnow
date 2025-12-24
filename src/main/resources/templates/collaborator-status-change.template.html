@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborator Account Status Update</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --secondary: #6c757d;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .email-container {
+            width: 100%;
+            max-width: 550px;
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .email-header {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .status-section {
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-ACTIVATED { 
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: 2px solid #28a745;
+        }
+        .status-DEACTIVATED { 
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+            border: 2px solid #ffc107;
+        }
+        .status-REMOVED { 
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: 2px solid #dc3545;
+        }
+
+        .email-body {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .status-details {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: left;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-details h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .status-details p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin: 10px 0;
+            text-align: left;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .status-details p:before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .change-info {
+            background: #e8f4fc;
+            border: 1px solid #b3e0ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+        }
+
+        .change-info p {
+            font-size: 14px;
+            color: #0066cc;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .security-notice p {
+            font-size: 14px;
+            color: #856404;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .action-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .action-button {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+
+        .email-footer {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .support-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 15px 0;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 20px 15px;
+                background: var(--background);
+            }
+
+            .email-container {
+                width: 95%;
+                padding: 30px 20px;
+                border-radius: 12px;
+            }
+
+            .email-header {
+                font-size: 24px;
+            }
+
+            .status-badge {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+
+            .status-details {
+                padding: 20px 15px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .email-container {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <div class="email-header">Account Status Updated</div>
+
+    <div class="status-section">
+        <div th:class="'status-badge status-' + ${status}" th:text="${status}">STATUS</div>
+    </div>
+
+    <div class="email-body">
+        <p>Hello <strong th:text="${collaboratorName}">Collaborator</strong>,</p>
+        <p>This is to inform you that your collaborator account associated with <strong th:text="${doctorName}">Dr. Name</strong> has been <strong th:text="${status}">updated</strong>.</p>
+    </div>
+
+    <div class="change-info">
+        <p><strong>Update Details:</strong></p>
+        <p>Date: <span th:text="${changeDate}">January 1, 2024</span></p>
+        <p>Time: <span th:text="${changeTime}">12:00 PM</span></p>
+        <p>Doctor: <span th:text="${doctorName}">Dr. Name</span></p>
+    </div>
+
+    <div class="status-details">
+        <h3>What This Means:</h3>
+        <div th:if="${status == 'REMOVED'}">
+            <p>Your access to the doctor's dashboard has been permanently revoked</p>
+            <p>You can no longer view or manage appointments</p>
+            <p>If this was an error, you need to be re-invited</p>
+        </div>
+        <div th:if="${status == 'DEACTIVATED'}">
+            <p>Your account is currently inactive</p>
+            <p>You cannot access the doctor's dashboard</p>
+            <p>Contact the doctor to reactivate your account</p>
+        </div>
+        <div th:if="${status == 'ACTIVATED'}">
+            <p>Your account is now active</p>
+            <p>You can log in and manage appointments</p>
+            <p>Full dashboard access restored</p>
+        </div>
+    </div>
+
+    <div th:if="${status == 'ACTIVATED'}" class="action-section">
+        <a th:href="${dashboardUrl}" class="action-button">
+            Access Dashboard
+        </a>
+    </div>
+
+    <div class="security-notice">
+        <p>🔒 This is an automated security notification. Contact support if you have concerns.</p>
+    </div>
+
+    <div class="email-footer">
+        <p>This is an official notification from <span class="company-name" th:text="${companyName}">Company Name</span>.</p>
+        <p>If you need assistance, please contact our support team.</p>
+        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span> Team</p>
+        <div class="support-info">
+            © 2024 <span th:text="${companyName}">Company Name</span>. All rights reserved.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

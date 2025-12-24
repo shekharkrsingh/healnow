@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,7 @@
             --text-secondary: #6c757d;
             --border: #dee2e6;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --accent: #17a2b8;
         }
 
         body {
@@ -32,7 +33,7 @@
 
         .email-container {
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
             background-color: var(--surface);
             padding: 40px;
             border-radius: 16px;
@@ -41,19 +42,36 @@
         }
 
         .email-header {
-            font-size: 28px;
-            font-weight: 700;
+            font-size: 32px;
+            font-weight: 800;
             color: var(--primary);
-            margin-bottom: 16px;
+            margin-bottom: 15px;
             letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .email-subheader {
-            font-size: 16px;
+            font-size: 18px;
             color: var(--text-secondary);
             margin-bottom: 30px;
             font-weight: 400;
             line-height: 1.5;
+        }
+
+        .welcome-icon {
+            font-size: 48px;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+
+        .email-body {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            text-align: center;
         }
 
         .invitation-section {
@@ -65,18 +83,22 @@
             display: inline-block;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 16px 32px;
+            padding: 18px 40px;
             text-decoration: none;
             border-radius: 12px;
-            font-weight: 600;
-            font-size: 16px;
+            font-weight: 700;
+            font-size: 18px;
             margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-            transition: transform 0.2s;
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.5px;
         }
 
         .invitation-button:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.5);
         }
 
         .expiry-notice {
@@ -84,30 +106,107 @@
             color: var(--text-secondary);
             margin-top: 15px;
             font-weight: 500;
+            background: #fff3cd;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
         }
 
         .info-section {
-            background: var(--background);
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+            border-left: 5px solid var(--accent);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .info-section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-section h3:before {
+            content: "📋";
+            font-size: 20px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .feature-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .doctor-info {
+            background: #e8f4fc;
+            border: 1px solid #b3e0ff;
             border-radius: 10px;
             padding: 20px;
             margin: 25px 0;
             text-align: left;
-            border-left: 4px solid var(--primary);
         }
 
-        .info-section h3 {
-            font-size: 15px;
+        .doctor-info h4 {
+            font-size: 16px;
+            color: #0066cc;
+            margin: 0 0 10px 0;
             font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-            text-align: left;
         }
 
-        .info-section p {
+        .doctor-details {
             font-size: 14px;
-            color: var(--text-secondary);
-            margin: 8px 0;
-            text-align: left;
+            color: #004085;
+            margin: 5px 0;
+        }
+
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .security-notice p {
+            font-size: 14px;
+            color: #856404;
+            margin: 0;
+            font-weight: 500;
         }
 
         .email-footer {
@@ -120,9 +219,10 @@
         }
 
         .company-name {
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-primary);
             margin: 10px 0;
+            font-size: 16px;
         }
 
         .support-info {
@@ -131,14 +231,13 @@
             margin: 15px 0;
         }
 
-        .email-body {
-            font-size: 16px;
-            margin-bottom: 20px;
-            line-height: 1.5;
-            text-align: center;
+        /* Responsive Design */
+        @media screen and (max-width: 768px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* Responsive Design */
         @media screen and (max-width: 600px) {
             body {
                 padding: 20px 15px;
@@ -152,20 +251,21 @@
             }
 
             .email-header {
-                font-size: 24px;
+                font-size: 26px;
             }
 
             .email-subheader {
-                font-size: 15px;
+                font-size: 16px;
             }
 
             .invitation-button {
-                padding: 14px 28px;
-                font-size: 15px;
+                padding: 16px 30px;
+                font-size: 16px;
+                width: 100%;
             }
 
             .info-section {
-                padding: 15px;
+                padding: 20px 15px;
             }
         }
 
@@ -181,42 +281,84 @@
             }
         }
 
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
         .email-container {
             animation: fadeIn 0.6s ease-out;
+        }
+
+        .invitation-button {
+            animation: pulse 2s infinite;
         }
     </style>
 </head>
 <body>
 
 <div class="email-container">
-    <div class="email-header">You're Invited! 🎉</div>
+    <div class="welcome-icon">🎉</div>
+    <div class="email-header">You're Invited to Collaborate!</div>
 
     <div class="email-subheader">
-        <p>Hello <span th:text="${firstName}">John</span>,</p>
+        Join <strong th:text="${doctorName}">Dr. Smith</strong>'s team and help manage appointments
     </div>
 
     <div class="email-body">
-        <p>You have been invited by <strong th:text="${doctorName}">Dr. Smith</strong> to collaborate and manage appointments on their behalf.</p>
+        <p>Hello <strong th:text="${firstName}">John</strong>,</p>
+        <p>You've been personally invited by <strong th:text="${doctorName}">Dr. Smith</strong> to become a collaborator on their medical practice dashboard.</p>
+    </div>
+
+    <div class="doctor-info">
+        <h4>Invitation From:</h4>
+        <p class="doctor-details">👨‍⚕️ Doctor: <strong th:text="${doctorName}">Dr. Smith</strong></p>
+        <p class="doctor-details">🏥 Organization: <span th:text="${companyName}">MediCare Solutions</span></p>
+        <p class="doctor-details">📅 Invited on: <span th:text="${invitationDate}">January 1, 2024</span></p>
     </div>
 
     <div class="invitation-section">
-        <a th:href="${invitationLink}" class="invitation-button">Accept Invitation</a>
-        <div class="expiry-notice">⏰ This invitation expires in <span th:text="${expiresIn}">72 hours</span></div>
+        <a th:href="${invitationLink}" class="invitation-button">
+            Accept Invitation & Get Started
+        </a>
+        <div class="expiry-notice">
+            ⏰ This invitation expires in <strong th:text="${expiresIn}">72 hours</strong>
+        </div>
     </div>
 
     <div class="info-section">
-        <h3>What you'll be able to do:</h3>
-        <p>✓ Manage appointments on behalf of the doctor</p>
-        <p>✓ Update appointment status and details</p>
-        <p>✓ View and manage patient appointments</p>
-        <p>✓ Access real-time appointment updates</p>
+        <h3>Your Role as a Collaborator</h3>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="feature-icon">📅</div>
+                <div class="feature-text">Manage appointments & schedules</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">👥</div>
+                <div class="feature-text">Update patient appointment status</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔔</div>
+                <div class="feature-text">Send notifications & reminders</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📊</div>
+                <div class="feature-text">View real-time dashboard analytics</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="security-notice">
+        <p>🔒 This invitation is unique to you. Do not share it with others.</p>
     </div>
 
     <div class="email-footer">
-        <p>If you did not expect this invitation, please ignore this email.</p>
-        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span></p>
+        <p>If you didn't expect this invitation or have questions, please ignore this email.</p>
+        <p>Welcome to the team! <br/> <span class="company-name" th:text="${companyName}">MediCare Solutions</span></p>
         <div class="support-info">
-            © 2024 <span th:text="${companyName}">Company Name</span>. All rights reserved.
+            © 2024 <span th:text="${companyName}">MediCare Solutions</span>. All rights reserved.<br>
+            Comprehensive Healthcare Services
         </div>
     </div>
 </div>

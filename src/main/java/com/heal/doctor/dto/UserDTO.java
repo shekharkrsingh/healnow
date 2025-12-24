@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DoctorDTO {
+public class UserDTO {
     private String firstName;
     private String lastName;
     private String email;

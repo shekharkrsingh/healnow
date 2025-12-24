@@ -11,11 +11,11 @@ public interface INotificationService {
 
     CompletableFuture<Void> createNotificationAsync(NotificationEntity notification);
 
-    List<NotificationResponseDTO> getAllNotificationsForCurrentDoctor();
+    List<NotificationResponseDTO> getAllNotifications();
 
-    List<NotificationResponseDTO> getUnreadNotificationsForCurrentDoctor();
+    List<NotificationResponseDTO> getUnreadNotifications();
 
     NotificationResponseDTO markAsRead(String notificationId);
 
-    List<NotificationResponseDTO> markAllAsReadForCurrentDoctor();
+    List<NotificationResponseDTO> markAllAsRead();
 }

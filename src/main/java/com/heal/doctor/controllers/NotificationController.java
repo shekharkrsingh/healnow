@@ -20,7 +20,7 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<NotificationResponseDTO>>> getAllNotifications() {
-        List<NotificationResponseDTO> notifications = notificationService.getAllNotificationsForCurrentDoctor();
+        List<NotificationResponseDTO> notifications = notificationService.getAllNotifications();
         ApiResponse<List<NotificationResponseDTO>> response = ApiResponse.<List<NotificationResponseDTO>>builder()
                 .success(true)
                 .message("Fetched all notifications successfully.")
@@ -31,7 +31,7 @@ public class NotificationController {
 
     @GetMapping("/unread")
     public ResponseEntity<ApiResponse<List<NotificationResponseDTO>>> getUnreadNotifications() {
-        List<NotificationResponseDTO> notifications = notificationService.getUnreadNotificationsForCurrentDoctor();
+        List<NotificationResponseDTO> notifications = notificationService.getUnreadNotifications();
         ApiResponse<List<NotificationResponseDTO>> response = ApiResponse.<List<NotificationResponseDTO>>builder()
                 .success(true)
                 .message("Fetched unread notifications successfully.")
@@ -53,7 +53,7 @@ public class NotificationController {
 
     @PatchMapping("/read-all")
     public ResponseEntity<ApiResponse<List<NotificationResponseDTO>>> markAllAsRead() {
-        List<NotificationResponseDTO> notifications= notificationService.markAllAsReadForCurrentDoctor();
+        List<NotificationResponseDTO> notifications= notificationService.markAllAsRead();
         ApiResponse<List<NotificationResponseDTO>> response = ApiResponse.<List<NotificationResponseDTO>>builder()
                 .success(true)
                 .message("All notifications marked as read successfully.")

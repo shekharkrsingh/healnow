@@ -1,7 +1,7 @@
 package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.AppointmentDTO;
-import com.heal.doctor.dto.DoctorDTO;
+import com.heal.doctor.dto.UserDTO;
 import com.heal.doctor.exception.BadRequestException;
 import com.heal.doctor.exception.ReportGenerationException;
 import com.heal.doctor.services.IAppointmentService;
@@ -67,7 +67,7 @@ public class DoctorReportsImpl implements IDoctorReports {
             String currentDoctorId = CurrentUserName.getCurrentDoctorId();
             String currentUsername = CurrentUserName.getCurrentUsername();
             
-            CompletableFuture<DoctorDTO> doctorFuture = CompletableFuture.supplyAsync(
+            CompletableFuture<UserDTO> doctorFuture = CompletableFuture.supplyAsync(
                     () -> doctorService.getDoctorById(currentDoctorId), taskExecutor);
             
             CompletableFuture<List<AppointmentDTO>> appointmentsFuture = CompletableFuture.supplyAsync(
@@ -77,7 +77,7 @@ public class DoctorReportsImpl implements IDoctorReports {
 
             CompletableFuture.allOf(doctorFuture, appointmentsFuture).join();
             
-            DoctorDTO doctor = doctorFuture.join();
+            UserDTO doctor = doctorFuture.join();
             List<AppointmentDTO> appointments = appointmentsFuture.join();
 
             Map<String, Object> variables = new HashMap<>();

@@ -6,18 +6,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface IDoctorService {
-    DoctorDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO);
-    DoctorDTO getDoctorById(String doctorId);
-    DoctorDTO getDoctorProfile();
-    List<DoctorDTO> getAllDoctors();
+    UserDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO);
+    UserDTO getDoctorById(String doctorId);
+    UserDTO getDoctorProfile();
+    List<UserDTO> getAllDoctors();
 
-    DoctorDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
+    UserDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
 
     void deleteDoctor(String doctorId);
-    void forgotPassword(ForgotPasswordDTO forgotPasswordDTO);
-    String updateEmail( UpdateEmailDTO updateEmailDTO);
-    void changePassword(ChangePasswordDTO changePasswordDTO);
-    String loginDoctor(String username, String password);
-    String changeProfilePicture(MultipartFile file);
-    String changeCoverPicture(MultipartFile file);
 }

@@ -34,46 +34,4 @@ public class DoctorAccountMailServiceImpl implements IDoctorAccountMailService {
         );
     }
 
-    @Override
-    public void doctorPasswordChangeMail(String doctorName, String email) {
-        LocalDateTime now = LocalDateTime.now();
-        String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
-        String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
-
-        emailService.sendHtmlEmail(
-                email,
-                "Your Password Has Been Changed - " + companyName,
-                "password-change.template.html",
-                Map.of(
-                        "companyName", companyName,
-                        "userName", doctorName,
-                        "changeDate", formattedDate,
-                        "changeTime", formattedTime,
-                        "securitySettingsUrl", "https://hportion.com/security-settings"
-                )
-        );
-    }
-
-    @Override
-    public void doctorLoginEmailChangedMail(String receiverMail, String doctorName, String doctorOldEmail, String doctorNewEmail) {
-        LocalDateTime now = LocalDateTime.now();
-        String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
-        String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
-
-        emailService.sendHtmlEmail(
-                receiverMail,
-                "Account Email Updated - " + companyName,
-                "email-change.template.html",
-                Map.of(
-                        "companyName", companyName,
-                        "userName", doctorName,
-                        "oldEmail", doctorOldEmail,
-                        "newEmail", doctorNewEmail,
-                        "changeDate", formattedDate,
-                        "changeTime", formattedTime,
-                        "loginUrl", "https://hportion.com/login"
-                )
-        );
-    }
-
 }

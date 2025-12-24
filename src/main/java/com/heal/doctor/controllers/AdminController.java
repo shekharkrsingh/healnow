@@ -1,6 +1,6 @@
 package com.heal.doctor.controllers;
 
-import com.heal.doctor.dto.DoctorDTO;
+import com.heal.doctor.dto.UserDTO;
 import com.heal.doctor.dto.RuntimeApplicationConfigDTO;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IRuntimeApplicationConfigService;
@@ -22,8 +22,8 @@ public class AdminController {
     private final IRuntimeApplicationConfigService runtimeApplicationConfigService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DoctorDTO>>> getAllDoctors() {
-        List<DoctorDTO> doctors = doctorService.getAllDoctors();
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllDoctors() {
+        List<UserDTO> doctors = doctorService.getAllDoctors();
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctors retrieved successfully", doctors));
     }
 
@@ -33,18 +33,6 @@ public class AdminController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor deleted successfully", null));
     }
 
-    @GetMapping("/app/runtime")
-    public ResponseEntity<ApiResponse<RuntimeApplicationConfigDTO>> getRuntimeApplicationConfig(){
-        RuntimeApplicationConfigDTO runtimeApplicationConfigDTO= runtimeApplicationConfigService.getRuntimeApplicationConfig();
-        return ResponseEntity
-                .ok(
-                        new ApiResponse<>(
-                                true,
-                                "Runtime Application config Fetched successfully",
-                                runtimeApplicationConfigDTO
-                        )
-                );
-    }
 
     @PostMapping("/app/runtime")
     public ResponseEntity<ApiResponse<RuntimeApplicationConfigDTO>> updateRuntimeApplicationConfig(

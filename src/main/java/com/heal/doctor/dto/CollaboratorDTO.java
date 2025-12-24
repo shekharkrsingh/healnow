@@ -1,5 +1,7 @@
 package com.heal.doctor.dto;
 
+import com.heal.doctor.models.enums.CollaboratorStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +19,6 @@ public class CollaboratorDTO {
     private String email;
     private String firstName;
     private String lastName;
-    private Boolean isActive;
+    private CollaboratorStatus status;
     private Date createdAt;
 }

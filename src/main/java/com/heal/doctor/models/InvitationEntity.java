@@ -59,6 +59,8 @@ public class InvitationEntity {
     @Pattern(regexp = "^[a-zA-Z\\s\\-']+$", message = "Last name can only contain letters, spaces, hyphens, and apostrophes")
     private String lastName;
 
+    private String collaboratorId;
+
     @NotNull(message = "Status is required")
     @Builder.Default
     private InvitationStatus status = InvitationStatus.PENDING;
