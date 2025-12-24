@@ -82,21 +82,34 @@ public class InvitationServiceImpl implements IInvitationService {
             logger.info("Allowing invitation for removed collaborator: {}", requestDTO.getEmail());
         });
 
-        // Check if there's already a pending invitation for this email
-        List<InvitationEntity> existingInvitations = invitationRepository.findByEmailAndStatusAndDoctorIdAndExpiresAtGreaterThan(
-                requestDTO.getEmail(), InvitationStatus.PENDING,  doctorId, new Date());
-        if (!existingInvitations.isEmpty()) {
-            logger.warn("Invitation failed - pending invitation already exists: {}", requestDTO.getEmail());
-            throw new ConflictException("Invitation", "A pending invitation for this email already exists");
+        List<InvitationEntity> existingInvitations = invitationRepository.findByEmailAndDoctorId(requestDTO.getEmail(), doctorId);
+        
+        // Check for existing valid pending invitations to RESEND
+        for (InvitationEntity inv : existingInvitations) {
+            // Case 1: Valid Pending Invitation -> Resend Email
+            if (inv.getStatus() == InvitationStatus.PENDING && inv.getExpiresAt().after(new Date())) {
+                 logger.info("Resending existing pending invitation to: {}", requestDTO.getEmail());
+                 
+                 // Update names in case of typo correction
+                 inv.setFirstName(requestDTO.getFirstName());
+                 inv.setLastName(requestDTO.getLastName());
+                 inv.setUpdatedAt(new Date());
+                 invitationRepository.save(inv);
+                 
+                 sendCollaborationInvitationEmail(inv);
+                 
+                 return modelMapper.map(inv, InvitationResponseDTO.class);
+            }
+            
+            // Case 2: Expired (or pending but past expiry) -> Revoke so we can create a fresh one
+            if (inv.getStatus() == InvitationStatus.EXPIRED || (inv.getStatus() == InvitationStatus.PENDING && inv.getExpiresAt().before(new Date()))) {
+                inv.setStatus(InvitationStatus.REVOKED);
+                inv.setUpdatedAt(new Date());
+                invitationRepository.save(inv);
+            }
         }
 
-
         String invitationToken = COLLABORATOR_ID_PREFIX + generateInvitationToken();
-
-
-        Date expiresAt = new Date(System.currentTimeMillis() + (INVITATION_EXPIRY_HOURS * 60 * 60 * 1000L));
-
-
         String collaboratorId;
         UserEntity existingUser = userRepository.findByEmail(requestDTO.getEmail()).orElse(null);
         if (existingUser != null) {
@@ -113,7 +126,7 @@ public class InvitationServiceImpl implements IInvitationService {
                 .firstName(requestDTO.getFirstName())
                 .lastName(requestDTO.getLastName())
                 .collaboratorId(collaboratorId)
-                .status(InvitationStatus.PENDING) // Keep status as PENDING for the invitation itself
+                .status(InvitationStatus.PENDING)
                 .expiresAt(new Date(System.currentTimeMillis() + (INVITATION_EXPIRY_HOURS * 3600000L)))
                 .createdAt(new Date())
                 .updatedAt(new Date())
@@ -128,7 +141,7 @@ public class InvitationServiceImpl implements IInvitationService {
                     .doctorId(doctorId)
                     .firstName(requestDTO.getFirstName())
                     .lastName(requestDTO.getLastName())
-                    .email(requestDTO.getEmail()) // Populate email
+                    .email(requestDTO.getEmail())
                     .status(CollaboratorStatus.INVITED)
                     .createdAt(new Date())
                     .updatedAt(new Date())
@@ -137,15 +150,21 @@ public class InvitationServiceImpl implements IInvitationService {
             profile.setDoctorId(doctorId);
             profile.setStatus(CollaboratorStatus.INVITED);
             profile.setUpdatedAt(new Date());
-            profile.setEmail(requestDTO.getEmail()); // Populate email
+            profile.setEmail(requestDTO.getEmail());
         }
         collaboratorProfileRepository.save(profile);
         logger.info("Invitation created: invitationId: {}, email: {}", invitation.getInvitationId(), requestDTO.getEmail());
 
+        sendCollaborationInvitationEmail(invitation);
+
+        return modelMapper.map(invitation, InvitationResponseDTO.class);
+    }
+
+    private void sendCollaborationInvitationEmail(InvitationEntity invitation) {
         // Get doctor name for email
         String doctorName = "Doctor";
         try {
-            DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
+            DoctorEntity doctor = doctorRepository.findByDoctorId(invitation.getDoctorId()).orElse(null);
             if (doctor != null) {
                 doctorName = doctor.getFirstName() + " " + doctor.getLastName();
             }
@@ -157,13 +176,13 @@ public class InvitationServiceImpl implements IInvitationService {
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
 
         // Send invitation email
-        String invitationLink = websiteUrl + "/accept-invitation?token=" + invitationToken;
+        String invitationLink = websiteUrl + "/accept-invitation?token=" + invitation.getInvitationToken();
         emailService.sendHtmlEmail(
-                requestDTO.getEmail(),
+                invitation.getEmail(),
                 "Invitation to Collaborate - " + companyName,
                 "collaborator-invitation.template.html",
                 Map.of(
-                        "firstName", requestDTO.getFirstName(),
+                        "firstName", invitation.getFirstName(),
                         "doctorName", doctorName,
                         "invitationLink", invitationLink,
                         "expiresIn", INVITATION_EXPIRY_HOURS + " hours",
@@ -171,11 +190,9 @@ public class InvitationServiceImpl implements IInvitationService {
                         "invitationDate", formattedDate
                 )
         ).exceptionally(ex -> {
-            logger.error("Failed to send invitation email: email: {}, error: {}", requestDTO.getEmail(), ex.getMessage(), ex);
+            logger.error("Failed to send invitation email: email: {}, error: {}", invitation.getEmail(), ex.getMessage(), ex);
             return null;
         });
-
-        return modelMapper.map(invitation, InvitationResponseDTO.class);
     }
 
     @Override
@@ -275,15 +292,28 @@ public class InvitationServiceImpl implements IInvitationService {
     public List<InvitationResponseDTO> getInvitationsByDoctor(String doctorId) {
         logger.debug("Fetching invitations for doctor: {}", doctorId);
         List<InvitationEntity> invitations = invitationRepository.findByDoctorId(doctorId);
+        
+        // Lazy expiration check: update status if expired
+        Date now = new Date();
+        invitations.forEach(invitation -> {
+            if (invitation.getStatus() == InvitationStatus.PENDING && invitation.getExpiresAt().before(now)) {
+                invitation.setStatus(InvitationStatus.EXPIRED);
+                invitation.setUpdatedAt(now);
+                invitationRepository.save(invitation);
+            }
+        });
+        
         return invitations.stream()
                 .filter(invitation -> {
                     if (invitation.getStatus() == InvitationStatus.REVOKED) {
                         return false;
                     }
                     if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+                        // Strict check: Only show accepted invitation if the collaborator is currently ACTIVATED or DEACTIVATED
+                        // If they are REMOVED or have been Re-INVITED (new cycle), hide this old accepted invitation.
                         return collaboratorProfileRepository.findByCollaboratorId(invitation.getCollaboratorId())
-                                .map(profile -> profile.getStatus() != CollaboratorStatus.REMOVED)
-                                .orElse(true);
+                                .map(profile -> profile.getStatus() == CollaboratorStatus.ACTIVATED || profile.getStatus() == CollaboratorStatus.DEACTIVATED)
+                                .orElse(false); // If profile missing (orphan), hide it
                     }
                     return true;
                 })

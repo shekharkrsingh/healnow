@@ -19,4 +19,5 @@ public interface InvitationRepository extends MongoRepository<InvitationEntity, 
             Date currentTime
     );
     List<InvitationEntity> findByDoctorId(String doctorId);
+    List<InvitationEntity> findByEmailAndDoctorId(String email, String doctorId);
 }
