@@ -4,9 +4,9 @@ package com.heal.doctor.services;
 
 import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentRequestDTO;
+import com.heal.doctor.dto.UpdateAppointmentDetailsDTO;
 import com.heal.doctor.models.enums.AppointmentStatus;
 
-import java.util.Date;
 import java.util.List;
 
 public interface IAppointmentService {
@@ -22,4 +22,5 @@ public interface IAppointmentService {
     AppointmentDTO updateEmergencyStatus(String appointmentId, Boolean isEmergency);
     AppointmentDTO cancelAppointment(String appointmentId);
     List<AppointmentDTO> getAppointmentsByDoctorAndDateRange(String doctorId, String  fromDate, String toDate);
+    AppointmentDTO updateAppointmentDetails(String appointmentId, UpdateAppointmentDetailsDTO updateDTO);
 }

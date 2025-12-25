@@ -1,9 +1,6 @@
 package com.heal.doctor.services.impl;
 
-import com.heal.doctor.dto.AppointmentDTO;
-import com.heal.doctor.dto.AppointmentRequestDTO;
-import com.heal.doctor.dto.WebSocketResponseType;
-import com.heal.doctor.dto.WebsocketResponseDTO;
+import com.heal.doctor.dto.*;
 import com.heal.doctor.models.AppointmentEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
@@ -431,6 +428,40 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
             logger.debug("Sending WebSocket notification for availability update: appointmentId: {}", appointmentId);
+            messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
+                    WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                            .type(WebSocketResponseType.APPOINTMENT)
+                            .payload(appointmentDTO)
+                            .build());
+        }
+
+        return appointmentDTO;
+    }
+
+    @Transactional
+    @Override
+    public AppointmentDTO updateAppointmentDetails(String appointmentId, UpdateAppointmentDetailsDTO updateDTO){
+        logger.info("Updating appointment details: appointmentId: {}", appointmentId);
+        AppointmentEntity appointment=appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
+        String currentDoctorId = appointment.getDoctorId();
+        if (appointment.getTreated()) {
+            logger.warn("Updation failed - already treated: appointmentId: {}, doctorId: {}",
+                    appointmentId, currentDoctorId);
+            throw new BusinessRuleException("cancel appointment", "Patient is already treated");
+        }
+        appointment.setPatientName(updateDTO.getPatientName());
+        appointment.setDescription(updateDTO.getDescription());
+        appointment.setEmail(updateDTO.getEmail());
+        appointment.setContact(updateDTO.getContact());
+        appointment.setAppointmentDateTime(updateDTO.getAppointmentDateTime());
+        AppointmentEntity savedAppointment= appointmentRepository.save(appointment);
+        logger.info("Appointment details are updated: appointmentId: {}", appointmentId);
+
+        AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
+
+        if (removeTime(appointmentDTO.getAppointmentDateTime()).equals(removeTime(new Date()))) {
+            logger.debug("Sending WebSocket notification for details update: appointmentId: {}", appointmentId);
             messagingTemplate.convertAndSend("/topic/appointments/" + appointmentDTO.getDoctorId(),
                     WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
                             .type(WebSocketResponseType.APPOINTMENT)

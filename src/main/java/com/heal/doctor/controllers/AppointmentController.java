@@ -82,6 +82,10 @@ public class AppointmentController {
             appointment = appointmentService.updateAvailableAtClinic(appointmentId, updateDTO.getAvailableAtClinic());
         }
 
+        if(updateDTO.getDescription() != null || updateDTO.getEmail() != null || updateDTO.getAppointmentDateTime() != null || updateDTO.getContact() != null) {
+            appointment=appointmentService.updateAppointmentDetails(appointmentId, updateDTO);
+        }
+
         return ResponseEntity.ok(ApiResponse.<AppointmentDTO>builder()
                 .success(true)
                 .message("Appointment updated successfully")
