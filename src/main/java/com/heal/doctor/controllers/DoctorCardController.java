@@ -39,9 +39,11 @@ public class DoctorCardController {
             logger.info("Doctor card generated successfully for doctorId: {}. PDF size: {} bytes", 
                     doctorId, pdfBytes.length);
 
+            String dynamicFilename = String.format("appointment-booking-card-%s.pdf", doctorId);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "appointment-booking-card.pdf");
+            headers.setContentDispositionFormData("attachment", dynamicFilename);
             headers.setContentLength(pdfBytes.length);
             headers.setCacheControl("no-cache, no-store, must-revalidate");
             headers.setPragma("no-cache");

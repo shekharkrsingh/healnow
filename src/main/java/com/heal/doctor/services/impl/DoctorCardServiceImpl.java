@@ -98,12 +98,14 @@ public class DoctorCardServiceImpl implements IDoctorCardService {
             DoctorEntity doctor = getDoctorEntity(doctorId);
             String doctorEmail = getDoctorEmail(doctor);
 
+            String dynamicFilename = String.format("appointment-booking-card-%s.pdf", doctorId);
+
             return emailService.sendSimpleEmailWithAttachment(
                     doctorEmail,
                     EMAIL_SUBJECT,
                     buildEmailBody(doctor),
                     pdfBytes,
-                    PDF_FILENAME,
+                    dynamicFilename,
                     PDF_CONTENT_TYPE
             );
 
