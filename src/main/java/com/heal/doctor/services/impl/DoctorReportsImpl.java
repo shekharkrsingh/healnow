@@ -8,6 +8,7 @@ import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.IDoctorReports;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IEmailService;
+import com.heal.doctor.services.IPdfService;
 import com.heal.doctor.utils.CurrentUserName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
@@ -39,6 +39,7 @@ public class DoctorReportsImpl implements IDoctorReports {
     private final IAppointmentService appointmentService;
     private final IEmailService emailService;
     private final Executor taskExecutor;
+    private final IPdfService pdfService;
 
     @Value("${company.name}")
     private String companyName;
@@ -50,12 +51,14 @@ public class DoctorReportsImpl implements IDoctorReports {
                              IDoctorService doctorService,
                              IAppointmentService appointmentService, 
                              IEmailService emailService,
-                             @Qualifier("emailTaskExecutor") Executor taskExecutor) {
+                             @Qualifier("emailTaskExecutor") Executor taskExecutor,
+                             IPdfService pdfService) {
         this.templateEngine = templateEngine;
         this.doctorService = doctorService;
         this.appointmentService = appointmentService;
         this.emailService = emailService;
         this.taskExecutor = taskExecutor;
+        this.pdfService = pdfService;
     }
 
     @Override
@@ -110,29 +113,22 @@ public class DoctorReportsImpl implements IDoctorReports {
 
             String htmlContent = templateEngine.process("doctor-report-template", context);
 
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-                ITextRenderer renderer = new ITextRenderer();
-                renderer.setDocumentFromString(htmlContent);
-                renderer.layout();
-                renderer.createPDF(outputStream);
+            byte[] pdfBytes = pdfService.generatePdfFromHtml(htmlContent);
 
-                byte[] pdfBytes = outputStream.toByteArray();
-                
-                emailService.sendSimpleEmailWithAttachment(
-                        currentUsername,
-                        "Doctor Appointment Report - " + LocalDate.now().format(DISPLAY_FORMATTER),
-                        "Please find your appointment report attached.",
-                        pdfBytes,
-                        "appointment-report-" + LocalDate.now() + ".pdf",
-                        "application/pdf"
-                ).exceptionally(ex -> {
-                    logger.error("Failed to send report email asynchronously: error: {}", ex.getMessage(), ex);
-                    return null;
-                });
-                logger.info("Report email sending initiated asynchronously for: {}", currentUsername);
+            emailService.sendSimpleEmailWithAttachment(
+                    currentUsername,
+                    "Doctor Appointment Report - " + LocalDate.now().format(DISPLAY_FORMATTER),
+                    "Please find your appointment report attached.",
+                    pdfBytes,
+                    "appointment-report-" + LocalDate.now() + ".pdf",
+                    "application/pdf"
+            ).exceptionally(ex -> {
+                logger.error("Failed to send report email asynchronously: error: {}", ex.getMessage(), ex);
+                return null;
+            });
+            logger.info("Report email sending initiated asynchronously for: {}", currentUsername);
 
-                return pdfBytes;
-            }
+            return pdfBytes;
 
         } catch (BadRequestException | IllegalArgumentException e) {
             throw e;

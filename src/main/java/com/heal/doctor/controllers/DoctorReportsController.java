@@ -39,6 +39,10 @@ public class DoctorReportsController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + safeFileName)
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
+                .contentLength(pdfBytes.length)
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
     }

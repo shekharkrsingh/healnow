@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+
 <head>
-    <meta charset="UTF-8"></meta>
+    <meta charset="UTF-8">
+    </meta>
     <title>Doctor Appointment Report</title>
     <style>
         * {
@@ -29,19 +31,19 @@
             border-bottom: 2px solid #1a73e8;
             padding-bottom: 20px;
             margin-bottom: 25px;
+            display: table;
+            width: 100%;
         }
 
         .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            display: table;
+            width: 100%;
             margin-bottom: 15px;
         }
 
         .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            display: table-cell;
+            vertical-align: middle;
         }
 
         .logo {
@@ -49,12 +51,18 @@
             height: 70px;
             background-color: #1a73e8;
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
+            line-height: 70px;
+            text-align: center;
             color: white;
             font-weight: bold;
             font-size: 18px;
+            float: left;
+            margin-right: 15px;
+        }
+
+        .company-info {
+            display: block;
         }
 
         .company-info h1 {
@@ -69,6 +77,8 @@
         }
 
         .report-info {
+            display: table-cell;
+            vertical-align: middle;
             text-align: right;
         }
 
@@ -85,9 +95,8 @@
         }
 
         .doctor-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            display: table;
+            width: 100%;
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 6px;
@@ -95,8 +104,8 @@
         }
 
         .detail-item {
-            display: flex;
-            flex-direction: column;
+            display: table-cell;
+            padding-right: 15px;
         }
 
         .detail-label {
@@ -104,12 +113,14 @@
             color: #666;
             margin-bottom: 3px;
             font-weight: 600;
+            display: block;
         }
 
         .detail-value {
             font-weight: 600;
             font-size: 13px;
             color: #333;
+            display: block;
         }
 
         .section-title {
@@ -199,18 +210,20 @@
         }
 
         .summary-section {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
+            display: table;
+            width: 100%;
+            border-spacing: 15px 0;
+            margin: 0 -15px 25px -15px;
         }
 
         .summary-card {
+            display: table-cell;
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 6px;
             text-align: center;
             border: 1px solid #e0e0e0;
+            width: 33%;
         }
 
         .summary-value {
@@ -227,24 +240,26 @@
         }
 
         .footer-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: table;
+            width: 100%;
             padding-top: 15px;
             border-top: 1px solid #e0e0e0;
         }
 
         .copyright {
+            display: table-cell;
             font-size: 11px;
             color: #666;
+            vertical-align: middle;
         }
 
         .warning {
+            display: table-cell;
             color: #d32f2f;
             font-size: 10px;
             font-style: italic;
-            max-width: 60%;
             text-align: right;
+            vertical-align: middle;
         }
 
         @media print {
@@ -282,7 +297,9 @@
                 font-size: 20pt;
             }
 
-            .header, .summary-section, .footer-bottom {
+            .header,
+            .summary-section,
+            .footer-bottom {
                 page-break-inside: avoid;
             }
 
@@ -297,105 +314,111 @@
         }
     </style>
 </head>
+
 <body>
-<div class="container">
-    <header class="header">
-        <div class="header-top">
-            <div class="logo-section">
-                <div class="logo" th:text="${#strings.substring(companyName, 0, 2)}">MC</div>
-                <div class="company-info">
-                    <h1 th:text="${companyName}">MediCare Solutions</h1>
-                    <p>Comprehensive Healthcare Services</p>
+    <div class="container">
+        <header class="header">
+            <div class="header-top">
+                <div class="logo-section">
+                    <div class="logo" th:text="${#strings.substring(companyName, 0, 2)}">MC</div>
+                    <div class="company-info">
+                        <h1 th:text="${companyName}">MediCare Solutions</h1>
+                        <p>Comprehensive Healthcare Services</p>
+                    </div>
+                </div>
+                <div class="report-info">
+                    <div class="report-title">Appointment Report</div>
+                    <div class="report-period" th:text="'Period: ' + ${reportFromDate} + ' to ' + ${reportToDate}">
+                        Period: Oct 1, 2023 - Oct 31, 2023</div>
                 </div>
             </div>
-            <div class="report-info">
-                <div class="report-title">Appointment Report</div>
-                <div class="report-period" th:text="'Period: ' + ${reportFromDate} + ' to ' + ${reportToDate}">Period: Oct 1, 2023 - Oct 31, 2023</div>
-            </div>
-        </div>
 
-        <div class="doctor-details">
-            <div class="detail-item">
-                <span class="detail-label">Doctor Name</span>
-                <span class="detail-value" th:text="${doctorName}">Dr. Sarah Johnson</span>
+            <div class="doctor-details">
+                <div class="detail-item">
+                    <span class="detail-label">Doctor Name</span>
+                    <span class="detail-value" th:text="${doctorName}">Dr. Sarah Johnson</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Doctor ID</span>
+                    <span class="detail-value" th:text="${doctorId}">DOC-7284</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Specialization</span>
+                    <span class="detail-value" th:text="${specialization}">Cardiology</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Clinic Address</span>
+                    <span class="detail-value" th:text="${address}">123 Health St, Medical City</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Report Generated On</span>
+                    <span class="detail-value" th:text="${reportGeneratedOn}">15 Nov, 2023</span>
+                </div>
             </div>
-            <div class="detail-item">
-                <span class="detail-label">Doctor ID</span>
-                <span class="detail-value" th:text="${doctorId}">DOC-7284</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Specialization</span>
-                <span class="detail-value" th:text="${specialization}">Cardiology</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Clinic Address</span>
-                <span class="detail-value" th:text="${address}">123 Health St, Medical City</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Report Generated On</span>
-                <span class="detail-value" th:text="${reportGeneratedOn}">15 Nov, 2023</span>
-            </div>
-        </div>
-    </header>
+        </header>
 
-    <section class="report-body">
-        <h2 class="section-title">Appointment Details</h2>
+        <section class="report-body">
+            <h2 class="section-title">Appointment Details</h2>
 
-        <table class="appointment-table">
-            <thead>
-            <tr>
-                <th>Appointment ID</th>
-                <th>Patient Name</th>
-                <th>Contact Number</th>
-                <th>Appointment Date</th>
-                <th>Status</th>
-                <th>Booking Mode</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="appointment : ${appointments}">
-                <td th:text="${appointment.appointmentId}">APT-1001</td>
-                <td th:text="${appointment.patientName}">Robert Wilson</td>
-                <td th:text="${appointment.contact}">(555) 123-4567</td>
-                <td th:text="${#dates.format(appointment.appointmentDateTime, 'dd MMM, yyyy')}">Oct 3, 2023</td>
-                <td>
-                    <span th:classappend="${appointment.status.name() == 'TREATED'} ? 'status treated' : 'status cancelled'"
-                          th:text="${appointment.status}">Treated</span>
-                </td>
-                <td>
-                    <span th:classappend="${appointment.appointmentType.name() == 'ONLINE'} ? 'booking-mode online' : 'booking-mode onsite'"
-                          th:text="${appointment.appointmentType}">Online</span>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </section>
+            <table class="appointment-table">
+                <thead>
+                    <tr>
+                        <th>Appointment ID</th>
+                        <th>Patient Name</th>
+                        <th>Contact Number</th>
+                        <th>Appointment Date</th>
+                        <th>Status</th>
+                        <th>Booking Mode</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="appointment : ${appointments}">
+                        <td th:text="${appointment.appointmentId}">APT-1001</td>
+                        <td th:text="${appointment.patientName}">Robert Wilson</td>
+                        <td th:text="${appointment.contact}">(555) 123-4567</td>
+                        <td th:text="${#dates.format(appointment.appointmentDateTime, 'dd MMM, yyyy')}">Oct 3, 2023</td>
+                        <td>
+                            <span
+                                th:classappend="${appointment.status.name() == 'TREATED'} ? 'status treated' : 'status cancelled'"
+                                th:text="${appointment.status}">Treated</span>
+                        </td>
+                        <td>
+                            <span
+                                th:classappend="${appointment.appointmentType.name() == 'ONLINE'} ? 'booking-mode online' : 'booking-mode onsite'"
+                                th:text="${appointment.appointmentType}">Online</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
 
-    <footer class="footer">
-        <div class="summary-section">
-            <div class="summary-card">
-                <div class="summary-value" th:text="${totalAppointments}">10</div>
-                <div class="summary-label">Total Appointments</div>
+        <footer class="footer">
+            <div class="summary-section">
+                <div class="summary-card">
+                    <div class="summary-value" th:text="${totalAppointments}">10</div>
+                    <div class="summary-label">Total Appointments</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" th:text="${cancelledAppointments}">3</div>
+                    <div class="summary-label">Cancelled Appointments</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" th:text="${treatedAppointments}">7</div>
+                    <div class="summary-label">Treated Appointments</div>
+                </div>
             </div>
-            <div class="summary-card">
-                <div class="summary-value" th:text="${cancelledAppointments}">3</div>
-                <div class="summary-label">Cancelled Appointments</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-value" th:text="${treatedAppointments}">7</div>
-                <div class="summary-label">Treated Appointments</div>
-            </div>
-        </div>
 
-        <div class="footer-bottom">
-            <div class="copyright">
-                &copy; 2023 <span th:text="${companyName}">MediCare Solutions</span>. All rights reserved.
+            <div class="footer-bottom">
+                <div class="copyright">
+                    &#169; 2023 <span th:text="${companyName}">MediCare Solutions</span>. All rights reserved.
+                </div>
+                <div class="warning">
+                    CONFIDENTIAL: This report contains sensitive information. If you received this in error, please
+                    delete immediately.
+                </div>
             </div>
-            <div class="warning">
-                CONFIDENTIAL: This report contains sensitive information. If you received this in error, please delete immediately.
-            </div>
-        </div>
-    </footer>
-</div>
+        </footer>
+    </div>
 </body>
+
 </html>
