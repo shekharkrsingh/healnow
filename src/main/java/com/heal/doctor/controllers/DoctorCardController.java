@@ -2,6 +2,7 @@ package com.heal.doctor.controllers;
 
 import com.heal.doctor.services.IDoctorCardService;
 import com.heal.doctor.utils.CurrentUserName;
+import jakarta.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,16 +40,7 @@ public class DoctorCardController {
             logger.info("Doctor card generated successfully for doctorId: {}. PDF size: {} bytes", 
                     doctorId, pdfBytes.length);
 
-            String dynamicFilename = String.format("appointment-booking-card-%s.pdf", doctorId);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", dynamicFilename);
-            headers.setContentLength(pdfBytes.length);
-            headers.setCacheControl("no-cache, no-store, must-revalidate");
-            headers.setPragma("no-cache");
-            headers.setExpires(0);
-            headers.add("X-Email-Status", "Email sending initiated");
+            HttpHeaders headers = getHttpHeaders(doctorId, pdfBytes);
 
             logger.info("Successfully returned doctor card PDF for doctorId: {}", doctorId);
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
@@ -57,5 +49,20 @@ public class DoctorCardController {
             logger.error("Failed to generate and send doctor card for doctorId: {}", doctorId, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Nonnull
+    private static HttpHeaders getHttpHeaders(String doctorId, byte[] pdfBytes) {
+        String dynamicFilename = String.format("appointment-booking-card-%s.pdf", doctorId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", dynamicFilename);
+        headers.setContentLength(pdfBytes.length);
+        headers.setCacheControl("no-cache, no-store, must-revalidate");
+        headers.setPragma("no-cache");
+        headers.setExpires(0);
+        headers.add("X-Email-Status", "Email sending initiated");
+        return headers;
     }
 }
