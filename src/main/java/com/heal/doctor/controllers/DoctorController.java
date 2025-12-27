@@ -1,6 +1,7 @@
 package com.heal.doctor.controllers;
 
 
+import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.services.IDoctorService;
@@ -19,6 +20,7 @@ public class DoctorController {
 
 
     private final IDoctorService doctorService;
+    private final IAppointmentService appointmentService;
 
 
     @PutMapping()
@@ -31,6 +33,12 @@ public class DoctorController {
     public ResponseEntity<ApiResponse<UserDTO>> getDoctorProfile() {
         UserDTO doctorDTO = doctorService.getDoctorProfile();
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile retrieved successfully", doctorDTO));
+    }
+
+    @GetMapping("/appointments/{appointmentId}")
+    public ResponseEntity<ApiResponse<AppointmentDetailsDTO>> getAppointmentDetails(@PathVariable String appointmentId) {
+        AppointmentDetailsDTO detailsDTO = appointmentService.getAppointmentDetails(appointmentId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Appointment details retrieved successfully", detailsDTO));
     }
 
 }

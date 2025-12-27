@@ -3,6 +3,7 @@ package com.heal.doctor.services;
 
 
 import com.heal.doctor.dto.AppointmentDTO;
+import com.heal.doctor.dto.AppointmentDetailsDTO;
 import com.heal.doctor.dto.AppointmentRequestDTO;
 import com.heal.doctor.dto.UpdateAppointmentDetailsDTO;
 import com.heal.doctor.models.enums.AppointmentStatus;
@@ -23,4 +24,5 @@ public interface IAppointmentService {
     AppointmentDTO cancelAppointment(String appointmentId);
     List<AppointmentDTO> getAppointmentsByDoctorAndDateRange(String doctorId, String  fromDate, String toDate);
     AppointmentDTO updateAppointmentDetails(String appointmentId, UpdateAppointmentDetailsDTO updateDTO);
+    AppointmentDetailsDTO getAppointmentDetails(String appointmentId);
 }

@@ -7,13 +7,16 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class AppointmentDTO {
+public class AppointmentDetailsDTO {
     private String appointmentId;
     private String doctorId;
+    private String doctorName;
+    private String doctorSpecialization;
     private String patientName;
     private String contact;
     private String email;
     private String description;
+    private String notice;
     private Date appointmentDateTime;
     private Date bookingDateTime;
     private Boolean availableAtClinic;

@@ -8,6 +8,7 @@ import com.heal.doctor.models.enums.AppointmentType;
 import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.AppointmentRepository;
+import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.exception.BusinessRuleException;
@@ -43,6 +44,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     private static final int VALID_CONTACT_LENGTH = 10;
 
     private final AppointmentRepository appointmentRepository;
+    private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final INotificationService notificationService;
@@ -537,6 +539,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
         return appointments.parallelStream()
                 .map(appointment -> modelMapper.map(appointment, AppointmentDTO.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public AppointmentDetailsDTO getAppointmentDetails(String appointmentId) {
+        logger.debug("Fetching detailed appointment info: appointmentId: {}", appointmentId);
+        AppointmentEntity appointment = appointmentRepository.findByAppointmentId(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
+
+        AppointmentDetailsDTO detailsDTO = modelMapper.map(appointment, AppointmentDetailsDTO.class);
+
+        doctorRepository.findByDoctorId(appointment.getDoctorId()).ifPresent(doctor -> {
+            detailsDTO.setDoctorName("Dr. " + doctor.getFirstName() + " " + doctor.getLastName());
+            detailsDTO.setDoctorSpecialization(doctor.getSpecialization());
+        });
+
+        return detailsDTO;
     }
 
 
