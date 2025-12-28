@@ -3,6 +3,7 @@ package com.heal.doctor.dto;
 
 import com.heal.doctor.models.Address;
 import com.heal.doctor.models.enums.AvailableDayEnum;
+import com.heal.doctor.models.enums.GenderEnum;
 import com.heal.doctor.models.TimeSlot;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,12 +27,16 @@ public class UserDTO {
     private List<AvailableDayEnum> availableDays;
     private List<TimeSlot> availableTimeSlots;
     private String clinicAddress;
+    private String clinicName;
+    private String clinicEmail;
+    private String clinicContactNumber;
     private Address address;
     private List<String> education;
     private List<String> achievementsAndAwards;
     private String about;
     private String bio;
     private Integer yearsOfExperience;
+    private GenderEnum gender;
     private String coverPicture;
     private String profilePicture;
     private Date createdAt;

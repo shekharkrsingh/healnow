@@ -215,6 +215,15 @@ public class DoctorServiceImpl implements IDoctorService {
         if (updateDoctorDetailsDTO.getClinicAddress() != null && !updateDoctorDetailsDTO.getClinicAddress().isEmpty()) {
             existingDoctor.setClinicAddress(updateDoctorDetailsDTO.getClinicAddress());
         }
+        if (updateDoctorDetailsDTO.getClinicName() != null && !updateDoctorDetailsDTO.getClinicName().isEmpty()) {
+            existingDoctor.setClinicName(updateDoctorDetailsDTO.getClinicName());
+        }
+        if (updateDoctorDetailsDTO.getClinicEmail() != null && !updateDoctorDetailsDTO.getClinicEmail().isEmpty()) {
+            existingDoctor.setClinicEmail(updateDoctorDetailsDTO.getClinicEmail());
+        }
+        if (updateDoctorDetailsDTO.getClinicContactNumber() != null && !updateDoctorDetailsDTO.getClinicContactNumber().isEmpty()) {
+            existingDoctor.setClinicContactNumber(updateDoctorDetailsDTO.getClinicContactNumber());
+        }
         if (updateDoctorDetailsDTO.getAddress() != null) {
             existingDoctor.setAddress(updateDoctorDetailsDTO.getAddress());
         }

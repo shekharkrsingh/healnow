@@ -70,6 +70,17 @@ public class DoctorEntity {
     @Size(max = 500, message = "Clinic address must not exceed 500 characters")
     private String clinicAddress;
 
+    @Size(max = 100, message = "Clinic name must not exceed 100 characters")
+    private String clinicName;
+
+    @Size(max = 100, message = "Clinic email must not exceed 100 characters")
+    @Pattern(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,6}$", message = "Invalid clinic email format")
+    private String clinicEmail;
+
+    @Size(min = VALID_PHONE_LENGTH, max = VALID_PHONE_LENGTH, message = "Clinic contact number must be exactly " + VALID_PHONE_LENGTH + " digits")
+    @Pattern(regexp = PHONE_PATTERN, message = "Clinic contact number must be exactly " + VALID_PHONE_LENGTH + " digits")
+    private String clinicContactNumber;
+
     @Valid
     private Address address;
 

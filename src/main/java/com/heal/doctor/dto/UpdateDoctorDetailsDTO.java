@@ -26,6 +26,12 @@ public class UpdateDoctorDetailsDTO {
     private List<AvailableDayEnum> availableDays;
     private List<TimeSlot> availableTimeSlots;
     private String clinicAddress;
+    private String clinicName;
+    private String clinicEmail;
+    
+    @Size(min = VALID_PHONE_LENGTH, max = VALID_PHONE_LENGTH, message = "Clinic contact number must be exactly " + VALID_PHONE_LENGTH + " digits")
+    @Pattern(regexp = PHONE_PATTERN, message = "Clinic contact number must be exactly " + VALID_PHONE_LENGTH + " digits")
+    private String clinicContactNumber;
     private Address address;
     private List<String> education;
     private List<String> achievementsAndAwards;

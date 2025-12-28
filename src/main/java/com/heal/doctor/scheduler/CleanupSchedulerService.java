@@ -24,10 +24,7 @@ public class CleanupSchedulerService {
         this.otpRepository = otpRepository;
     }
 
-    /**
-     * Scheduled task to run at midnight (00:00:00) every day
-     * Deletes notifications older than 10 days and OTPs older than 1 day
-     */
+
     @Scheduled(cron = "0 0 0 * * ?")
     public void cleanupOldData() {
         logger.info("Starting scheduled cleanup task at midnight");

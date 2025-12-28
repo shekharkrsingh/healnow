@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -88,7 +87,10 @@ public class DoctorReportsImpl implements IDoctorReports {
             variables.put("doctorName", doctor.getFirstName() + " " + doctor.getLastName());
             variables.put("doctorId", doctor.getDoctorId());
             variables.put("specialization", doctor.getSpecialization());
-            variables.put("address", doctor.getClinicAddress());
+            variables.put("address", doctor.getClinicAddress() != null ? doctor.getClinicAddress() : "N/A");
+            variables.put("clinicName", doctor.getClinicName() != null ? doctor.getClinicName() : "N/A");
+            variables.put("clinicEmail", doctor.getClinicEmail() != null ? doctor.getClinicEmail() : "N/A");
+            variables.put("clinicContactNumber", doctor.getClinicContactNumber() != null ? doctor.getClinicContactNumber() : "N/A");
             variables.put("reportFromDate", LocalDate.parse(finalFromDate, FORMATTER).format(DISPLAY_FORMATTER));
             variables.put("reportToDate", LocalDate.parse(finalToDate, FORMATTER).format(DISPLAY_FORMATTER));
             variables.put("reportGeneratedOn", LocalDate.now().format(DISPLAY_FORMATTER));

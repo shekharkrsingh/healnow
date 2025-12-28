@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.thymeleaf.org" lang="">
+<html xmlns:th="http://www.thymeleaf.org" lang="">
 
 <head>
     <meta charset="UTF-8" />
@@ -302,7 +302,8 @@
                     <div class="clinic-address" th:text="${clinicAddress}">
                         San Karo, 3rd street, Kolba, 4958930, Denmark
                     </div>
-                    <div class="clinic-contact" th:text="${phoneNumber}">Phone: (854) 752-1584</div>
+                    <div class="clinic-contact" th:text="'Email: ' + ${clinicEmail}">Email: clinic@example.com</div>
+                    <div class="clinic-contact" th:text="'Clinic: ' + ${clinicContactNumber}">Clinic: (123) 456-7890</div>
                 </div>
             </div>
 

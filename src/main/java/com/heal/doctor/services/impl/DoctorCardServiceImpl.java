@@ -145,11 +145,12 @@ public class DoctorCardServiceImpl implements IDoctorCardService {
 
         variables.put("companyName", companyName);
         variables.put("qrCodeData", qrCodeDataUrl);
-        variables.put("clinicName", doctor.getClinicAddress() != null && !doctor.getClinicAddress().isEmpty()
-                ? "Clinic"
+        variables.put("clinicName", doctor.getClinicName() != null && !doctor.getClinicName().isEmpty()
+                ? doctor.getClinicName()
                 : getDoctorFullName(doctor) + "'s Clinic");
         variables.put("clinicAddress", doctor.getClinicAddress() != null ? doctor.getClinicAddress() : "N/A");
-        variables.put("phoneNumber", formatPhoneNumber(doctor.getPhoneNumber()));
+        variables.put("clinicEmail", doctor.getClinicEmail() != null ? doctor.getClinicEmail() : "N/A");
+        variables.put("clinicContactNumber", doctor.getClinicContactNumber() != null ? formatPhoneNumber(doctor.getClinicContactNumber()) : "N/A");
         variables.put("clinicInitial", getClinicInitial(variables.get("clinicName").toString()));
         variables.put("doctorName", getDoctorFullName(doctor));
         variables.put("specialization", doctor.getSpecialization() != null ? doctor.getSpecialization() : "Medical Professional");
