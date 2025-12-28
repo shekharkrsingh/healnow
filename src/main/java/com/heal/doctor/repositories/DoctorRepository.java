@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface DoctorRepository extends MongoRepository<DoctorEntity, String> {
     Optional<DoctorEntity> findByDoctorId(String doctorId);
+
+    Boolean existsByDoctorId(String doctorId);
 }

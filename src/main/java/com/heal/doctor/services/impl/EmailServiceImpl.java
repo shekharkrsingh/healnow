@@ -69,7 +69,16 @@ public class EmailServiceImpl implements IEmailService {
     public CompletableFuture<Void> sendHtmlEmailWithAttachment(String to, String subject, String templateName,
                                             Map<String, Object> variables, byte[] attachment,
                                             String attachmentFileName, String attachmentContentType) {
-        logger.debug("Sending HTML email with attachment asynchronously: to: {}, subject: {}, attachment: {}", 
+        return sendHtmlEmailWithAttachment(to, subject, templateName, variables, attachment, attachmentFileName, attachmentContentType, null);
+    }
+
+    @Override
+    @Async("emailTaskExecutor")
+    public CompletableFuture<Void> sendHtmlEmailWithAttachment(String to, String subject, String templateName,
+                                                               Map<String, Object> variables, byte[] attachment,
+                                                               String attachmentFileName, String attachmentContentType,
+                                                               Map<String, byte[]> inlineImages) {
+        logger.debug("Sending HTML email with attachment and inline images asynchronously: to: {}, subject: {}, attachment: {}", 
                 to, subject, attachmentFileName);
         MimeMessage message = mailSender.createMimeMessage();
         try {
@@ -85,6 +94,12 @@ public class EmailServiceImpl implements IEmailService {
 
             ByteArrayResource pdfResource = new ByteArrayResource(attachment);
             helper.addAttachment(attachmentFileName, pdfResource, attachmentContentType);
+
+            if (inlineImages != null) {
+                for (Map.Entry<String, byte[]> entry : inlineImages.entrySet()) {
+                    helper.addInline(entry.getKey(), new ByteArrayResource(entry.getValue()), "image/png");
+                }
+            }
 
             mailSender.send(message);
             logger.info("HTML email with attachment sent successfully: to: {}, subject: {}, attachment: {}", 

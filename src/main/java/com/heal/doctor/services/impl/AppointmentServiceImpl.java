@@ -9,8 +9,10 @@ import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.services.IAppointmentConfirmationService;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
+import com.heal.doctor.Mail.IOtpService;
 import com.heal.doctor.exception.BusinessRuleException;
 import com.heal.doctor.exception.ConflictException;
 import com.heal.doctor.exception.ForbiddenException;
@@ -48,6 +50,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final INotificationService notificationService;
+    private final IOtpService otpService;
+    private final IAppointmentConfirmationService confirmationService;
 
 
     @Transactional
@@ -144,6 +148,104 @@ public class AppointmentServiceImpl implements IAppointmentService {
                             .payload(appointmentDTO)
                             .build());
         }
+        return appointmentDTO;
+    }
+
+    @Transactional
+    @Override
+    public AppointmentDTO selfBookAppointment(PatientSelfBookingDTO requestDTO) {
+        String doctorId = requestDTO.getDoctorId();
+        logger.info("Self-booking appointment for doctorId: {}, patientName: {}", doctorId, requestDTO.getPatientName());
+
+
+        if (doctorId == null || doctorId.trim().isEmpty()) {
+            throw new ValidationException("Doctor ID is mandatory.");
+        }
+        if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
+            throw new ValidationException("Patient name is mandatory.");
+        }
+        if (requestDTO.getEmail() == null || requestDTO.getEmail().trim().isEmpty()) {
+            throw new ValidationException("Email is mandatory.");
+        }
+        if (requestDTO.getOtp() == null || requestDTO.getOtp().trim().isEmpty()) {
+            throw new ValidationException("OTP is mandatory.");
+        }
+        if (requestDTO.getContact() == null || requestDTO.getContact().trim().isEmpty()) {
+            throw new ValidationException("Contact number is mandatory.");
+        }
+        if (requestDTO.getAppointmentDateTime() == null) {
+            throw new ValidationException("Appointment date and time are mandatory.");
+        }
+
+        if (requestDTO.getContact().trim().length() != VALID_CONTACT_LENGTH) {
+            throw new ValidationException("Contact number must be exactly " + VALID_CONTACT_LENGTH + " digits.");
+        }
+
+
+
+        if (!doctorRepository.existsByDoctorId(doctorId)) {
+            throw new ResourceNotFoundException("Doctor", doctorId);
+        }
+
+
+        Date appointmentDate = requestDTO.getAppointmentDateTime();
+        Date currentTime = new Date();
+
+        // 4. Date Validation (Exactly as bookAppointment)
+        // For patient self-booking, it is always a scheduled appointment (not walk-in at the moment)
+        if (appointmentDate.before(currentTime) || appointmentDate.equals(currentTime)) {
+            logger.warn("Scheduled appointment cannot be in the past or present: patientName: {}, appointmentDate: {}, currentTime: {}",
+                    requestDTO.getPatientName(), appointmentDate, currentTime);
+            throw new ValidationException("Scheduled appointments must be in the future.");
+        }
+
+        // 3. OTP Verification
+        otpService.validateOtp(requestDTO.getEmail(), requestDTO.getOtp());
+
+
+        Date[] dateRange = DateUtils.getStartAndEndOfDay(appointmentDate);
+        boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
+                doctorId,
+                requestDTO.getPatientName(),
+                requestDTO.getContact(),
+                dateRange[0],
+                dateRange[1],
+                AppointmentStatus.ACCEPTED);
+
+        if (exists) {
+            throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
+        }
+
+        AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
+        appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
+        appointmentEntity.setDoctorId(doctorId);
+        appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
+        appointmentEntity.setBookingDateTime(new Date());
+        appointmentEntity.setTreated(false);
+        appointmentEntity.setAppointmentType(AppointmentType.ONLINE);
+        appointmentEntity.setIsEmergency(false);
+        
+        // STRICTOR Business Rules
+        appointmentEntity.setPaymentStatus(false);
+        appointmentEntity.setAvailableAtClinic(false);
+        appointmentEntity.setAvailableAtClinicDateTime(null);
+
+        AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
+        logger.info("Self-booked appointment successfully: appointmentId: {}, doctorId: {}", 
+                savedAppointment.getAppointmentId(), doctorId);
+
+        AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
+
+        // 8. WebSocket Notification
+        messagingTemplate.convertAndSend("/topic/appointments/" + doctorId,
+                WebsocketResponseDTO.<AppointmentDTO>builderGeneric()
+                        .type(WebSocketResponseType.APPOINTMENT)
+                        .payload(appointmentDTO)
+                        .build());
+
+        // 9. Send Confirmation Email (Async)
+        confirmationService.sendConfirmationEmail(savedAppointment);
+
         return appointmentDTO;
     }
 

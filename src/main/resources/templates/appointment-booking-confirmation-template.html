@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <title>Appointment Confirmation</title>
+    <style>
+        /* IMPORTANT: Reset all margins and paddings */
+        @page {
+            margin: 0;
+            padding: 0;
+            size: A4;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 9pt;
+            line-height: 1.3;
+            color: #000000;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            padding: 0;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .content-wrapper {
+            width: 210mm; /* A4 width */
+            min-height: 297mm; /* A4 height */
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .top-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #0EA5E9;
+            z-index: 10;
+        }
+
+        /* Header - Fixed overflow issue */
+        .header {
+            width: calc(100% - 30px); /* Account for padding */
+            padding: 15px;
+            border-bottom: 1px solid #cccccc;
+            background: #ffffff;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .company-logo-cell {
+            width: 50px;
+            vertical-align: top;
+        }
+
+        .company-logo {
+            width: 40px;
+            height: 40px;
+            background-color: #0EA5E9;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            line-height: 40px;
+        }
+
+        .company-info {
+            vertical-align: top;
+            padding-left: 10px;
+            width: auto;
+        }
+
+        .company-name {
+            color: #000000;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .company-tagline {
+            color: #666666;
+            font-size: 8px;
+            white-space: nowrap;
+        }
+
+        .document-info {
+            vertical-align: top;
+            text-align: right;
+            width: 150px; /* Fixed width for document info */
+        }
+
+        .document-title {
+            color: #0EA5E9;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 3px;
+            white-space: nowrap;
+        }
+
+        .document-subtitle {
+            color: #666666;
+            font-size: 8px;
+            white-space: nowrap;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 15px;
+            min-height: calc(100vh - 200px); /* Adjust based on header/footer height */
+            box-sizing: border-box;
+        }
+
+        .content-table {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .left-column {
+            width: 50%;
+            vertical-align: top;
+            padding-right: 5px;
+            box-sizing: border-box;
+        }
+
+        .right-column {
+            width: 50%;
+            vertical-align: top;
+            padding-left: 5px;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 10px;
+            border: 1px solid #cccccc;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+        }
+
+        .card-title {
+            color: #000000;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eeeeee;
+            text-transform: uppercase;
+        }
+
+        .info-row {
+            margin-bottom: 6px;
+            clear: both;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .info-label {
+            color: #666666;
+            font-size: 8px;
+            font-weight: bold;
+            width: 70px;
+            float: left;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            color: #000000;
+            font-size: 9px;
+            margin-left: 75px;
+            display: block;
+            word-break: break-word;
+        }
+
+        .info-value-highlight {
+            color: #0EA5E9;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-confirmed {
+            background-color: #DCFCE7;
+            color: #166534;
+            border: 1px solid #86EFAC;
+        }
+
+        .status-pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+
+        .status-emergency {
+            background-color: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+            margin-left: 5px;
+        }
+
+        /* Stats Table */
+        .stats-section {
+            width: 100%;
+            margin: 15px 0;
+            clear: both;
+            box-sizing: border-box;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #cccccc;
+            table-layout: fixed;
+        }
+
+        .stats-table td {
+            text-align: center;
+            padding: 8px 5px;
+            background-color: #f8f8f8;
+            border: 1px solid #cccccc;
+            word-break: break-word;
+            box-sizing: border-box;
+        }
+
+        .stat-label {
+            color: #666666;
+            font-size: 7px;
+            font-weight: bold;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #000000;
+            font-size: 9px;
+            font-weight: bold;
+            display: block;
+        }
+
+        /* QR Code Section */
+        .qr-section {
+            background-color: #f0f9ff;
+            border: 1px solid #BAE6FD;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+        }
+
+        .qr-title {
+            color: #000000;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .qr-subtitle {
+            color: #555555;
+            font-size: 8px;
+            margin-bottom: 12px;
+        }
+
+        .qr-container {
+            display: inline-block;
+            padding: 8px;
+            background: white;
+            border: 1px solid #cccccc;
+        }
+
+        .qr-image {
+            width: 110px;
+            height: 110px;
+        }
+
+        /* Instructions Section */
+        .instructions-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            margin-top: 20px;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+        }
+
+        .instructions-title {
+            color: #000000;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .instructions-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .instructions-table td {
+            vertical-align: top;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .instruction-item {
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .instruction-icon {
+            width: 20px;
+            height: 20px;
+            background-color: #0EA5E9;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            text-align: center;
+            line-height: 20px;
+            font-size: 10px;
+            float: left;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .instruction-text {
+            color: #555555;
+            font-size: 8px;
+            margin-left: 28px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .instruction-heading {
+            color: #000000;
+            font-size: 9px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        /* Important Notes */
+        .important-notes {
+            background-color: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 12px;
+            margin: 15px 0 80px 0; /* Increased bottom margin for footer */
+            border-left: 4px solid #f97316;
+            page-break-inside: avoid;
+            box-sizing: border-box;
+        }
+
+        .notes-title {
+            color: #9a3412;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .notes-list {
+            margin: 0;
+            padding-left: 15px;
+        }
+
+        .notes-list li {
+            color: #555555;
+            font-size: 8px;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        /* Footer - Fixed overflow issue */
+        .footer-section {
+            width: 100%;
+            padding: 15px;
+            border-top: 1px solid #cccccc;
+            color: #666666;
+            font-size: 7px;
+            background: #ffffff;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-sizing: border-box;
+        }
+
+        .footer-content {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .footer-table td {
+            text-align: center;
+            padding: 0 10px;
+            vertical-align: top;
+            word-break: break-word;
+            box-sizing: border-box;
+        }
+
+        .footer-label {
+            color: #000000;
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 8px;
+            text-transform: uppercase;
+        }
+
+        .footer-value {
+            color: #666666;
+            line-height: 1.3;
+        }
+
+        .footer-bottom {
+            width: 100%;
+            padding-top: 10px;
+            border-top: 1px solid #eeeeee;
+        }
+
+        .footer-bottom-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .footer-bottom-table td {
+            vertical-align: middle;
+            padding: 0 5px;
+            word-break: break-word;
+            box-sizing: border-box;
+        }
+
+        .copyright {
+            color: #999999;
+            font-size: 7px;
+        }
+
+        .disclaimer {
+            color: #666666;
+            font-size: 7px;
+            font-style: italic;
+            text-align: center;
+        }
+
+        /* Utility classes */
+        .clear {
+            clear: both;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-10 {
+            margin-bottom: 10px;
+        }
+
+        /* Print-specific fixes */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                overflow: hidden;
+            }
+
+            .container {
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+
+            .content-wrapper {
+                border: none;
+                max-width: 100%;
+                width: 100%;
+                min-height: auto;
+                margin: 0;
+            }
+
+            .header, .footer-section {
+                position: static;
+            }
+
+            .footer-section {
+                position: relative;
+                margin-top: 20px;
+            }
+
+            .important-notes {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="content-wrapper">
+        <div class="top-border"></div>
+
+        <!-- Header -->
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td class="company-logo-cell">
+                        <div class="company-logo" th:text="${clinicInitial ?: 'MC'}">
+                            MC
+                        </div>
+                    </td>
+                    <td class="company-info">
+                        <div class="company-name" th:text="${clinicName}">MEDICAL CLINIC</div>
+                        <div class="company-tagline" th:text="${companyTagline ?: 'Professional Healthcare Services'}">
+                            Professional Healthcare Services
+                        </div>
+                    </td>
+                    <td class="document-info">
+                        <div class="document-title">APPOINTMENT CONFIRMATION</div>
+                        <div class="document-subtitle" th:text="${#dates.format(generationDate, 'MMM dd, yyyy • HH:mm')}">
+                            Jan 15, 2024 • 14:30
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <table class="content-table">
+                <tr>
+                    <td class="left-column">
+                        <!-- Patient Information -->
+                        <div class="card">
+                            <div class="card-title">Patient Details</div>
+                            <div class="info-row">
+                                <div class="info-label">Name</div>
+                                <div class="info-value info-value-highlight" th:text="${patientName}">John Doe</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Contact</div>
+                                <div class="info-value" th:text="${contact}">+1 234 567 8900</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Email</div>
+                                <div class="info-value" th:text="${email}">john.doe@example.com</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="right-column">
+                        <!-- Appointment Information -->
+                        <div class="card">
+                            <div class="card-title">Appointment Details</div>
+                            <div class="info-row">
+                                <div class="info-label">Reference ID</div>
+                                <div class="info-value info-value-highlight" th:text="${appointmentId}">APP-2024-001</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Date</div>
+                                <div class="info-value" th:text="${#dates.format(appointmentDateTime, 'MMM dd, yyyy')}">
+                                    Jan 15, 2024
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Time</div>
+                                <div class="info-value" th:text="${#dates.format(appointmentDateTime, 'hh:mm a')}">
+                                    02:30 PM
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Doctor</div>
+                                <div class="info-value" th:text="${doctorName}">Dr. Smith Johnson</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Status</div>
+                                <div class="info-value">
+                                    <span th:text="${paymentStatus ? 'Confirmed' : 'Pending'}"
+                                          th:class="${paymentStatus ? 'status-badge status-confirmed' : 'status-badge status-pending'}">
+                                        Confirmed
+                                    </span>
+                                    <span th:if="${isEmergency}" class="status-badge status-emergency">
+                                        EMERGENCY
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Stats Table -->
+            <div class="stats-section">
+                <table class="stats-table">
+                    <tr>
+                        <td>
+                            <span class="stat-label">Type</span>
+                            <span class="stat-value" th:text="${appointmentType}">Consultation</span>
+                        </td>
+                        <td>
+                            <span class="stat-label">Specialization</span>
+                            <span class="stat-value" th:text="${specialization ?: 'General'}">Cardiology</span>
+                        </td>
+                        <td>
+                            <span class="stat-label">Location</span>
+                            <span class="stat-value" th:text="${clinicAddress ?: 'Main Clinic'}">Main Clinic</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <div class="qr-title">DIGITAL CHECK-IN</div>
+                <div class="qr-subtitle text-center">
+                    Scan this QR code at clinic reception for instant check-in
+                </div>
+                <div class="qr-container">
+                    <img th:src="${qrCodeData}" alt="Appointment QR Code" class="qr-image" />
+                </div>
+            </div>
+
+            <!-- Instructions Section -->
+            <div class="instructions-section">
+                <div class="instructions-title">Important Instructions</div>
+
+                <table class="instructions-table">
+                    <tr>
+                        <td>
+                            <div class="instruction-item">
+                                <div class="instruction-icon">1</div>
+                                <div class="instruction-text">
+                                    <div class="instruction-heading">Before Arrival</div>
+                                    • Arrive 15 minutes early<br />
+                                    • Bring valid ID proof<br />
+                                    • Carry insurance card if applicable<br />
+                                    • Complete any pre-visit forms
+                                </div>
+                            </div>
+
+                            <div class="instruction-item">
+                                <div class="instruction-icon">2</div>
+                                <div class="instruction-text">
+                                    <div class="instruction-heading">What to Bring</div>
+                                    • This confirmation document<br />
+                                    • Previous medical reports<br />
+                                    • List of current medications<br />
+                                    • Insurance information
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="instruction-item">
+                                <div class="instruction-icon">3</div>
+                                <div class="instruction-text">
+                                    <div class="instruction-heading">At the Clinic</div>
+                                    • Use QR code for check-in<br />
+                                    • Inform reception of arrival<br />
+                                    • Wait in designated area<br />
+                                    • Maintain social distancing
+                                </div>
+                            </div>
+
+                            <div class="instruction-item">
+                                <div class="instruction-icon">4</div>
+                                <div class="instruction-text">
+                                    <div class="instruction-heading">Payment</div>
+                                    • Co-pay due at check-in<br />
+                                    • Accepted: Cash/Card/Insurance<br />
+                                    • Receipt provided after payment<br />
+                                    • Keep payment confirmation
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="instruction-item">
+                                <div class="instruction-icon">5</div>
+                                <div class="instruction-text">
+                                    <div class="instruction-heading">For Online Appointments</div>
+                                    • Test audio/video 10 mins before<br />
+                                    • Stable internet connection required<br />
+                                    • Private, well-lit space<br />
+                                    • Have questions ready
+                                </div>
+                            </div>
+
+                            <div class="instruction-item">
+                                <div class="instruction-icon">6</div>
+                                <div class="instruction-text">
+                                    <div class="instruction-heading">Cancellation</div>
+                                    • 24-hour notice required<br />
+                                    • Call clinic to cancel/reschedule<br />
+                                    • No-show fees may apply<br />
+                                    • Emergency exceptions apply
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Important Notes -->
+            <div class="important-notes">
+                <div class="notes-title">⚠️ Important Notes:</div>
+                <ul class="notes-list">
+                    <li>Late arrivals may result in rescheduled appointments</li>
+                    <li>Emergency cases will be prioritized regardless of appointment time</li>
+                    <li>Mask wearing is mandatory in clinic premises</li>
+                    <li>Notify staff immediately if experiencing COVID-19 symptoms</li>
+                    <li>Bring a companion if you require assistance during consultation</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-section">
+            <div class="footer-content">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="footer-label">Contact</div>
+                            <div class="footer-value">
+                                <div th:text="${clinicContactNumber}">+1 800 MEDICAL</div>
+                                <div th:text="${clinicEmail}">info@medicalclinic.com</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-label">Address</div>
+                            <div class="footer-value" th:text="${clinicAddress}">
+                                123 Medical Street<br />
+                                City, State 12345
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-label">Business Hours</div>
+                            <div class="footer-value">
+                                Mon-Fri: 8:00 AM - 8:00 PM<br />
+                                Sat: 9:00 AM - 4:00 PM<br />
+                                Sun: Emergency Only
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="footer-bottom">
+                <table class="footer-bottom-table">
+                    <tr>
+                        <td style="width: 30%;">
+                            <div class="copyright">
+                                © <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2024</span>
+                                <span th:text="${clinicName}">Medical Clinic</span>. All rights reserved.
+                            </div>
+                        </td>
+                        <td style="width: 40%;">
+                            <div class="disclaimer">
+                                This document is electronically generated. Please arrive 15 minutes before appointment.
+                            </div>
+                        </td>
+                        <td style="width: 30%; text-align: right;">
+                            <div class="copyright">
+                                Document ID: <span th:text="${appointmentId}">APP-2024-001</span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

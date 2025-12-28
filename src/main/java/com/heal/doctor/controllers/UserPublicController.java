@@ -1,5 +1,6 @@
 package com.heal.doctor.controllers;
 
+import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.Mail.IOtpService;
 import com.heal.doctor.services.IUserService;
@@ -18,6 +19,7 @@ public class UserPublicController {
     private final IDoctorService doctorService;
     private final IUserService userService;
     private final IOtpService otpService;
+    private final IAppointmentService appointmentService;
     private final RuntimeApplicationConfigServices runtimeApplicationConfigService;
 
 
@@ -28,9 +30,31 @@ public class UserPublicController {
 
 
     @GetMapping("/{doctorId}")
-    public ResponseEntity<ApiResponse<UserDTO>> getDoctorById(@PathVariable String doctorId) {
+    public ResponseEntity<ApiResponse<DoctorPublicProfileDTO>> getDoctorById(@PathVariable String doctorId) {
         UserDTO doctorDTO = doctorService.getDoctorById(doctorId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Doctor retrieved successfully", doctorDTO));
+        
+        DoctorPublicProfileDTO publicProfile = DoctorPublicProfileDTO.builder()
+                .doctorId(doctorDTO.getDoctorId())
+                .firstName(doctorDTO.getFirstName())
+                .lastName(doctorDTO.getLastName())
+                .specialization(doctorDTO.getSpecialization())
+                .clinicName(doctorDTO.getClinicName())
+                .clinicEmail(doctorDTO.getClinicEmail())
+                .clinicContactNumber(doctorDTO.getClinicContactNumber())
+                .clinicAddress(doctorDTO.getClinicAddress())
+                .address(doctorDTO.getAddress())
+                .about(doctorDTO.getAbout())
+                .bio(doctorDTO.getBio())
+                .yearsOfExperience(doctorDTO.getYearsOfExperience())
+                .profilePicture(doctorDTO.getProfilePicture())
+                .gender(doctorDTO.getGender())
+                .availableDays(doctorDTO.getAvailableDays())
+                .availableTimeSlots(doctorDTO.getAvailableTimeSlots())
+                .education(doctorDTO.getEducation())
+                .achievementsAndAwards(doctorDTO.getAchievementsAndAwards())
+                .build();
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Doctor retrieved successfully", publicProfile));
     }
 
     @PostMapping
@@ -56,6 +80,12 @@ public class UserPublicController {
     public ResponseEntity<ApiResponse<OtpResponseDTO>> sendOtp(@RequestBody OtpRequestDTO otpRequestDTO){
         OtpResponseDTO otpResponseDTO= otpService.generateOtp(otpRequestDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "OTP is generated successfully", otpResponseDTO));
+    }
+
+    @PostMapping("/appointments/book")
+    public ResponseEntity<ApiResponse<AppointmentDTO>> selfBookAppointment(@RequestBody PatientSelfBookingDTO requestDTO) {
+        AppointmentDTO appointmentDTO = appointmentService.selfBookAppointment(requestDTO);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Appointment booked successfully", appointmentDTO));
     }
 
 

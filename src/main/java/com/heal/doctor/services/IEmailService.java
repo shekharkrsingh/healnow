@@ -10,6 +10,11 @@ public interface IEmailService {
                                      Map<String, Object> variables, byte[] attachment,
                                      String attachmentFileName, String attachmentContentType);
 
+    CompletableFuture<Void> sendHtmlEmailWithAttachment(String to, String subject, String templateName,
+                                                        Map<String, Object> variables, byte[] attachment,
+                                                        String attachmentFileName, String attachmentContentType,
+                                                        Map<String, byte[]> inlineImages);
+
     CompletableFuture<Void> sendSimpleEmail(String to, String subject, String body);
 
     CompletableFuture<Void> sendSimpleEmailWithAttachment(String to, String subject, String body,
