@@ -1,9 +1,7 @@
 package com.heal.doctor.controllers;
 
-import com.heal.doctor.dto.AppointmentDTO;
-import com.heal.doctor.dto.AppointmentRequestDTO;
-import com.heal.doctor.dto.EmergencyStatusDTO;
-import com.heal.doctor.dto.UpdateAppointmentDetailsDTO;
+import com.heal.doctor.dto.*;
+import com.heal.doctor.services.IAppointmentSearchService;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.utils.ApiResponse;
 import jakarta.validation.Valid;
@@ -21,9 +19,11 @@ import java.util.List;
 public class AppointmentController {
 
     private final IAppointmentService appointmentService;
+    private final IAppointmentSearchService appointmentSearchService;
 
-    public AppointmentController(IAppointmentService appointmentService) {
+    public AppointmentController(IAppointmentService appointmentService, IAppointmentSearchService appointmentSearchService) {
         this.appointmentService = appointmentService;
+        this.appointmentSearchService = appointmentSearchService;
     }
 
     @PostMapping("/book")
@@ -118,6 +118,19 @@ public class AppointmentController {
                 .success(true)
                 .message("Appointment updated successfully")
                 .data(appointmentDTO)
+                .build());
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<List<AppointmentDTO>>> searchAppointment(
+            @RequestBody AppointmentSearchDTO appointmentSearchDTO
+    ){
+        System.out.println(appointmentSearchDTO.toString());
+        List<AppointmentDTO> appointments=appointmentSearchService.searchAppointment(appointmentSearchDTO);
+        return ResponseEntity.ok(ApiResponse.<List<AppointmentDTO>>builder()
+                .success(true)
+                .message("Appointment searched successfully")
+                .data(appointments)
                 .build());
     }
 }
