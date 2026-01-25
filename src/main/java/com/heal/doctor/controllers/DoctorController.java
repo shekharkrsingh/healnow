@@ -20,7 +20,6 @@ public class DoctorController {
 
 
     private final IDoctorService doctorService;
-    private final IAppointmentService appointmentService;
 
 
     @PutMapping()
@@ -34,11 +33,4 @@ public class DoctorController {
         DoctorProfileDTO doctorDTO = doctorService.getDoctorProfile();
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile retrieved successfully", doctorDTO));
     }
-
-    @GetMapping("/appointments/{appointmentId}")
-    public ResponseEntity<ApiResponse<AppointmentDetailsDTO>> getAppointmentDetails(@PathVariable String appointmentId) {
-        AppointmentDetailsDTO detailsDTO = appointmentService.getAppointmentDetails(appointmentId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Appointment details retrieved successfully", detailsDTO));
-    }
-
 }
