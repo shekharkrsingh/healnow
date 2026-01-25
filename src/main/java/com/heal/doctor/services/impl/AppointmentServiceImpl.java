@@ -327,7 +327,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized appointment access attempt: appointmentId: {}, owner: {}, requester: {}", 
                     appointmentId, currentDoctorId, requestingUserId);
-            throw new ForbiddenException("appointment", "view");
+            throw new ForbiddenException("This appointment belongs to another doctor. You can only view and manage your own appointments.");
         }
         logger.debug("Appointment retrieved: appointmentId: {}, doctorId: {}", appointmentId, currentDoctorId);
         return modelMapper.map(appointmentEntity, AppointmentDTO.class);
@@ -668,6 +668,14 @@ public class AppointmentServiceImpl implements IAppointmentService {
         logger.debug("Fetching detailed appointment info: appointmentId: {}", appointmentId);
         AppointmentEntity appointment = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
+
+        String currentDoctorId = appointment.getDoctorId();
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
+            logger.warn("Unauthorized appointment details access attempt: appointmentId: {}, owner: {}, requester: {}",
+                    appointmentId, currentDoctorId, requestingUserId);
+            throw new ForbiddenException("This appointment belongs to another doctor. You can only view and manage your own appointments.");
+        }
 
         AppointmentDetailsDTO detailsDTO = modelMapper.map(appointment, AppointmentDetailsDTO.class);
 
