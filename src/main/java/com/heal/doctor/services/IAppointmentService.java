@@ -27,4 +27,5 @@ public interface IAppointmentService {
     AppointmentDTO updateAppointmentDetails(String appointmentId, UpdateAppointmentDetailsDTO updateDTO);
     AppointmentDetailsDTO getAppointmentDetails(String appointmentId);
     AppointmentDTO selfBookAppointment(PatientSelfBookingDTO requestDTO);
+    List<AppointmentDetailsDTO> getAppointmentsByPatientEmail(String email);
 }

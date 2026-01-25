@@ -1,6 +1,6 @@
 package com.heal.doctor.controllers;
 
-import com.heal.doctor.dto.UserDTO;
+import com.heal.doctor.dto.DoctorProfileDTO;
 import com.heal.doctor.dto.RuntimeApplicationConfigDTO;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IRuntimeApplicationConfigService;
@@ -22,8 +22,8 @@ public class AdminController {
     private final IRuntimeApplicationConfigService runtimeApplicationConfigService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllDoctors() {
-        List<UserDTO> doctors = doctorService.getAllDoctors();
+    public ResponseEntity<ApiResponse<List<DoctorProfileDTO>>> getAllDoctors() {
+        List<DoctorProfileDTO> doctors = doctorService.getAllDoctors();
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctors retrieved successfully", doctors));
     }
 

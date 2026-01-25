@@ -5,4 +5,5 @@ public enum RolesEnum {
     ADMIN,
     USER,
     COLLABORATOR,
+    ROGER,
 }

@@ -6,6 +6,8 @@ import com.heal.doctor.Mail.impl.OtpServiceImpl;
 import com.heal.doctor.dto.ChangePasswordDTO;
 import com.heal.doctor.dto.ForgotPasswordDTO;
 import com.heal.doctor.dto.UpdateEmailDTO;
+import com.heal.doctor.models.RogerEntity;
+import com.heal.doctor.repositories.RogerRepository;
 import com.heal.doctor.exception.*;
 import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
@@ -27,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -53,6 +56,7 @@ public class UserServiceImpl implements IUserService {
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final CollaboratorProfileRepository collaboratorProfileRepository;
+    private final RogerRepository rogerRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -64,7 +68,9 @@ public class UserServiceImpl implements IUserService {
 
     public UserServiceImpl(
             DoctorRepository doctorRepository,
-            UserRepository userRepository, CollaboratorProfileRepository collaboratorProfileRepository,
+            UserRepository userRepository,
+            CollaboratorProfileRepository collaboratorProfileRepository,
+            RogerRepository rogerRepository,
             PasswordEncoder passwordEncoder,
             JwtUtil jwtUtil,
             AuthenticationManager authenticationManager,
@@ -76,6 +82,7 @@ public class UserServiceImpl implements IUserService {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
         this.collaboratorProfileRepository = collaboratorProfileRepository;
+        this.rogerRepository = rogerRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
@@ -97,7 +104,7 @@ public class UserServiceImpl implements IUserService {
 
             authenticationManager.authenticate(authenticationToken);
 
-            org.springframework.security.core.userdetails.UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             String userId;
             String doctorId;
@@ -105,10 +112,11 @@ public class UserServiceImpl implements IUserService {
 
             if (userDetails instanceof DoctorUserDetails doctorUserDetails) {
                 userId = doctorUserDetails.getDoctorId();
-                doctorId = doctorUserDetails.getDoctorId();
                 role = doctorUserDetails.getUser().getRolesEnum() != null
                         ? doctorUserDetails.getUser().getRolesEnum().name()
                         : "DOCTOR";
+                // Only set doctorId if the role is actually DOCTOR
+                doctorId = "DOCTOR".equals(role) ? userId : null;
             } else if (userDetails instanceof CollaboratorUserDetails collaboratorUserDetails) {
                 userId = collaboratorUserDetails.getUserId();
                 doctorId = collaboratorUserDetails.getDoctorId();
@@ -170,8 +178,8 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     public String updateEmail(UpdateEmailDTO updateEmailDTO) {
         String username = CurrentUserName.getCurrentUsername();
-        String doctorId = CurrentUserName.getCurrentDoctorId();
-        logger.info("Updating email: oldEmail: {}, newEmail: {}, doctorId: {}", username, updateEmailDTO.getNewEmail(), doctorId);
+        String userId = CurrentUserName.getCurrentUserId();
+        logger.info("Updating email: oldEmail: {}, newEmail: {}, userId: {}", username, updateEmailDTO.getNewEmail(), userId);
         UserEntity user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
 
@@ -204,22 +212,32 @@ public class UserServiceImpl implements IUserService {
                 .message("Your login email has been changed. If this wasn’t you, please review your security settings.")
                 .build();
         notificationService.createNotificationAsync(notification).exceptionally(ex -> {
-            logger.error("Failed to create email change notification asynchronously: doctorId: {}, error: {}",
-                    doctorId, ex.getMessage(), ex);
+            logger.error("Failed to create email change notification asynchronously: userId: {}, error: {}",
+                    userId, ex.getMessage(), ex);
             return null;
         });
 
-        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
-        String firstName = doctor != null ? doctor.getFirstName() : "User";
+        DoctorEntity doctor = doctorRepository.findByDoctorId(userId).orElse(null);
+        String firstName = "User";
+        if (doctor != null) {
+            firstName = doctor.getFirstName();
+        } else {
+             // Try fetching Roger profile if not a doctor
+             RogerEntity roger = rogerRepository.findByRogerId(userId).orElse(null);
+             if (roger != null) {
+                 firstName = roger.getFirstName();
+             }
+        }
 
+        String finalFirstName = firstName;
         CompletableFuture<Void> oldEmailFuture = CompletableFuture.runAsync(() ->
                         userAccountEmailService.loginEmailChangedMail(
-                                oldMail, firstName, oldMail, updateEmailDTO.getNewEmail()),
+                                oldMail, finalFirstName, oldMail, updateEmailDTO.getNewEmail()),
                 taskExecutor);
 
         CompletableFuture<Void> newEmailFuture = CompletableFuture.runAsync(() ->
                         userAccountEmailService.loginEmailChangedMail(
-                                updateEmailDTO.getNewEmail(), firstName, oldMail, updateEmailDTO.getNewEmail()),
+                                updateEmailDTO.getNewEmail(), finalFirstName, oldMail, updateEmailDTO.getNewEmail()),
                 taskExecutor);
 
         CompletableFuture.allOf(oldEmailFuture, newEmailFuture).exceptionally(ex -> {
@@ -275,40 +293,56 @@ public class UserServiceImpl implements IUserService {
     @Transactional
     @Override
     public String changeProfilePicture(MultipartFile file) {
-        String doctorId = CurrentUserName.getCurrentDoctorId();
-        logger.info("Changing profile picture: doctorId: {}", doctorId);
+        String userId = CurrentUserName.getCurrentUserId();
+        logger.info("Changing profile picture: userId: {}", userId);
 
         validateImageFile(file);
 
         String imageUrl = savePictureToCloud(file);
-        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+        
+        String role = CurrentUserName.getCurrentUserRole();
+        if ("ROGER".equalsIgnoreCase(role)) {
+             RogerEntity roger = rogerRepository.findByRogerId(userId)
+                     .orElseThrow(() -> new ResourceNotFoundException("Roger", userId));
+             roger.setProfilePicture(imageUrl);
+             roger.setUpdatedAt(new Date());
+             rogerRepository.save(roger);
+        } else {
+             // Default to Doctor/Admin behavior
+             DoctorEntity doctor = doctorRepository.findByDoctorId(userId)
+                     .orElseThrow(() -> new ResourceNotFoundException("Doctor", userId));
 
-        doctor.setProfilePicture(imageUrl);
-        doctor.setUpdatedAt(new Date());
-        doctorRepository.save(doctor);
+             doctor.setProfilePicture(imageUrl);
+             doctor.setUpdatedAt(new Date());
+             doctorRepository.save(doctor);
+        }
 
-        logger.info("Profile picture updated successfully: doctorId: {}", doctorId);
+        logger.info("Profile picture updated successfully: userId: {}", userId);
         return imageUrl;
     }
 
     @Transactional
     @Override
     public String changeCoverPicture(MultipartFile file) {
-        String doctorId = CurrentUserName.getCurrentDoctorId();
-        logger.info("Changing cover picture: doctorId: {}", doctorId);
+        String userId = CurrentUserName.getCurrentUserId();
+        logger.info("Changing cover picture: userId: {}", userId);
 
         validateImageFile(file);
 
+        // Check if user is ROGER, they don't have cover picture yet
+        if ("ROGER".equalsIgnoreCase(CurrentUserName.getCurrentUserRole())) {
+            throw new ForbiddenException("Roger users cannot update cover picture yet");
+        }
+
         String imageUrl = savePictureToCloud(file);
-        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+        DoctorEntity doctor = doctorRepository.findByDoctorId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", userId));
 
         doctor.setCoverPicture(imageUrl);
         doctor.setUpdatedAt(new Date());
         doctorRepository.save(doctor);
 
-        logger.info("Cover picture updated successfully: doctorId: {}", doctorId);
+        logger.info("Cover picture updated successfully: userId: {}", userId);
         return imageUrl;
     }
 

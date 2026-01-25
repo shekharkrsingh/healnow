@@ -3,7 +3,7 @@ package com.heal.doctor.services.impl;
 import com.heal.doctor.Mail.ICollaboratorMailService;
 import com.heal.doctor.dto.CollaboratorDTO;
 import com.heal.doctor.dto.UpdateCollaboratorProfileDTO;
-import com.heal.doctor.dto.UserDTO;
+import com.heal.doctor.dto.DoctorProfileDTO;
 import com.heal.doctor.exception.BadRequestException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
@@ -171,7 +171,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
     }
 
     @Override
-    public UserDTO getCollaboratorProfile() {
+    public DoctorProfileDTO getCollaboratorProfile() {
         String username = CurrentUserName.getCurrentUsername();
         String doctorId = CurrentUserName.getCurrentDoctorId();
         String userId = CurrentUserName.getCurrentUserId();
@@ -183,8 +183,8 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         UserEntity user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
         
-        // Map collaborator profile to userDTO (for compatibility with frontend)
-        UserDTO userDTO = UserDTO.builder()
+        // Map collaborator profile to doctorProfileDTO (for compatibility with frontend)
+        DoctorProfileDTO userDTO = DoctorProfileDTO.builder()
                 .firstName(collaboratorProfile.getFirstName())
                 .lastName(collaboratorProfile.getLastName())
                 .doctorId(doctorId) // Associated doctor's ID
@@ -198,7 +198,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
 
     @Override
     @Transactional
-    public UserDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO) {
+    public DoctorProfileDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO) {
         String username = CurrentUserName.getCurrentUsername();
         String doctorId = CurrentUserName.getCurrentDoctorId();
         String userId = CurrentUserName.getCurrentUserId();
@@ -222,7 +222,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         UserEntity user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
         
-        UserDTO userDTO = UserDTO.builder()
+        DoctorProfileDTO userDTO = DoctorProfileDTO.builder()
                 .firstName(updatedProfile.getFirstName())
                 .lastName(updatedProfile.getLastName())
                 .doctorId(doctorId) // Associated doctor's ID

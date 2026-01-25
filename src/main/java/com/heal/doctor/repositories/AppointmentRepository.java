@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends MongoRepository<AppointmentEntity, String> {
     Optional<AppointmentEntity> findByAppointmentId(String appointmentId);
+    List<AppointmentEntity> findByEmail(String email);
 
     List<AppointmentEntity> findByDoctorIdAndBookingDateTimeBetween(String doctorId, Date startDate, Date endDate);
 

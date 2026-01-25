@@ -14,9 +14,7 @@ import java.util.Date;
 public class PatientSelfBookingDTO {
     private String patientName;
     private String contact;
-    private String email;
     private Date appointmentDateTime;
     private String doctorId;
-    private String otp;
     private String description;
 }

@@ -7,9 +7,13 @@ import com.heal.doctor.services.IUserService;
 import com.heal.doctor.services.impl.RuntimeApplicationConfigServices;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
+import com.heal.doctor.dto.RogerRegistrationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/public")
@@ -29,9 +33,38 @@ public class UserPublicController {
     }
 
 
+    @GetMapping("/doctors")
+    public ResponseEntity<ApiResponse<List<DoctorPublicProfileDTO>>> getAllDoctors() {
+        List<DoctorProfileDTO> doctorDTOs = doctorService.getAllDoctors();
+        List<DoctorPublicProfileDTO> publicProfiles = doctorDTOs.stream()
+                .map(doctorDTO -> DoctorPublicProfileDTO.builder()
+                        .doctorId(doctorDTO.getDoctorId())
+                        .firstName(doctorDTO.getFirstName())
+                        .lastName(doctorDTO.getLastName())
+                        .specialization(doctorDTO.getSpecialization())
+                        .clinicName(doctorDTO.getClinicName())
+                        .clinicEmail(doctorDTO.getClinicEmail())
+                        .clinicContactNumber(doctorDTO.getClinicContactNumber())
+                        .clinicAddress(doctorDTO.getClinicAddress())
+                        .address(doctorDTO.getAddress())
+                        .about(doctorDTO.getAbout())
+                        .bio(doctorDTO.getBio())
+                        .yearsOfExperience(doctorDTO.getYearsOfExperience())
+                        .profilePicture(doctorDTO.getProfilePicture())
+                        .gender(doctorDTO.getGender())
+                        .availableDays(doctorDTO.getAvailableDays())
+                        .availableTimeSlots(doctorDTO.getAvailableTimeSlots())
+                        .education(doctorDTO.getEducation())
+                        .achievementsAndAwards(doctorDTO.getAchievementsAndAwards())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Doctors retrieved successfully", publicProfiles));
+    }
+
     @GetMapping("/{doctorId}")
     public ResponseEntity<ApiResponse<DoctorPublicProfileDTO>> getDoctorById(@PathVariable String doctorId) {
-        UserDTO doctorDTO = doctorService.getDoctorById(doctorId);
+        DoctorProfileDTO doctorDTO = doctorService.getDoctorById(doctorId);
         
         DoctorPublicProfileDTO publicProfile = DoctorPublicProfileDTO.builder()
                 .doctorId(doctorDTO.getDoctorId())
@@ -58,8 +91,8 @@ public class UserPublicController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserDTO>> createDoctor(@RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
-        UserDTO doctorDTO = doctorService.createDoctor(doctorRegistrationDTO);
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> createDoctor(@RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
+        DoctorProfileDTO doctorDTO = doctorService.createDoctor(doctorRegistrationDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor created successfully", doctorDTO));
     }
 

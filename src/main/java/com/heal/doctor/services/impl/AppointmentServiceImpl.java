@@ -2,6 +2,7 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.AppointmentEntity;
+import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
@@ -9,6 +10,7 @@ import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.services.IAppointmentConfirmationService;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
@@ -47,6 +49,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final INotificationService notificationService;
@@ -164,12 +167,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
             throw new ValidationException("Patient name is mandatory.");
         }
-        if (requestDTO.getEmail() == null || requestDTO.getEmail().trim().isEmpty()) {
-            throw new ValidationException("Email is mandatory.");
+        if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
+            throw new ValidationException("Patient name is mandatory.");
         }
-        if (requestDTO.getOtp() == null || requestDTO.getOtp().trim().isEmpty()) {
-            throw new ValidationException("OTP is mandatory.");
-        }
+        // Email is fetched from CurrentUser, so no validation on DTO email
         if (requestDTO.getContact() == null || requestDTO.getContact().trim().isEmpty()) {
             throw new ValidationException("Contact number is mandatory.");
         }
@@ -199,9 +200,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ValidationException("Scheduled appointments must be in the future.");
         }
 
-        // 3. OTP Verification
-        otpService.validateOtp(requestDTO.getEmail(), requestDTO.getOtp());
-
 
         Date[] dateRange = DateUtils.getStartAndEndOfDay(appointmentDate);
         boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
@@ -216,7 +214,29 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
         }
 
+        if (exists) {
+            throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
+        }
+
+        String patientEmail = null;
+        try {
+            String currentUserId = CurrentUserName.getCurrentUserId();
+            userRepository.findByUserId(currentUserId).ifPresent(u -> {
+                // Use final local variable workaround for lambda
+            });
+            // Better approach without lambda if we need the value
+            UserEntity currentUser = userRepository.findByUserId(currentUserId).orElse(null);
+            if (currentUser != null) {
+                patientEmail = currentUser.getEmail();
+            }
+        } catch (Exception e) {
+            logger.debug("No authenticated user found for self-booking, proceeding as public booking");
+        }
+
         AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
+        if (patientEmail != null) {
+            appointmentEntity.setEmail(patientEmail);
+        }
         appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setDoctorId(doctorId);
         appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
@@ -740,6 +760,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
+    }
 
+    @Override
+    public List<AppointmentDetailsDTO> getAppointmentsByPatientEmail(String email) {
+        logger.debug("Fetching appointments for patient email: {}", email);
+        List<AppointmentEntity> appointments = appointmentRepository.findByEmail(email);
+        return appointments.stream()
+                .map(appointment -> {
+                    AppointmentDetailsDTO detailsDTO = modelMapper.map(appointment, AppointmentDetailsDTO.class);
+                    doctorRepository.findByDoctorId(appointment.getDoctorId()).ifPresent(doctor -> {
+                        detailsDTO.setDoctorName("Dr. " + doctor.getFirstName() + " " + doctor.getLastName());
+                        detailsDTO.setDoctorSpecialization(doctor.getSpecialization());
+                    });
+                    return detailsDTO;
+                })
+                .sorted(Comparator.comparing(AppointmentDetailsDTO::getAppointmentDateTime).reversed())
+                .collect(Collectors.toList());
     }
 }
