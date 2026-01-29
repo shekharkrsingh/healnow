@@ -1,0 +1,23 @@
+[
+    {
+        "title": "Register & Verify",
+        "description": "Sign up securely with medical credentials. We handle the verification so you don't have to.",
+        "iconName": "UserGroupIcon",
+        "stepNumber": 1,
+        "isActive": true
+    },
+    {
+        "title": "Invite Your Team",
+        "description": "Send tokenized invites to staff. No complex setup—just instant collaboration.",
+        "iconName": "InboxArrowDownIcon",
+        "stepNumber": 2,
+        "isActive": true
+    },
+    {
+        "title": "Launch Practice",
+        "description": "Start managing appointments and viewing analytics immediately from your new dashboard.",
+        "iconName": "RocketLaunchIcon",
+        "stepNumber": 3,
+        "isActive": true
+    }
+]

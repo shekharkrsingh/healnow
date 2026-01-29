@@ -23,7 +23,7 @@ public class AdminController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<DoctorProfileDTO>>> getAllDoctors() {
-        List<DoctorProfileDTO> doctors = doctorService.getAllDoctors();
+        List<DoctorProfileDTO> doctors = doctorService.getAllDoctors(null, null);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctors retrieved successfully", doctors));
     }
 

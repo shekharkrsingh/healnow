@@ -1,0 +1,11 @@
+{
+    "supportEmail": "support@hpotion.com",
+    "phoneNumber": "+91 98765 43210",
+    "address": "HPotion Plaza, Sector 44",
+    "city": "Gurugram",
+    "state": "Haryana",
+    "country": "India",
+    "businessHours": "Mon-Sat from 9am to 6pm",
+    "responseTime": "Expect a response within 24 hours",
+    "isActive": true
+}

@@ -34,8 +34,11 @@ public class UserPublicController {
 
 
     @GetMapping("/doctors")
-    public ResponseEntity<ApiResponse<List<DoctorPublicProfileDTO>>> getAllDoctors() {
-        List<DoctorProfileDTO> doctorDTOs = doctorService.getAllDoctors();
+    public ResponseEntity<ApiResponse<List<DoctorPublicProfileDTO>>> getAllDoctors(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String query) {
+        
+        List<DoctorProfileDTO> doctorDTOs = doctorService.getAllDoctors(location, query);
         List<DoctorPublicProfileDTO> publicProfiles = doctorDTOs.stream()
                 .map(doctorDTO -> DoctorPublicProfileDTO.builder()
                         .doctorId(doctorDTO.getDoctorId())

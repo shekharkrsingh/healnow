@@ -8,7 +8,7 @@ public interface IDoctorService {
     DoctorProfileDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO);
     DoctorProfileDTO getDoctorById(String doctorId);
     DoctorProfileDTO getDoctorProfile();
-    List<DoctorProfileDTO> getAllDoctors();
+    List<DoctorProfileDTO> getAllDoctors(String location, String query);
 
     DoctorProfileDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
 

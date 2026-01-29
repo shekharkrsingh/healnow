@@ -166,13 +166,24 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
-    public List<DoctorProfileDTO> getAllDoctors() {
-        logger.debug("Fetching all doctors");
-        List<DoctorProfileDTO> doctors = doctorRepository.findAll().parallelStream()
+    public List<DoctorProfileDTO> getAllDoctors(String location, String query) {
+        logger.debug("Fetching all doctors with location: {} and query: {}", location, query);
+        List<DoctorEntity> doctors;
+
+        if ((location == null || location.isEmpty()) && (query == null || query.isEmpty())) {
+            doctors = doctorRepository.findAll();
+        } else {
+            // Null-safe strings for regex
+            String safeLocation = (location != null) ? location : "";
+            String safeQuery = (query != null) ? query : "";
+            doctors = doctorRepository.findByLocationAndQuery(safeLocation, safeQuery);
+        }
+
+        List<DoctorProfileDTO> doctorDTOs = doctors.parallelStream()
                 .map(doctor -> modelMapper.map(doctor, DoctorProfileDTO.class))
                 .collect(Collectors.toList());
-        logger.debug("Retrieved {} doctors", doctors.size());
-        return doctors;
+        logger.debug("Retrieved {} doctors", doctorDTOs.size());
+        return doctorDTOs;
     }
 
     @Transactional

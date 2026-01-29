@@ -1,0 +1,56 @@
+[
+    {
+        "quote": "HPotion has completely transformed how we manage our clinic. The real-time notifications and appointment management features have saved us countless hours every week.",
+        "author": "Dr. Sarah Thompson",
+        "role": "Chief Physician, HealthFirst Clinic",
+        "rating": 5,
+        "type": "DOCTOR",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "quote": "The collaborator management system is brilliant. I can easily onboard new staff and manage permissions without any hassle. HPotion is a game-changer for our practice.",
+        "author": "Dr. Michael Chen",
+        "role": "Medical Director, WellCare Medical Group",
+        "rating": 5,
+        "type": "DOCTOR",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "quote": "The analytics and reporting features give us invaluable insights into our clinic's performance. We've improved our patient care significantly since implementing HPotion.",
+        "author": "Dr. Priya Patel",
+        "role": "Founder, CarePlus Healthcare",
+        "rating": 5,
+        "type": "DOCTOR",
+        "displayOrder": 3,
+        "isActive": true
+    },
+    {
+        "quote": "Finding a specialist was so easy with HPotion. I booked an appointment in minutes and the doctor was amazing.",
+        "author": "Anjali Sharma",
+        "role": "Patient",
+        "rating": 5,
+        "type": "PATIENT",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "quote": "I love that I can see the doctor's availability in real-time. No more calling clinics to check for slots!",
+        "author": "Rahul Verma",
+        "role": "Patient",
+        "rating": 5,
+        "type": "PATIENT",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "quote": "The clinic verification gave me peace of mind. Highly recommend for anyone looking for trusted healthcare.",
+        "author": "Sneha Gupta",
+        "role": "Patient",
+        "rating": 4,
+        "type": "PATIENT",
+        "displayOrder": 3,
+        "isActive": true
+    }
+]

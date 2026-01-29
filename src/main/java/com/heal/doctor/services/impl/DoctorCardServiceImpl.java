@@ -31,7 +31,7 @@ public class DoctorCardServiceImpl implements IDoctorCardService {
 
     private static final Logger logger = LoggerFactory.getLogger(DoctorCardServiceImpl.class);
     private static final String CARD_TEMPLATE_NAME = "appointment-booking-qr-card";
-    private static final String EMAIL_SUBJECT = "Your Digital Appointment Booking Card - H-Potion";
+    private static final String EMAIL_SUBJECT = "Your Digital Appointment Booking Card - HPotion";
     private static final String PDF_FILENAME = "appointment-booking-card.pdf";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
@@ -46,7 +46,7 @@ public class DoctorCardServiceImpl implements IDoctorCardService {
     @Value("${app.booking.base-url}")
     private String bookingBaseUrl;
 
-    @Value("${app.company.name:H-Potion}")
+    @Value("${app.company.name:HPotion}")
     private String companyName;
 
     @Autowired
