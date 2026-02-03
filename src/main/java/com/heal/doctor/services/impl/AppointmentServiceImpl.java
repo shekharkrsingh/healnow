@@ -131,7 +131,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
-        appointmentEntity.setIsEmergency(false);
         if (Boolean.TRUE.equals(requestDTO.getAvailableAtClinic())) {
             appointmentEntity.setAvailableAtClinicDateTime(new Date());
         }
@@ -243,7 +242,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setBookingDateTime(new Date());
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.ONLINE);
-        appointmentEntity.setIsEmergency(false);
         
         // STRICTOR Business Rules
         appointmentEntity.setPaymentStatus(false);
@@ -352,16 +350,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .toList();
         
         List<AppointmentDTO> activeAppointments = allAppointments.stream()
-                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED && appointment.getStatus() != AppointmentStatus.MISSED)
                 .sorted(createFairQueueComparator(currentTime))
                 .collect(Collectors.toList());
         
-        List<AppointmentDTO> cancelledAppointments = allAppointments.stream()
-                .filter(appointment -> appointment.getStatus() == AppointmentStatus.CANCELLED)
-                .sorted((a, b) -> b.getBookingDateTime().compareTo(a.getBookingDateTime()))
+        List<AppointmentDTO> inactiveAppointments = allAppointments.stream()
+                .filter(appointment -> appointment.getStatus() == AppointmentStatus.CANCELLED || appointment.getStatus() == AppointmentStatus.MISSED)
+                .sorted((a, b) -> b.getAppointmentDateTime().compareTo(a.getAppointmentDateTime()))
                 .toList();
         
-        activeAppointments.addAll(cancelledAppointments);
+        activeAppointments.addAll(inactiveAppointments);
         return activeAppointments;
     }
 
@@ -426,13 +424,15 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
         if (
-                (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED))
+                (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || 
+                 appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED) || 
+                 appointmentEntity.getStatus().equals(AppointmentStatus.MISSED))
                         && !appointmentEntity.getPaymentStatus()
                         && paymentStatus
         ) {
             logger.warn("Payment status update failed - invalid status: appointmentId: {}, currentStatus: {}, paymentStatus: {}", 
                     appointmentId, appointmentEntity.getStatus(), paymentStatus);
-            throw new BusinessRuleException("mark as paid", "Appointment must be in ACCEPTED status");
+            throw new BusinessRuleException("mark as paid", "Appointment must be in ACCEPTED or REACTIVATED status");
         }
         Boolean oldPaymentStatus = appointmentEntity.getPaymentStatus();
         appointmentEntity.setPaymentStatus(paymentStatus);
@@ -481,10 +481,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new BusinessRuleException("mark as treated", "Patient is not available at the clinic");
         }
 
-        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED)) {
+        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.MISSED)) {
             logger.warn("Treated status update failed - invalid appointment status: appointmentId: {}, status: {}, doctorId: {}", 
                     appointmentId, appointmentEntity.getStatus(), currentDoctorId);
-            throw new BusinessRuleException("mark as treated", "Appointment must be in ACCEPTED status");
+            throw new BusinessRuleException("mark as treated", "Appointment must be in ACCEPTED or REACTIVATED status");
         }
 
         Boolean oldTreatedStatus = appointmentEntity.getTreated();
@@ -529,10 +531,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new BusinessRuleException("update availability", "Patient is already treated");
         }
 
-        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED)) {
+        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.MISSED)) {
             logger.warn("Availability update failed - invalid status: appointmentId: {}, status: {}, doctorId: {}", 
                     appointmentId, appointmentEntity.getStatus(), currentDoctorId);
-            throw new BusinessRuleException("mark as available", "Appointment must be in ACCEPTED status");
+            throw new BusinessRuleException("mark as available", "Appointment must be in ACCEPTED or REACTIVATED status");
         }
         Boolean oldAvailableAtClinic = appointmentEntity.getAvailableAtClinic();
         
@@ -750,9 +754,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private int compareStatus(AppointmentStatus a, AppointmentStatus b) {
         Map<AppointmentStatus, Integer> priority = Map.of(
-                AppointmentStatus.ACCEPTED, 1,
-                AppointmentStatus.BOOKED, 2,
-                AppointmentStatus.CANCELLED, 3
+                AppointmentStatus.REACTIVATED, 1,
+                AppointmentStatus.ACCEPTED, 2,
+                AppointmentStatus.BOOKED, 3,
+                AppointmentStatus.MISSED, 4,
+                AppointmentStatus.CANCELLED, 5
         );
         return Integer.compare(
                 priority.getOrDefault(a, 99),
