@@ -136,6 +136,18 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
 
+        if (Boolean.TRUE.equals(savedAppointment.getIsEmergency())) {
+            notificationService.createNotificationAsync(
+                NotificationEntity.builder()
+                    .targetId(doctorId)
+                    .recipientType(NotificationRecipientType.DOCTOR_COLLABORATORS)
+                    .type(NotificationType.EMERGENCY)
+                    .title("New Emergency Appointment Alert")
+                    .message("A new emergency appointment for " + savedAppointment.getPatientName() + " has been registered.")
+                    .build()
+            );
+        }
+
         logger.info("Appointment booked successfully: appointmentId: {}, doctorId: {}, patientName: {}", 
                 savedAppointment.getAppointmentId(), doctorId, requestDTO.getPatientName());
 
@@ -247,6 +259,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setPaymentStatus(false);
         appointmentEntity.setAvailableAtClinic(false);
         appointmentEntity.setAvailableAtClinicDateTime(null);
+        appointmentEntity.setIsEmergency(false);
 
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
         logger.info("Self-booked appointment successfully: appointmentId: {}, doctorId: {}", 
