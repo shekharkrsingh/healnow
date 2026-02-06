@@ -33,6 +33,8 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             String doctorId, Date fromDate, Date toDate
     );
 
+    List<AppointmentEntity> findByAppointmentDateTimeBeforeAndStatusIn(Date date, List<AppointmentStatus> statuses);
+
     @Query("""
     {
       doctorId: ?0,
