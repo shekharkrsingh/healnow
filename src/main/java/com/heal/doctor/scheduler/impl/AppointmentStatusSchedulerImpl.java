@@ -65,7 +65,6 @@ public class AppointmentStatusSchedulerImpl implements IAppointmentStatusSchedul
                         appointment.getAppointmentId(), appointment.getStatus(), appointment.getAppointmentDateTime());
                 
                 appointment.setStatus(AppointmentStatus.MISSED);
-                appointment.setUpdatedAt(new Date());
             }
 
             appointmentRepository.saveAll(missedAppointments);
