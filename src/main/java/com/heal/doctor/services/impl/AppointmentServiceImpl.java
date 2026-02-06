@@ -391,18 +391,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
         AppointmentStatus oldStatus = appointmentEntity.getStatus();
         
-        if (oldStatus.equals(AppointmentStatus.CANCELLED) && status.equals(AppointmentStatus.ACCEPTED)) {
-            if (Boolean.TRUE.equals(appointmentEntity.getPaymentStatus())) {
-                logger.warn("Cannot restore cancelled appointment with payment: appointmentId: {}, doctorId: {}", 
-                        appointmentId, currentDoctorId);
-                throw new BusinessRuleException("restore appointment", "Cannot restore cancelled appointment with payment already received");
-            }
-            if (appointmentEntity.getTreated()) {
-                logger.warn("Cannot restore cancelled appointment that was treated: appointmentId: {}, doctorId: {}", 
-                        appointmentId, currentDoctorId);
-                throw new BusinessRuleException("restore appointment", "Cannot restore cancelled appointment that was already treated");
-            }
-        }
+
         
         appointmentEntity.setStatus(status);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
