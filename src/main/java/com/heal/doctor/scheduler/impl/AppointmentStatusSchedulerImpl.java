@@ -22,17 +22,18 @@ public class AppointmentStatusSchedulerImpl implements IAppointmentStatusSchedul
     private static final Logger logger = LoggerFactory.getLogger(AppointmentStatusSchedulerImpl.class);
 
     private final AppointmentRepository appointmentRepository;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
-    public AppointmentStatusSchedulerImpl(AppointmentRepository appointmentRepository) {
+    public AppointmentStatusSchedulerImpl(AppointmentRepository appointmentRepository, org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
         this.appointmentRepository = appointmentRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     /**
      * Daily job at 3:00 AM to mark past appointments as MISSED.
-     * Criteria:
-     * - Appointment date is strictly before today (00:00:00).
-     * - Status is ACCEPTED or REACTIVATED.
-     * - Not TREATED (implied by status check, but logic reinforces this).
+     * Logic:
+     * 1. Fetch only appointmentIds of expired appointments (Optimization).
+     * 2. Perform bulk update on these IDs.
      */
     @Scheduled(cron = "0 0 3 * * ?") 
     @Transactional
@@ -40,7 +41,6 @@ public class AppointmentStatusSchedulerImpl implements IAppointmentStatusSchedul
         logger.info("Starting scheduled task: Mark Missed Appointments");
 
         try {
-            // Get start of today (midnight)
             LocalDate today = LocalDate.now();
             Date startOfToday = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
@@ -49,26 +49,31 @@ public class AppointmentStatusSchedulerImpl implements IAppointmentStatusSchedul
                     AppointmentStatus.REACTIVATED
             );
 
-            // Fetch appointments that should be missed (before today)
-            List<AppointmentEntity> missedAppointments = appointmentRepository
-                    .findByAppointmentDateTimeBeforeAndStatusIn(startOfToday, targetStatuses);
+            // 1. Fetch only IDs (Projection)
+            List<AppointmentEntity> expiredDocs = appointmentRepository
+                    .findExpiredAppointmentIds(startOfToday, targetStatuses);
 
-            if (missedAppointments.isEmpty()) {
+            if (expiredDocs.isEmpty()) {
                 logger.info("No appointments found to mark as MISSED.");
                 return;
             }
 
-            logger.info("Found {} appointments to mark as MISSED.", missedAppointments.size());
+            List<String> appointmentIds = expiredDocs.stream()
+                    .map(AppointmentEntity::getAppointmentId)
+                    .toList();
 
-            for (AppointmentEntity appointment : missedAppointments) {
-                logger.info("Marking appointment {} as MISSED (Old Status: {}, Date: {})",
-                        appointment.getAppointmentId(), appointment.getStatus(), appointment.getAppointmentDateTime());
-                
-                appointment.setStatus(AppointmentStatus.MISSED);
-            }
+            logger.info("Found {} appointments to mark as MISSED: {}", appointmentIds.size(), appointmentIds);
 
-            appointmentRepository.saveAll(missedAppointments);
-            logger.info("Successfully marked {} appointments as MISSED.", missedAppointments.size());
+            // 2. Bulk Update
+            org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query(
+                    org.springframework.data.mongodb.core.query.Criteria.where("appointmentId").in(appointmentIds)
+            );
+            org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
+                    .set("status", AppointmentStatus.MISSED);
+
+            mongoTemplate.updateMulti(query, update, AppointmentEntity.class);
+
+            logger.info("Successfully marked {} appointments as MISSED via bulk update.", appointmentIds.size());
 
         } catch (Exception e) {
             logger.error("Error occurred while marking missed appointments", e);
