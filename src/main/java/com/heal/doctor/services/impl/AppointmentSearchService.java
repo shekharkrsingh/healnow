@@ -4,6 +4,7 @@ import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentSearchDTO;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.AppointmentEntity;
+import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.services.IAppointmentSearchService;
 import com.heal.doctor.utils.CurrentUserName;
@@ -52,7 +53,7 @@ public class AppointmentSearchService implements IAppointmentSearchService {
             if ("TREATED".equals(statusStr)) {
                 treated = true;
             } else if ("PENDING".equals(statusStr)) {
-                status = com.heal.doctor.models.enums.AppointmentStatus.BOOKED;
+                status = AppointmentStatus.BOOKED;
             } else if (!"ALL".equals(statusStr)) {
                 try {
                     status =AppointmentStatus.valueOf(statusStr);
