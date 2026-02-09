@@ -1,0 +1,22 @@
+[
+    {
+        "name": "General Inquiry",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "name": "Booking Help",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "name": "Technical Issue",
+        "displayOrder": 3,
+        "isActive": true
+    },
+    {
+        "name": "Feedback",
+        "displayOrder": 4,
+        "isActive": true
+    }
+]

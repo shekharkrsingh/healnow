@@ -1,0 +1,9 @@
+{
+    "androidAppUrl": "https://play.google.com/store/apps/details?id=com.hpotion.app",
+    "iosAppUrl": "https://apps.apple.com/app/hpotion/id123456789",
+    "appVersion": "1.0.0",
+    "maintenanceMode": false,
+    "announcementText": "System Maintenance Scheduled for Saturday, 10 PM - 12 AM",
+    "announcementActive": true,
+    "isActive": true
+}

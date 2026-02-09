@@ -1,0 +1,56 @@
+[
+    {
+        "title": "Appointment Dashboard",
+        "description": "Manage and view all appointments in one intuitive, real-time dashboard.",
+        "tag": "Workflow",
+        "iconName": "ClipboardDocumentCheckIcon",
+        "color": "blue",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "title": "Patient Management",
+        "description": "Access detailed patient profiles, medical history, and upcoming visits.",
+        "tag": "Patients",
+        "iconName": "UserPlusIcon",
+        "color": "green",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "title": "Analytics & Insights",
+        "description": "Track clinic performance with real-time metrics and growth trends.",
+        "tag": "Analytics",
+        "iconName": "PresentationChartLineIcon",
+        "color": "indigo",
+        "displayOrder": 3,
+        "isActive": true
+    },
+    {
+        "title": "Staff Collaboration",
+        "description": "Secure, tokenized messaging for doctors and assistants.",
+        "tag": "Team",
+        "iconName": "ChatBubbleLeftRightIcon",
+        "color": "purple",
+        "displayOrder": 4,
+        "isActive": true
+    },
+    {
+        "title": "Secure Reporting",
+        "description": "Generate comprehensive PDF reports and patient status updates.",
+        "tag": "Reports",
+        "iconName": "DocumentMagnifyingGlassIcon",
+        "color": "amber",
+        "displayOrder": 5,
+        "isActive": true
+    },
+    {
+        "title": "Custom Logic",
+        "description": "Configure clinic settings, doctor shifts, and availability rules.",
+        "tag": "Settings",
+        "iconName": "Cog8ToothIcon",
+        "color": "rose",
+        "displayOrder": 6,
+        "isActive": true
+    }
+]

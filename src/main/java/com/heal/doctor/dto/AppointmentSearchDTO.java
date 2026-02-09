@@ -16,6 +16,7 @@ public class AppointmentSearchDTO {
     private String email;
     private String appointmentDate;
     private String bookingDate;
-    private AppointmentStatus status;
+    private String status;
+    private Boolean treated;
     private AppointmentType appointmentType;
 }

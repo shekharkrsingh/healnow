@@ -1,6 +1,6 @@
 package com.heal.doctor.controllers;
 
-import com.heal.doctor.dto.UserDTO;
+import com.heal.doctor.dto.DoctorProfileDTO;
 import com.heal.doctor.dto.UpdateCollaboratorProfileDTO;
 import com.heal.doctor.services.ICollaboratorService;
 import com.heal.doctor.utils.ApiResponse;
@@ -19,15 +19,15 @@ public class CollaboratorProfileController {
     private final ICollaboratorService collaboratorService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<UserDTO>> getCollaboratorProfile() {
-        UserDTO profile = collaboratorService.getCollaboratorProfile();
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> getCollaboratorProfile() {
+        DoctorProfileDTO profile = collaboratorService.getCollaboratorProfile();
         return ResponseEntity.ok(new ApiResponse<>(true, "Collaborator profile retrieved successfully", profile));
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<UserDTO>> updateCollaboratorProfile(
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> updateCollaboratorProfile(
             @Valid @RequestBody UpdateCollaboratorProfileDTO updateDTO) {
-        UserDTO updatedProfile = collaboratorService.updateCollaboratorProfile(updateDTO);
+        DoctorProfileDTO updatedProfile = collaboratorService.updateCollaboratorProfile(updateDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Collaborator profile updated successfully", updatedProfile));
     }
 }

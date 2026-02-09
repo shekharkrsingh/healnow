@@ -32,7 +32,7 @@ public class CurrentUserName {
         if (authentication != null && authentication.getPrincipal() instanceof CollaboratorUserDetails collaboratorUserDetails) {
             return collaboratorUserDetails.getDoctorId();
         }
-        throw new RuntimeException("No authenticated user found or doctor ID is missing.");
+        return null; // Return null if not a doctor/collaborator or ID is missing
     }
 
     public static String getCurrentUserId() {

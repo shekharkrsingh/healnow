@@ -133,4 +133,10 @@ public class AppointmentController {
                 .data(appointments)
                 .build());
     }
+
+    @GetMapping("/details/{appointmentId}")
+    public ResponseEntity<ApiResponse<AppointmentDetailsDTO>> getAppointmentDetails(@PathVariable String appointmentId) {
+        AppointmentDetailsDTO detailsDTO = appointmentService.getAppointmentDetails(appointmentId);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Appointment details retrieved successfully", detailsDTO));
+    }
 }

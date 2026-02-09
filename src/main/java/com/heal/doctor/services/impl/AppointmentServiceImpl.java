@@ -2,6 +2,7 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.AppointmentEntity;
+import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
@@ -9,6 +10,7 @@ import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.services.IAppointmentConfirmationService;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
@@ -47,6 +49,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final INotificationService notificationService;
@@ -128,11 +131,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
-        appointmentEntity.setIsEmergency(false);
         if (Boolean.TRUE.equals(requestDTO.getAvailableAtClinic())) {
             appointmentEntity.setAvailableAtClinicDateTime(new Date());
         }
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
+
+        if (Boolean.TRUE.equals(savedAppointment.getIsEmergency())) {
+            notificationService.createNotificationAsync(
+                NotificationEntity.builder()
+                    .targetId(doctorId)
+                    .recipientType(NotificationRecipientType.DOCTOR_COLLABORATORS)
+                    .type(NotificationType.EMERGENCY)
+                    .title("New Emergency Appointment Alert")
+                    .message("A new emergency appointment for " + savedAppointment.getPatientName() + " has been registered.")
+                    .build()
+            );
+        }
 
         logger.info("Appointment booked successfully: appointmentId: {}, doctorId: {}, patientName: {}", 
                 savedAppointment.getAppointmentId(), doctorId, requestDTO.getPatientName());
@@ -164,12 +178,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
         if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
             throw new ValidationException("Patient name is mandatory.");
         }
-        if (requestDTO.getEmail() == null || requestDTO.getEmail().trim().isEmpty()) {
-            throw new ValidationException("Email is mandatory.");
+        if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
+            throw new ValidationException("Patient name is mandatory.");
         }
-        if (requestDTO.getOtp() == null || requestDTO.getOtp().trim().isEmpty()) {
-            throw new ValidationException("OTP is mandatory.");
-        }
+        // Email is fetched from CurrentUser, so no validation on DTO email
         if (requestDTO.getContact() == null || requestDTO.getContact().trim().isEmpty()) {
             throw new ValidationException("Contact number is mandatory.");
         }
@@ -199,9 +211,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ValidationException("Scheduled appointments must be in the future.");
         }
 
-        // 3. OTP Verification
-        otpService.validateOtp(requestDTO.getEmail(), requestDTO.getOtp());
-
 
         Date[] dateRange = DateUtils.getStartAndEndOfDay(appointmentDate);
         boolean exists = appointmentRepository.existsByDoctorIdAndPatientNameAndContactAndAppointmentDateTimeBetweenAndStatus(
@@ -216,19 +225,41 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
         }
 
+        if (exists) {
+            throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
+        }
+
+        String patientEmail = null;
+        try {
+            String currentUserId = CurrentUserName.getCurrentUserId();
+            userRepository.findByUserId(currentUserId).ifPresent(u -> {
+                // Use final local variable workaround for lambda
+            });
+            // Better approach without lambda if we need the value
+            UserEntity currentUser = userRepository.findByUserId(currentUserId).orElse(null);
+            if (currentUser != null) {
+                patientEmail = currentUser.getEmail();
+            }
+        } catch (Exception e) {
+            logger.debug("No authenticated user found for self-booking, proceeding as public booking");
+        }
+
         AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
+        if (patientEmail != null) {
+            appointmentEntity.setEmail(patientEmail);
+        }
         appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
         appointmentEntity.setDoctorId(doctorId);
         appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
         appointmentEntity.setBookingDateTime(new Date());
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.ONLINE);
-        appointmentEntity.setIsEmergency(false);
         
         // STRICTOR Business Rules
         appointmentEntity.setPaymentStatus(false);
         appointmentEntity.setAvailableAtClinic(false);
         appointmentEntity.setAvailableAtClinicDateTime(null);
+        appointmentEntity.setIsEmergency(false);
 
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
         logger.info("Self-booked appointment successfully: appointmentId: {}, doctorId: {}", 
@@ -307,7 +338,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
             logger.warn("Unauthorized appointment access attempt: appointmentId: {}, owner: {}, requester: {}", 
                     appointmentId, currentDoctorId, requestingUserId);
-            throw new ForbiddenException("appointment", "view");
+            throw new ForbiddenException("This appointment belongs to another doctor. You can only view and manage your own appointments.");
         }
         logger.debug("Appointment retrieved: appointmentId: {}, doctorId: {}", appointmentId, currentDoctorId);
         return modelMapper.map(appointmentEntity, AppointmentDTO.class);
@@ -332,16 +363,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .toList();
         
         List<AppointmentDTO> activeAppointments = allAppointments.stream()
-                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED && appointment.getStatus() != AppointmentStatus.MISSED)
                 .sorted(createFairQueueComparator(currentTime))
                 .collect(Collectors.toList());
         
-        List<AppointmentDTO> cancelledAppointments = allAppointments.stream()
-                .filter(appointment -> appointment.getStatus() == AppointmentStatus.CANCELLED)
-                .sorted((a, b) -> b.getBookingDateTime().compareTo(a.getBookingDateTime()))
+        List<AppointmentDTO> inactiveAppointments = allAppointments.stream()
+                .filter(appointment -> appointment.getStatus() == AppointmentStatus.CANCELLED || appointment.getStatus() == AppointmentStatus.MISSED)
+                .sorted((a, b) -> b.getAppointmentDateTime().compareTo(a.getAppointmentDateTime()))
                 .toList();
         
-        activeAppointments.addAll(cancelledAppointments);
+        activeAppointments.addAll(inactiveAppointments);
         return activeAppointments;
     }
 
@@ -360,18 +391,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
         AppointmentStatus oldStatus = appointmentEntity.getStatus();
         
-        if (oldStatus.equals(AppointmentStatus.CANCELLED) && status.equals(AppointmentStatus.ACCEPTED)) {
-            if (Boolean.TRUE.equals(appointmentEntity.getPaymentStatus())) {
-                logger.warn("Cannot restore cancelled appointment with payment: appointmentId: {}, doctorId: {}", 
-                        appointmentId, currentDoctorId);
-                throw new BusinessRuleException("restore appointment", "Cannot restore cancelled appointment with payment already received");
-            }
-            if (appointmentEntity.getTreated()) {
-                logger.warn("Cannot restore cancelled appointment that was treated: appointmentId: {}, doctorId: {}", 
-                        appointmentId, currentDoctorId);
-                throw new BusinessRuleException("restore appointment", "Cannot restore cancelled appointment that was already treated");
-            }
-        }
+
         
         appointmentEntity.setStatus(status);
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
@@ -406,13 +426,15 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
         if (
-                (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED))
+                (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || 
+                 appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED) || 
+                 appointmentEntity.getStatus().equals(AppointmentStatus.MISSED))
                         && !appointmentEntity.getPaymentStatus()
                         && paymentStatus
         ) {
             logger.warn("Payment status update failed - invalid status: appointmentId: {}, currentStatus: {}, paymentStatus: {}", 
                     appointmentId, appointmentEntity.getStatus(), paymentStatus);
-            throw new BusinessRuleException("mark as paid", "Appointment must be in ACCEPTED status");
+            throw new BusinessRuleException("mark as paid", "Appointment must be in ACCEPTED or REACTIVATED status");
         }
         Boolean oldPaymentStatus = appointmentEntity.getPaymentStatus();
         appointmentEntity.setPaymentStatus(paymentStatus);
@@ -461,10 +483,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new BusinessRuleException("mark as treated", "Patient is not available at the clinic");
         }
 
-        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED)) {
+        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.MISSED)) {
             logger.warn("Treated status update failed - invalid appointment status: appointmentId: {}, status: {}, doctorId: {}", 
                     appointmentId, appointmentEntity.getStatus(), currentDoctorId);
-            throw new BusinessRuleException("mark as treated", "Appointment must be in ACCEPTED status");
+            throw new BusinessRuleException("mark as treated", "Appointment must be in ACCEPTED or REACTIVATED status");
         }
 
         Boolean oldTreatedStatus = appointmentEntity.getTreated();
@@ -509,10 +533,12 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new BusinessRuleException("update availability", "Patient is already treated");
         }
 
-        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED)) {
+        if (appointmentEntity.getStatus().equals(AppointmentStatus.CANCELLED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.BOOKED) || 
+            appointmentEntity.getStatus().equals(AppointmentStatus.MISSED)) {
             logger.warn("Availability update failed - invalid status: appointmentId: {}, status: {}, doctorId: {}", 
                     appointmentId, appointmentEntity.getStatus(), currentDoctorId);
-            throw new BusinessRuleException("mark as available", "Appointment must be in ACCEPTED status");
+            throw new BusinessRuleException("mark as available", "Appointment must be in ACCEPTED or REACTIVATED status");
         }
         Boolean oldAvailableAtClinic = appointmentEntity.getAvailableAtClinic();
         
@@ -649,6 +675,14 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointment = appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
+        String currentDoctorId = appointment.getDoctorId();
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
+            logger.warn("Unauthorized appointment details access attempt: appointmentId: {}, owner: {}, requester: {}",
+                    appointmentId, currentDoctorId, requestingUserId);
+            throw new ForbiddenException("This appointment belongs to another doctor. You can only view and manage your own appointments.");
+        }
+
         AppointmentDetailsDTO detailsDTO = modelMapper.map(appointment, AppointmentDetailsDTO.class);
 
         doctorRepository.findByDoctorId(appointment.getDoctorId()).ifPresent(doctor -> {
@@ -722,9 +756,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private int compareStatus(AppointmentStatus a, AppointmentStatus b) {
         Map<AppointmentStatus, Integer> priority = Map.of(
-                AppointmentStatus.ACCEPTED, 1,
-                AppointmentStatus.BOOKED, 2,
-                AppointmentStatus.CANCELLED, 3
+                AppointmentStatus.REACTIVATED, 1,
+                AppointmentStatus.ACCEPTED, 2,
+                AppointmentStatus.BOOKED, 3,
+                AppointmentStatus.MISSED, 4,
+                AppointmentStatus.CANCELLED, 5
         );
         return Integer.compare(
                 priority.getOrDefault(a, 99),
@@ -740,6 +776,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
+    }
 
+    @Override
+    public List<AppointmentDetailsDTO> getAppointmentsByPatientEmail(String email) {
+        logger.debug("Fetching appointments for patient email: {}", email);
+        List<AppointmentEntity> appointments = appointmentRepository.findByEmail(email);
+        return appointments.stream()
+                .map(appointment -> {
+                    AppointmentDetailsDTO detailsDTO = modelMapper.map(appointment, AppointmentDetailsDTO.class);
+                    doctorRepository.findByDoctorId(appointment.getDoctorId()).ifPresent(doctor -> {
+                        detailsDTO.setDoctorName("Dr. " + doctor.getFirstName() + " " + doctor.getLastName());
+                        detailsDTO.setDoctorSpecialization(doctor.getSpecialization());
+                    });
+                    return detailsDTO;
+                })
+                .sorted(Comparator.comparing(AppointmentDetailsDTO::getAppointmentDateTime).reversed())
+                .collect(Collectors.toList());
     }
 }

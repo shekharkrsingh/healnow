@@ -4,7 +4,10 @@ package com.heal.doctor.controllers;
 import com.heal.doctor.dto.ChangePasswordDTO;
 import com.heal.doctor.dto.UpdateEmailDTO;
 import com.heal.doctor.services.IUserService;
+import com.heal.doctor.services.impl.RuntimeApplicationConfigServices;
 import com.heal.doctor.utils.ApiResponse;
+import com.heal.doctor.dto.*;
+import com.heal.doctor.dto.RogerProfileDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN', 'COLLABORATOR')")
+@PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN', 'COLLABORATOR', 'ROGER')")
 public class UserController {
 
     private final IUserService userService;

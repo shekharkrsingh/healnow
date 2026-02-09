@@ -1,0 +1,50 @@
+[
+    {
+        "title": "Streamlined Efficiency",
+        "description": "Reduce administrative overhead with automated scheduling and real-time status tracking.",
+        "iconName": "BoltIcon",
+        "color": "text-amber-500",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "title": "Enterprise Security",
+        "description": "Patient data protected by healthcare-grade encryption and secure authentication.",
+        "iconName": "ShieldCheckIcon",
+        "color": "text-blue-500",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "title": "Actionable Intelligence",
+        "description": "Make informed decisions with detailed statistics and comprehensive practice reports.",
+        "iconName": "ChartBarIcon",
+        "color": "text-indigo-500",
+        "displayOrder": 3,
+        "isActive": true
+    },
+    {
+        "title": "Team Collaboration",
+        "description": "Built for medical teams to coordinate seamlessly between doctors and assistants.",
+        "iconName": "UserGroupIcon",
+        "color": "text-green-500",
+        "displayOrder": 4,
+        "isActive": true
+    },
+    {
+        "title": "Instant Updates",
+        "description": "Stay current with seamless over-the-air updates and cloud-synced patient data.",
+        "iconName": "CloudArrowUpIcon",
+        "color": "text-purple-500",
+        "displayOrder": 5,
+        "isActive": true
+    },
+    {
+        "title": "Real-time Pulse",
+        "description": "Instant notifications keep you connected to your clinic's activity from anywhere.",
+        "iconName": "ChatBubbleBottomCenterTextIcon",
+        "color": "text-rose-500",
+        "displayOrder": 6,
+        "isActive": true
+    }
+]

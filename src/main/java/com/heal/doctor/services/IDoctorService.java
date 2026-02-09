@@ -5,12 +5,12 @@ import com.heal.doctor.dto.*;
 import java.util.List;
 
 public interface IDoctorService {
-    UserDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO);
-    UserDTO getDoctorById(String doctorId);
-    UserDTO getDoctorProfile();
-    List<UserDTO> getAllDoctors();
+    DoctorProfileDTO createDoctor(DoctorRegistrationDTO doctorRegistrationDTO);
+    DoctorProfileDTO getDoctorById(String doctorId);
+    DoctorProfileDTO getDoctorProfile();
+    List<DoctorProfileDTO> getAllDoctors(String location, String query);
 
-    UserDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
+    DoctorProfileDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
 
     void deleteDoctor(String doctorId);
 }

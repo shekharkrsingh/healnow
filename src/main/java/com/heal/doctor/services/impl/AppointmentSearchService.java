@@ -4,6 +4,7 @@ import com.heal.doctor.dto.AppointmentDTO;
 import com.heal.doctor.dto.AppointmentSearchDTO;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.AppointmentEntity;
+import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.services.IAppointmentSearchService;
 import com.heal.doctor.utils.CurrentUserName;
@@ -44,6 +45,25 @@ public class AppointmentSearchService implements IAppointmentSearchService {
         Date[] appointmentDateRange = getDateRange(appointmentSearchDTO.getAppointmentDate());
         Date[] bookingDateRange = getDateRange(appointmentSearchDTO.getBookingDate());
 
+        AppointmentStatus status = null;
+        Boolean treated = null;
+
+        if (StringUtils.hasText(appointmentSearchDTO.getStatus())) {
+            String statusStr = appointmentSearchDTO.getStatus().toUpperCase();
+            if ("TREATED".equals(statusStr)) {
+                treated = true;
+            } else if ("PENDING".equals(statusStr)) {
+                status = AppointmentStatus.BOOKED;
+            } else if (!"ALL".equals(statusStr)) {
+                try {
+                    status =AppointmentStatus.valueOf(statusStr);
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Invalid status provided for search: {}", statusStr);
+                    // treat as null (ALL) if invalid, or could throw exception
+                }
+            }
+        }
+
         List<AppointmentEntity> appointments = appointmentRepository.searchAppointmentsByDoctorId(
                 doctorId,
                 appointmentSearchDTO.getAppointmentId(),
@@ -54,8 +74,9 @@ public class AppointmentSearchService implements IAppointmentSearchService {
                 appointmentDateRange[1],
                 bookingDateRange[0],
                 bookingDateRange[1],
-                appointmentSearchDTO.getStatus(),
-                appointmentSearchDTO.getAppointmentType()
+                status,
+                appointmentSearchDTO.getAppointmentType(),
+                treated
         );
 
         logger.debug("Found {} appointments matching criteria.", appointments.size());

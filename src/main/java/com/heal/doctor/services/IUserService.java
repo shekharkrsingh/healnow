@@ -3,6 +3,8 @@ package com.heal.doctor.services;
 import com.heal.doctor.dto.ChangePasswordDTO;
 import com.heal.doctor.dto.ForgotPasswordDTO;
 import com.heal.doctor.dto.UpdateEmailDTO;
+import com.heal.doctor.dto.RogerProfileDTO;
+import com.heal.doctor.dto.RogerRegistrationDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface IUserService {

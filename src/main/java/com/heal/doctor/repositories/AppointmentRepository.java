@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends MongoRepository<AppointmentEntity, String> {
     Optional<AppointmentEntity> findByAppointmentId(String appointmentId);
+    List<AppointmentEntity> findByEmail(String email);
 
     List<AppointmentEntity> findByDoctorIdAndBookingDateTimeBetween(String doctorId, Date startDate, Date endDate);
 
@@ -32,6 +33,9 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             String doctorId, Date fromDate, Date toDate
     );
 
+    @Query(value = "{ 'appointmentDateTime' : { $lt : ?0 }, 'status' : { $in : ?1 } }", fields = "{ 'appointmentId' : 1 }")
+    List<AppointmentEntity> findExpiredAppointmentIds(Date date, List<AppointmentStatus> statuses);
+
     @Query("""
     {
       doctorId: ?0,
@@ -43,7 +47,8 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
         { $or: [ { appointmentDateTime: { $gte: ?5, $lte: ?6 } }, { $expr: { $eq: [ ?5, null ] } } ] },
         { $or: [ { bookingDateTime: { $gte: ?7, $lte: ?8 } }, { $expr: { $eq: [ ?7, null ] } } ] },
         { $or: [ { status: ?9 }, { $expr: { $eq: [ ?9, null ] } } ] },
-        { $or: [ { appointmentType: ?10 }, { $expr: { $eq: [ ?10, null ] } } ] }
+        { $or: [ { appointmentType: ?10 }, { $expr: { $eq: [ ?10, null ] } } ] },
+        { $or: [ { treated: ?11 }, { $expr: { $eq: [ ?11, null ] } } ] }
       ]
     }
     """)
@@ -58,7 +63,8 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             Date bookingDateStart,
             Date bookingDateEnd,
             AppointmentStatus status,
-            AppointmentType appointmentType
+            AppointmentType appointmentType,
+            Boolean treated
     );
 
 

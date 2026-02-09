@@ -1,0 +1,10 @@
+{
+    "totalPatients": 10000,
+    "totalDoctors": 150,
+    "satisfactionRate": 98,
+    "avgWaitTime": "15 min",
+    "monthlyGrowth": "+12% this month",
+    "specialtiesCount": 24,
+    "citiesCount": 50,
+    "isActive": true
+}

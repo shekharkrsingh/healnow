@@ -20,25 +20,17 @@ public class DoctorController {
 
 
     private final IDoctorService doctorService;
-    private final IAppointmentService appointmentService;
 
 
     @PutMapping()
-    public ResponseEntity<ApiResponse<UserDTO>> updateDoctor(@Valid @RequestBody UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
-        UserDTO savedDoctorDTO = doctorService.updateDoctor(updateDoctorDetailsDTO);
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> updateDoctor(@Valid @RequestBody UpdateDoctorDetailsDTO updateDoctorDetailsDTO) {
+        DoctorProfileDTO savedDoctorDTO = doctorService.updateDoctor(updateDoctorDetailsDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor updated successfully", savedDoctorDTO));
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<UserDTO>> getDoctorProfile() {
-        UserDTO doctorDTO = doctorService.getDoctorProfile();
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> getDoctorProfile() {
+        DoctorProfileDTO doctorDTO = doctorService.getDoctorProfile();
         return ResponseEntity.ok(new ApiResponse<>(true, "Profile retrieved successfully", doctorDTO));
     }
-
-    @GetMapping("/appointments/{appointmentId}")
-    public ResponseEntity<ApiResponse<AppointmentDetailsDTO>> getAppointmentDetails(@PathVariable String appointmentId) {
-        AppointmentDetailsDTO detailsDTO = appointmentService.getAppointmentDetails(appointmentId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Appointment details retrieved successfully", detailsDTO));
-    }
-
 }

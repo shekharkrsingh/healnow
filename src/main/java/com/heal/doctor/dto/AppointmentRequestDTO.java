@@ -37,4 +37,6 @@ public class AppointmentRequestDTO {
     
     @NotNull(message = "Payment status is required")
     private Boolean paymentStatus;
+
+    private Boolean isEmergency=false;
 }

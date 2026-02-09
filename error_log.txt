@@ -1,0 +1,20 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------------< com.heal:doctor >---------------------------
+[INFO] Building Heal Now (Doctor) 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ doctor ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 14 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ doctor ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 171 source files with javac [debug parameters release 21] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  26.720 s
+[INFO] Finished at: 2026-01-24T17:01:24+05:30
+[INFO] ------------------------------------------------------------------------

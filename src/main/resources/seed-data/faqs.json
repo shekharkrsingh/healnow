@@ -1,0 +1,58 @@
+[
+    {
+        "question": "How secure is clinical data?",
+        "answer": "Enterprise-grade encryption is used for all data transmissions. We are fully compliant with RBAC standards to ensure only authorized personnel can access sensitive records.",
+        "category": "DOCTOR",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "question": "Can I manage multiple clinics?",
+        "answer": "Yes! Our platform supports multi-clinic management from a single practitioner account, allowing you to toggle between workspaces seamlessly.",
+        "category": "DOCTOR",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "question": "Is there a desktop version available?",
+        "answer": "Currently, we focus on a 'Mobile First' experience for practitioners, but a full web dashboard for clinic administrators is in active development.",
+        "category": "DOCTOR",
+        "displayOrder": 3,
+        "isActive": true
+    },
+    {
+        "question": "How do I invite my staff members?",
+        "answer": "You can generate secure, tokenized invite links directly from the Settings panel. Once they sign up, they'll be automatically added to your clinic team.",
+        "category": "DOCTOR",
+        "displayOrder": 4,
+        "isActive": true
+    },
+    {
+        "question": "How do I book an appointment?",
+        "answer": "Simply search for a doctor by specialty or location, choose an available time slot that suits you, and confirm your booking instantly.",
+        "category": "PATIENT",
+        "displayOrder": 1,
+        "isActive": true
+    },
+    {
+        "question": "Is the service free for patients?",
+        "answer": "Yes, searching for doctors and booking appointments through HPotion is completely free. You only pay for the consultation at the clinic.",
+        "category": "PATIENT",
+        "displayOrder": 2,
+        "isActive": true
+    },
+    {
+        "question": "Can I cancel or reschedule?",
+        "answer": "Absolutely. You can manage all your appointments from your dashboard. We recommend cancelling at least 24 hours in advance.",
+        "category": "PATIENT",
+        "displayOrder": 3,
+        "isActive": true
+    },
+    {
+        "question": "Are the doctors verified?",
+        "answer": "Yes, we have a strict verification process. We ensure all doctors listed on our platform are licensed and qualified professionals.",
+        "category": "PATIENT",
+        "displayOrder": 4,
+        "isActive": true
+    }
+]
