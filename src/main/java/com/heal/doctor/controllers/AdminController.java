@@ -4,6 +4,7 @@ import com.heal.doctor.dto.DoctorProfileDTO;
 import com.heal.doctor.dto.RuntimeApplicationConfigDTO;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IRuntimeApplicationConfigService;
+import com.heal.doctor.models.enums.VerificationStatus;
 import com.heal.doctor.utils.ApiResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,14 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Void>> deleteDoctor(@PathVariable String doctorId) {
         doctorService.deleteDoctor(doctorId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor deleted successfully", null));
+    }
+
+    @PutMapping("/{doctorId}/status")
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> updateVerificationStatus(
+            @PathVariable String doctorId,
+            @RequestParam VerificationStatus status) {
+        DoctorProfileDTO doctor = doctorService.updateVerificationStatus(doctorId, status);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Verification status updated successfully", doctor));
     }
 
 

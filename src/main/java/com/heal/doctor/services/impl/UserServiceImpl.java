@@ -9,6 +9,7 @@ import com.heal.doctor.dto.UpdateEmailDTO;
 import com.heal.doctor.models.RogerEntity;
 import com.heal.doctor.repositories.RogerRepository;
 import com.heal.doctor.exception.*;
+import com.heal.doctor.models.CollaboratorProfileEntity;
 import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.UserEntity;
@@ -307,6 +308,12 @@ public class UserServiceImpl implements IUserService {
              roger.setProfilePicture(imageUrl);
              roger.setUpdatedAt(new Date());
              rogerRepository.save(roger);
+        } else if ("COLLABORATOR".equalsIgnoreCase(role)) {
+             CollaboratorProfileEntity collaboratorProfile = collaboratorProfileRepository.findByCollaboratorId(userId)
+                     .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", userId));
+             collaboratorProfile.setProfilePicture(imageUrl);
+             collaboratorProfile.setUpdatedAt(new Date());
+             collaboratorProfileRepository.save(collaboratorProfile);
         } else {
              // Default to Doctor/Admin behavior
              DoctorEntity doctor = doctorRepository.findByDoctorId(userId)
@@ -329,18 +336,28 @@ public class UserServiceImpl implements IUserService {
 
         validateImageFile(file);
 
+        String role = CurrentUserName.getCurrentUserRole();
         // Check if user is ROGER, they don't have cover picture yet
-        if ("ROGER".equalsIgnoreCase(CurrentUserName.getCurrentUserRole())) {
+        if ("ROGER".equalsIgnoreCase(role)) {
             throw new ForbiddenException("Roger users cannot update cover picture yet");
         }
 
         String imageUrl = savePictureToCloud(file);
-        DoctorEntity doctor = doctorRepository.findByDoctorId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor", userId));
+        
+        if ("COLLABORATOR".equalsIgnoreCase(role)) {
+             CollaboratorProfileEntity collaboratorProfile = collaboratorProfileRepository.findByCollaboratorId(userId)
+                     .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", userId));
+             collaboratorProfile.setCoverPicture(imageUrl);
+             collaboratorProfile.setUpdatedAt(new Date());
+             collaboratorProfileRepository.save(collaboratorProfile);
+        } else {
+             DoctorEntity doctor = doctorRepository.findByDoctorId(userId)
+                     .orElseThrow(() -> new ResourceNotFoundException("Doctor", userId));
 
-        doctor.setCoverPicture(imageUrl);
-        doctor.setUpdatedAt(new Date());
-        doctorRepository.save(doctor);
+             doctor.setCoverPicture(imageUrl);
+             doctor.setUpdatedAt(new Date());
+             doctorRepository.save(doctor);
+        }
 
         logger.info("Cover picture updated successfully: userId: {}", userId);
         return imageUrl;

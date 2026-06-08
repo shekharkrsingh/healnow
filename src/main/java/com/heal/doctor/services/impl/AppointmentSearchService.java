@@ -12,6 +12,9 @@ import com.heal.doctor.utils.DateUtils;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -64,6 +67,21 @@ public class AppointmentSearchService implements IAppointmentSearchService {
             }
         }
 
+        int page = appointmentSearchDTO.getPage() != null ? appointmentSearchDTO.getPage() : 0;
+        int size = appointmentSearchDTO.getSize() != null ? appointmentSearchDTO.getSize() : 10;
+
+        Sort sort = Sort.unsorted();
+        if (StringUtils.hasText(appointmentSearchDTO.getSortBy())) {
+            Sort.Direction direction = "desc".equalsIgnoreCase(appointmentSearchDTO.getSortDirection())
+                    ? Sort.Direction.DESC
+                    : Sort.Direction.ASC;
+            sort = Sort.by(direction, appointmentSearchDTO.getSortBy());
+        } else {
+            sort = Sort.by(Sort.Direction.DESC, "appointmentDateTime");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
         List<AppointmentEntity> appointments = appointmentRepository.searchAppointmentsByDoctorId(
                 doctorId,
                 appointmentSearchDTO.getAppointmentId(),
@@ -76,7 +94,8 @@ public class AppointmentSearchService implements IAppointmentSearchService {
                 bookingDateRange[1],
                 status,
                 appointmentSearchDTO.getAppointmentType(),
-                treated
+                treated,
+                pageable
         );
 
         logger.debug("Found {} appointments matching criteria.", appointments.size());

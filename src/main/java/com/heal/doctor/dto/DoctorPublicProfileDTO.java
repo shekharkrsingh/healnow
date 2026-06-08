@@ -1,8 +1,7 @@
 package com.heal.doctor.dto;
 
 import com.heal.doctor.models.Address;
-import com.heal.doctor.models.TimeSlot;
-import com.heal.doctor.models.enums.AvailableDayEnum;
+import com.heal.doctor.models.DayAvailability;
 import com.heal.doctor.models.enums.GenderEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,8 +29,7 @@ public class DoctorPublicProfileDTO {
     private Integer yearsOfExperience;
     private String profilePicture;
     private GenderEnum gender;
-    private List<AvailableDayEnum> availableDays;
-    private List<TimeSlot> availableTimeSlots;
+    private List<DayAvailability> availability;
     private List<String> education;
     private List<String> achievementsAndAwards;
 }

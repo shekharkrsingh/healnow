@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Request Received</title>
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #6c757d;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .email-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--surface);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .email-header {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .email-subheader {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .email-body {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .submitted-notice {
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .submitted-notice p {
+            font-size: 14px;
+            color: #0369a1;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .details-list {
+            background: #f0f9ff;
+            border: 1px solid #e0f2fe;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .details-list p {
+            font-size: 14px;
+            color: #0369a1;
+            margin: 5px 0;
+            font-weight: 500;
+        }
+
+        .email-footer {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .support-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 15px 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="email-container">
+    <div class="email-header">Verification Details Received</div>
+
+    <div class="email-subheader">
+        Your professional practitioner credentials are under review.
+    </div>
+
+    <div class="email-body">
+        <p>Dear Dr. <strong th:text="${doctorName}">Doctor</strong>,</p>
+        <p>We have successfully received your updated medical license and verification details.</p>
+        <p>Our administration team will review your submission shortly. While the review is pending, your existing active verification status (if verified) remains active so you can continue accepting appointments without interruption.</p>
+    </div>
+
+    <div class="details-list">
+        <p><strong>Submitted License Details:</strong></p>
+        <p>License Number: <span th:text="${licenseNumber}">N/A</span></p>
+        <p>Licensing Authority: <span th:text="${licensingAuthority}">N/A</span></p>
+        <p>Expiry Date: <span th:text="${expiryDate}">N/A</span></p>
+    </div>
+
+    <div class="submitted-notice">
+        <p>ℹ️ Under review. We will notify you once approved.</p>
+    </div>
+
+    <div class="email-footer">
+        <p>This is an operational notification from <span th:text="${companyName}">Company Name</span>.</p>
+        <p>If you have any questions or require assistance, please contact our support team.</p>
+        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span> Administration</p>
+        <div class="support-info">
+            © 2026 <span th:text="${companyName}">Company Name</span>. All rights reserved.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

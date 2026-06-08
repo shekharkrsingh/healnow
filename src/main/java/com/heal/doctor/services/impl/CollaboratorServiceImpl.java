@@ -2,9 +2,11 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.Mail.ICollaboratorMailService;
 import com.heal.doctor.dto.CollaboratorDTO;
+import com.heal.doctor.dto.CollaboratorProfileDTO;
 import com.heal.doctor.dto.UpdateCollaboratorProfileDTO;
 import com.heal.doctor.dto.DoctorProfileDTO;
 import com.heal.doctor.exception.BadRequestException;
+import com.heal.doctor.exception.ForbiddenException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
 import com.heal.doctor.models.DoctorEntity;
@@ -55,13 +57,18 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
 
     @Override
     @Transactional
-    public void deactivateCollaborator(String collaboratorId) {
-        logger.info("Deactivating collaborator: {}", collaboratorId);
-        UserEntity user = userRepository.findByUserId(collaboratorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Collaborator user", collaboratorId));
+    public void deactivateCollaborator(String collaboratorId, String doctorId) {
+        logger.info("Deactivating collaborator: {} for doctor: {}", collaboratorId, doctorId);
 
         CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", collaboratorId));
+
+        if (!doctorId.equals(profile.getDoctorId())) {
+            throw new ForbiddenException("collaborator", "deactivate");
+        }
+
+        UserEntity user = userRepository.findByUserId(collaboratorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collaborator user", collaboratorId));
 
         if (!user.getIsActive() && profile.getStatus() == CollaboratorStatus.DEACTIVATED) {
             throw new BadRequestException("Collaborator is already deactivated");
@@ -81,13 +88,18 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
 
     @Override
     @Transactional
-    public void activateCollaborator(String collaboratorId) {
-        logger.info("Activating collaborator: {}", collaboratorId);
-        UserEntity user = userRepository.findByUserId(collaboratorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Collaborator user", collaboratorId));
+    public void activateCollaborator(String collaboratorId, String doctorId) {
+        logger.info("Activating collaborator: {} for doctor: {}", collaboratorId, doctorId);
 
         CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", collaboratorId));
+
+        if (!doctorId.equals(profile.getDoctorId())) {
+            throw new ForbiddenException("collaborator", "activate");
+        }
+
+        UserEntity user = userRepository.findByUserId(collaboratorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collaborator user", collaboratorId));
 
         if (user.getIsActive() && profile.getStatus() == CollaboratorStatus.ACTIVATED) {
             throw new BadRequestException("Collaborator is already active");
@@ -107,13 +119,17 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
 
     @Override
     @Transactional
-    public void removeCollaborator(String collaboratorId) {
-        logger.info("Removing collaborator from doctor: {}", collaboratorId);
+    public void removeCollaborator(String collaboratorId, String doctorId) {
+        logger.info("Removing collaborator from doctor: {} by doctor: {}", collaboratorId, doctorId);
         CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", collaboratorId));
 
+        if (!doctorId.equals(profile.getDoctorId())) {
+            throw new ForbiddenException("collaborator", "remove");
+        }
+
         // Save info for email before clearing
-        String doctorId = profile.getDoctorId();
+        String targetDoctorId = profile.getDoctorId();
         String colleagueEmail = profile.getEmail(); // Use email from profile
 
         // Update profile: clear doctor link and set status
@@ -135,10 +151,10 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         logger.info("Collaborator removed (released): {}", collaboratorId);
 
         // Send emails
-        if (doctorId != null && colleagueEmail != null) {
-            DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
+        if (targetDoctorId != null && colleagueEmail != null) {
+            DoctorEntity doctor = doctorRepository.findByDoctorId(targetDoctorId).orElse(null);
             if (doctor != null) {
-                UserEntity doctorUser = userRepository.findByUserId(doctorId).orElse(null);
+                UserEntity doctorUser = userRepository.findByUserId(targetDoctorId).orElse(null);
                 if (doctorUser != null) {
                     collaboratorMailService.sendRemovalEmail(
                             doctor.getFirstName() + " " + doctor.getLastName(),
@@ -171,7 +187,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
     }
 
     @Override
-    public DoctorProfileDTO getCollaboratorProfile() {
+    public CollaboratorProfileDTO getCollaboratorProfile() {
         String username = CurrentUserName.getCurrentUsername();
         String doctorId = CurrentUserName.getCurrentDoctorId();
         String userId = CurrentUserName.getCurrentUserId();
@@ -183,22 +199,27 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         UserEntity user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
         
-        // Map collaborator profile to doctorProfileDTO (for compatibility with frontend)
-        DoctorProfileDTO userDTO = DoctorProfileDTO.builder()
+        CollaboratorProfileDTO userDTO = CollaboratorProfileDTO.builder()
                 .firstName(collaboratorProfile.getFirstName())
                 .lastName(collaboratorProfile.getLastName())
-                .doctorId(doctorId) // Associated doctor's ID
+                .collaboratorId(collaboratorProfile.getCollaboratorId())
+                .doctorId(collaboratorProfile.getDoctorId())
+                .status(collaboratorProfile.getStatus())
+                .profilePicture(collaboratorProfile.getProfilePicture())
+                .coverPicture(collaboratorProfile.getCoverPicture())
                 .email(user.getEmail())
+                .createdAt(collaboratorProfile.getCreatedAt())
+                .updatedAt(collaboratorProfile.getUpdatedAt())
                 .build();
         
         logger.debug("Collaborator profile retrieved: collaboratorId: {}, doctorId: {}", 
-                collaboratorProfile.getCollaboratorId(), doctorId);
+                collaboratorProfile.getCollaboratorId(), collaboratorProfile.getDoctorId());
         return userDTO;
     }
 
     @Override
     @Transactional
-    public DoctorProfileDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO) {
+    public CollaboratorProfileDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO) {
         String username = CurrentUserName.getCurrentUsername();
         String doctorId = CurrentUserName.getCurrentDoctorId();
         String userId = CurrentUserName.getCurrentUserId();
@@ -222,14 +243,20 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         UserEntity user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", username));
         
-        DoctorProfileDTO userDTO = DoctorProfileDTO.builder()
+        CollaboratorProfileDTO userDTO = CollaboratorProfileDTO.builder()
                 .firstName(updatedProfile.getFirstName())
                 .lastName(updatedProfile.getLastName())
-                .doctorId(doctorId) // Associated doctor's ID
+                .collaboratorId(updatedProfile.getCollaboratorId())
+                .doctorId(updatedProfile.getDoctorId())
+                .status(updatedProfile.getStatus())
+                .profilePicture(updatedProfile.getProfilePicture())
+                .coverPicture(updatedProfile.getCoverPicture())
                 .email(user.getEmail())
+                .createdAt(updatedProfile.getCreatedAt())
+                .updatedAt(updatedProfile.getUpdatedAt())
                 .build();
         
-        logger.info("Collaborator profile updated: collaboratorId: {}, doctorId: {}", userId, doctorId);
+        logger.info("Collaborator profile updated: collaboratorId: {}, doctorId: {}", userId, updatedProfile.getDoctorId());
         return userDTO;
     }
 }

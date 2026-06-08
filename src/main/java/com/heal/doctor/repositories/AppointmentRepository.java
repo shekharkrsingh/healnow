@@ -3,6 +3,7 @@ package com.heal.doctor.repositories;
 import com.heal.doctor.models.AppointmentEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -64,7 +65,8 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             Date bookingDateEnd,
             AppointmentStatus status,
             AppointmentType appointmentType,
-            Boolean treated
+            Boolean treated,
+            Pageable pageable
     );
 
 

@@ -62,7 +62,8 @@ public class InvitationController {
     @DeleteMapping("/doctors/invitations/{invitationId}")
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<ApiResponse<Void>> revokeInvitation(@PathVariable String invitationId) {
-        invitationService.revokeInvitation(invitationId);
+        String doctorId = CurrentUserName.getCurrentUserId();
+        invitationService.revokeInvitation(invitationId, doctorId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Invitation revoked successfully")

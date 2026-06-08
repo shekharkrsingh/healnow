@@ -34,7 +34,8 @@ public class CollaboratorController {
 
     @PutMapping("/{collaboratorId}/deactivate")
     public ResponseEntity<ApiResponse<Void>> deactivateCollaborator(@PathVariable String collaboratorId) {
-        collaboratorService.deactivateCollaborator(collaboratorId);
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        collaboratorService.deactivateCollaborator(collaboratorId, doctorId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Collaborator deactivated successfully")
@@ -43,7 +44,8 @@ public class CollaboratorController {
 
     @PutMapping("/{collaboratorId}/activate")
     public ResponseEntity<ApiResponse<Void>> activateCollaborator(@PathVariable String collaboratorId) {
-        collaboratorService.activateCollaborator(collaboratorId);
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        collaboratorService.activateCollaborator(collaboratorId, doctorId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Collaborator activated successfully")
@@ -52,7 +54,8 @@ public class CollaboratorController {
 
     @DeleteMapping("/{collaboratorId}")
     public ResponseEntity<ApiResponse<Void>> removeCollaborator(@PathVariable String collaboratorId) {
-        collaboratorService.removeCollaborator(collaboratorId);
+        String doctorId = CurrentUserName.getCurrentDoctorId();
+        collaboratorService.removeCollaborator(collaboratorId, doctorId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Collaborator removed successfully")

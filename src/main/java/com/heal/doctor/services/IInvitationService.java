@@ -10,6 +10,6 @@ public interface IInvitationService {
     InvitationResponseDTO sendInvitation(String doctorId, InvitationRequestDTO requestDTO);
     InvitationResponseDTO acceptInvitation(AcceptInvitationDTO acceptDTO);
     List<InvitationResponseDTO> getInvitationsByDoctor(String doctorId);
-    void revokeInvitation(String invitationId);
+    void revokeInvitation(String invitationId, String doctorId);
     boolean validateInvitationToken(String token);
 }

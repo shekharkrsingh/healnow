@@ -53,6 +53,14 @@ public class CollaboratorProfileEntity {
     @Email(message = "Email must be a valid email address")
     private String email;
 
+    @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
+    @Pattern(regexp = "^(https?://.*|/.*|)$", message = "Profile picture must be a valid URL or file path")
+    private String profilePicture;
+
+    @Size(max = 500, message = "Cover picture URL must not exceed 500 characters")
+    @Pattern(regexp = "^(https?://.*|/.*|)$", message = "Cover picture must be a valid URL or file path")
+    private String coverPicture;
+
     private Date createdAt;
     private Date updatedAt;
 }

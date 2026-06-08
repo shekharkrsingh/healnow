@@ -6,6 +6,7 @@ import com.heal.doctor.dto.InvitationResponseDTO;
 import com.heal.doctor.models.enums.CollaboratorStatus;
 import com.heal.doctor.exception.BadRequestException;
 import com.heal.doctor.exception.ConflictException;
+import com.heal.doctor.exception.ForbiddenException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
@@ -109,13 +110,24 @@ public class InvitationServiceImpl implements IInvitationService {
             }
         }
 
+        // Revoke all other pending invitations for this email from other doctors
+        List<InvitationEntity> otherPendingInvitations = invitationRepository.findByEmailAndStatus(requestDTO.getEmail(), InvitationStatus.PENDING);
+        for (InvitationEntity inv : otherPendingInvitations) {
+            if (!inv.getDoctorId().equals(doctorId)) {
+                logger.info("Revoking prior pending invitation from doctor {} for email {}", inv.getDoctorId(), requestDTO.getEmail());
+                inv.setStatus(InvitationStatus.REVOKED);
+                inv.setUpdatedAt(new Date());
+                invitationRepository.save(inv);
+            }
+        }
+
         String invitationToken = COLLABORATOR_ID_PREFIX + generateInvitationToken();
         String collaboratorId;
         UserEntity existingUser = userRepository.findByEmail(requestDTO.getEmail()).orElse(null);
         if (existingUser != null) {
             collaboratorId = existingUser.getUserId();
         } else {
-            collaboratorId = generateUserId();
+            collaboratorId = generateCollaboratorId();
         }
 
         InvitationEntity invitation = InvitationEntity.builder()
@@ -323,10 +335,14 @@ public class InvitationServiceImpl implements IInvitationService {
 
     @Override
     @Transactional
-    public void revokeInvitation(String invitationId) {
-        logger.info("Revoking invitation: invitationId: {}", invitationId);
+    public void revokeInvitation(String invitationId, String doctorId) {
+        logger.info("Revoking invitation: invitationId: {} by doctorId: {}", invitationId, doctorId);
         InvitationEntity invitation = invitationRepository.findByInvitationId(invitationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invitation", invitationId));
+
+        if (!doctorId.equals(invitation.getDoctorId())) {
+            throw new ForbiddenException("invitation", "revoke");
+        }
 
         if (invitation.getStatus() != InvitationStatus.PENDING) {
             throw new BadRequestException("Only pending invitations can be revoked");
@@ -374,9 +390,9 @@ public class InvitationServiceImpl implements IInvitationService {
         return INVITATION_ID_PREFIX + timestamp + "-" + randomSuffix;
     }
 
-    private String generateUserId() {
+    private String generateCollaboratorId() {
         String timestamp = new SimpleDateFormat(INVITATION_ID_DATE_FORMAT).format(new Date());
         String randomSuffix = String.format("%06d", new SecureRandom().nextInt(1000000));
-        return USER_ID_PREFIX + timestamp + "-" + randomSuffix;
+        return COLLABORATOR_ID_PREFIX + timestamp + "-" + randomSuffix;
     }
 }

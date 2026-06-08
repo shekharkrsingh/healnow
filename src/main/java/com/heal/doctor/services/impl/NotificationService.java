@@ -8,6 +8,7 @@ import com.heal.doctor.models.CollaboratorProfileEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.UserNotification;
+import com.heal.doctor.models.enums.CollaboratorStatus;
 import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.RolesEnum;
 import com.heal.doctor.repositories.CollaboratorProfileRepository;
@@ -126,7 +127,9 @@ public class NotificationService implements INotificationService {
                     // Required new NotificationRecipent as DOCTOR_AND_COLLABORATORS for seprate funcnality doctor and collaborator
                      recipientIds.add(targetId); // Include the doctor themselves
                      List<CollaboratorProfileEntity> collaborators = collaboratorProfileRepository.findByDoctorId(targetId);
-                     collaborators.forEach(c -> recipientIds.add(c.getCollaboratorId()));
+                     collaborators.stream()
+                             .filter(c -> c.getStatus() == CollaboratorStatus.ACTIVATED)
+                             .forEach(c -> recipientIds.add(c.getCollaboratorId()));
                 }
                 break;
             case ADMINS:

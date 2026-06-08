@@ -1,7 +1,7 @@
 package com.heal.doctor.models;
 
-import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.GenderEnum;
+import com.heal.doctor.models.enums.VerificationStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -59,13 +59,9 @@ public class DoctorEntity {
     @Pattern(regexp = PHONE_PATTERN, message = "Phone number must be exactly " + VALID_PHONE_LENGTH + " digits")
     private String phoneNumber;
 
-    @Size(max = 7, message = "Available days cannot exceed 7 days")
+    @Size(max = 7, message = "Availability entries cannot exceed 7 days")
     @Valid
-    private List<AvailableDayEnum> availableDays;
-
-    @Size(max = 50, message = "Available time slots cannot exceed 50")
-    @Valid
-    private List<TimeSlot> availableTimeSlots;
+    private List<DayAvailability> availability;
 
     @Size(max = 500, message = "Clinic address must not exceed 500 characters")
     private String clinicAddress;
@@ -110,6 +106,16 @@ public class DoctorEntity {
     @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
     @Pattern(regexp = "^(https?://.*|/.*|)$", message = "Profile picture must be a valid URL or file path")
     private String profilePicture;
+
+    @Size(max = 100, message = "License number must not exceed 100 characters")
+    private String licenseNumber;
+
+    @Size(max = 150, message = "Licensing authority must not exceed 150 characters")
+    private String licensingAuthority;
+
+    private Date licenseExpiryDate;
+
+    private VerificationStatus verificationStatus;
 
     private Date createdAt;
     private Date updatedAt;

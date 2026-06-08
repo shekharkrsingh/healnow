@@ -4,13 +4,17 @@ import com.heal.doctor.Mail.IDoctorAccountMailService;
 import com.heal.doctor.Mail.impl.OtpServiceImpl;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DoctorEntity;
+import com.heal.doctor.models.DoctorVerificationRequestEntity;
 import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
+import com.heal.doctor.models.enums.RequestStatus;
 import com.heal.doctor.models.enums.RolesEnum;
+import com.heal.doctor.models.enums.VerificationStatus;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.repositories.DoctorVerificationRequestRepository;
 import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.INotificationService;
@@ -19,12 +23,16 @@ import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.EmailValidatorUtil;
+import com.heal.doctor.services.IEmailService;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Map;
+import java.util.Optional;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -49,12 +57,18 @@ public class DoctorServiceImpl implements IDoctorService {
     private final OtpServiceImpl otpService;
     private final INotificationService notificationService;
     private final IDoctorAccountMailService doctorAccountMailService;
+    private final IEmailService emailService;
+    private final String companyName;
+    private final DoctorVerificationRequestRepository doctorVerificationRequestRepository;
 
     public DoctorServiceImpl(DoctorRepository doctorRepository, UserRepository userRepository,
                             ModelMapper modelMapper,
                             PasswordEncoder passwordEncoder,OtpServiceImpl otpService,
                             INotificationService notificationService,
-                            IDoctorAccountMailService doctorAccountMailService) {
+                            IDoctorAccountMailService doctorAccountMailService,
+                            IEmailService emailService,
+                            @Value("${company.name}") String companyName,
+                            DoctorVerificationRequestRepository doctorVerificationRequestRepository) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
@@ -62,6 +76,9 @@ public class DoctorServiceImpl implements IDoctorService {
         this.otpService = otpService;
         this.notificationService = notificationService;
         this.doctorAccountMailService = doctorAccountMailService;
+        this.emailService = emailService;
+        this.companyName = companyName;
+        this.doctorVerificationRequestRepository = doctorVerificationRequestRepository;
     }
 
     @Transactional
@@ -109,6 +126,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
         DoctorEntity doctor = modelMapper.map(doctorRegistrationDTO, DoctorEntity.class);
         doctor.setDoctorId(doctorId); // Link to UserEntity.userId
+        doctor.setVerificationStatus(VerificationStatus.PENDING);
         doctor.setCreatedAt(new Date());
         doctor.setUpdatedAt(new Date());
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
@@ -145,6 +163,7 @@ public class DoctorServiceImpl implements IDoctorService {
         if (user != null) {
             doctorDTO.setEmail(user.getEmail());
         }
+        populatePendingVerificationFields(doctor, doctorDTO);
         return doctorDTO;
     }
 
@@ -162,6 +181,7 @@ public class DoctorServiceImpl implements IDoctorService {
         if (user != null) {
             doctorDTO.setEmail(user.getEmail());
         }
+        populatePendingVerificationFields(doctor, doctorDTO);
         return doctorDTO;
     }
 
@@ -216,12 +236,8 @@ public class DoctorServiceImpl implements IDoctorService {
             }
             existingDoctor.setPhoneNumber(phoneNumber);
         }
-        if (updateDoctorDetailsDTO.getAvailableDays() != null) {
-            validateAvailableDays(updateDoctorDetailsDTO.getAvailableDays());
-            existingDoctor.setAvailableDays(updateDoctorDetailsDTO.getAvailableDays());
-        }
-        if (updateDoctorDetailsDTO.getAvailableTimeSlots() != null) {
-                existingDoctor.setAvailableTimeSlots(updateDoctorDetailsDTO.getAvailableTimeSlots());
+        if (updateDoctorDetailsDTO.getAvailability() != null) {
+            existingDoctor.setAvailability(updateDoctorDetailsDTO.getAvailability());
         }
         if (updateDoctorDetailsDTO.getClinicAddress() != null && !updateDoctorDetailsDTO.getClinicAddress().isEmpty()) {
             existingDoctor.setClinicAddress(updateDoctorDetailsDTO.getClinicAddress());
@@ -257,12 +273,97 @@ public class DoctorServiceImpl implements IDoctorService {
             existingDoctor.setGender(updateDoctorDetailsDTO.getGender());
         }
 
+        boolean isVerificationDetailsChanged = false;
+        String licenseNumber = updateDoctorDetailsDTO.getLicenseNumber() != null ? updateDoctorDetailsDTO.getLicenseNumber() : existingDoctor.getLicenseNumber();
+        String licensingAuthority = updateDoctorDetailsDTO.getLicensingAuthority() != null ? updateDoctorDetailsDTO.getLicensingAuthority() : existingDoctor.getLicensingAuthority();
+        Date licenseExpiryDate = updateDoctorDetailsDTO.getLicenseExpiryDate() != null ? updateDoctorDetailsDTO.getLicenseExpiryDate() : existingDoctor.getLicenseExpiryDate();
+
+        if (updateDoctorDetailsDTO.getLicenseNumber() != null || updateDoctorDetailsDTO.getLicensingAuthority() != null || updateDoctorDetailsDTO.getLicenseExpiryDate() != null) {
+            isVerificationDetailsChanged = true;
+        }
+
+        if (isVerificationDetailsChanged) {
+            DoctorVerificationRequestEntity request = doctorVerificationRequestRepository
+                    .findFirstByDoctorIdAndStatusOrderBySubmittedAtDesc(doctorId, RequestStatus.PENDING)
+                    .orElse(null);
+
+            if (request == null) {
+                request = DoctorVerificationRequestEntity.builder()
+                        .doctorId(doctorId)
+                        .status(RequestStatus.PENDING)
+                        .submittedAt(new Date())
+                        .build();
+            }
+
+            request.setLicenseNumber(licenseNumber);
+            request.setLicensingAuthority(licensingAuthority);
+            request.setLicenseExpiryDate(licenseExpiryDate);
+            request.setSubmittedAt(new Date());
+            doctorVerificationRequestRepository.save(request);
+
+            // Send in-app notification
+            String title = "Verification Request Under Review";
+            String message = "Your updated medical license details (License No: " + licenseNumber + ") have been submitted and are currently pending administrative review.";
+            
+            NotificationEntity notification = NotificationEntity.builder()
+                    .targetId(doctorId)
+                    .recipientType(NotificationRecipientType.INDIVIDUAL)
+                    .type(NotificationType.SYSTEM)
+                    .title(title)
+                    .message(message)
+                    .createdAt(java.time.Instant.now())
+                    .build();
+
+            notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+                logger.error("Failed to create verification submission notification asynchronously for doctorId: {}, error: {}", 
+                        doctorId, ex.getMessage(), ex);
+                return null;
+            });
+
+            // Send HTML email
+            try {
+                String doctorEmail = existingDoctor.getClinicEmail();
+                Optional<UserEntity> userOpt = userRepository.findByUserId(doctorId);
+                if (userOpt.isPresent()) {
+                    doctorEmail = userOpt.get().getEmail();
+                }
+
+                if (doctorEmail != null && !doctorEmail.isEmpty()) {
+                    final String toEmail = doctorEmail;
+                    final String doctorName = existingDoctor.getFirstName() + " " + existingDoctor.getLastName();
+                    final String finalLicenseNumber = licenseNumber;
+                    final String finalLicensingAuthority = licensingAuthority;
+                    final String expiryDateStr = licenseExpiryDate != null ? licenseExpiryDate.toString() : "N/A";
+
+                    emailService.sendHtmlEmail(
+                            toEmail,
+                            "Verification Request Received - " + companyName,
+                            "license-submitted.template.html",
+                            Map.of(
+                                    "companyName", companyName,
+                                    "doctorName", doctorName,
+                                    "licenseNumber", finalLicenseNumber,
+                                    "licensingAuthority", finalLicensingAuthority,
+                                    "expiryDate", expiryDateStr
+                            )
+                    ).exceptionally(ex -> {
+                        logger.error("Failed to send verification submission email to doctorId: {}, email: {}, error: {}", 
+                                doctorId, toEmail, ex.getMessage());
+                        return null;
+                    });
+                }
+            } catch (Exception ex) {
+                logger.error("Error setting up verification submission email for doctorId: {}", doctorId, ex);
+            }
+        }
+
         existingDoctor.setUpdatedAt(new Date());
 
         DoctorEntity updatedDoctor = doctorRepository.save(existingDoctor);
 
         DoctorProfileDTO doctorDTO = new DoctorProfileDTO();
         modelMapper.map(updatedDoctor, doctorDTO);
+        populatePendingVerificationFields(updatedDoctor, doctorDTO);
 
         return doctorDTO;
     }
@@ -290,12 +391,162 @@ public class DoctorServiceImpl implements IDoctorService {
         return String.format("%s-%s-%s", DOCTOR_ID_PREFIX, timestamp, randomNumber);
     }
 
-    private void validateAvailableDays(List<AvailableDayEnum> availableDays) {
-        for (AvailableDayEnum day : availableDays) {
-            if (day == null) {
-                throw new ValidationException("Invalid day in available days");
+
+
+    @Transactional
+    @Override
+    public DoctorProfileDTO updateVerificationStatus(String doctorId, VerificationStatus status) {
+        logger.info("Updating doctor verification status: doctorId: {}, status: {}", doctorId, status);
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+
+        VerificationStatus oldStatus = doctor.getVerificationStatus();
+        
+        String licenseNumber = doctor.getLicenseNumber() != null ? doctor.getLicenseNumber() : "N/A";
+        String licensingAuthority = doctor.getLicensingAuthority() != null ? doctor.getLicensingAuthority() : "N/A";
+        String expiryDateStr = doctor.getLicenseExpiryDate() != null ? doctor.getLicenseExpiryDate().toString() : "N/A";
+
+        if (status == VerificationStatus.VERIFIED) {
+            Optional<DoctorVerificationRequestEntity> pendingOpt = doctorVerificationRequestRepository
+                    .findFirstByDoctorIdAndStatusOrderBySubmittedAtDesc(doctorId, RequestStatus.PENDING);
+            if (pendingOpt.isPresent()) {
+                DoctorVerificationRequestEntity pending = pendingOpt.get();
+                pending.setStatus(RequestStatus.APPROVED);
+                pending.setReviewedAt(new Date());
+                doctorVerificationRequestRepository.save(pending);
+
+                doctor.setLicenseNumber(pending.getLicenseNumber());
+                doctor.setLicensingAuthority(pending.getLicensingAuthority());
+                doctor.setLicenseExpiryDate(pending.getLicenseExpiryDate());
+
+                licenseNumber = pending.getLicenseNumber();
+                licensingAuthority = pending.getLicensingAuthority();
+                expiryDateStr = pending.getLicenseExpiryDate() != null ? pending.getLicenseExpiryDate().toString() : "N/A";
+            }
+            doctor.setVerificationStatus(VerificationStatus.VERIFIED);
+        } else if (status == VerificationStatus.REJECTED || status == VerificationStatus.DENIED) {
+            Optional<DoctorVerificationRequestEntity> pendingOpt = doctorVerificationRequestRepository
+                    .findFirstByDoctorIdAndStatusOrderBySubmittedAtDesc(doctorId, RequestStatus.PENDING);
+            if (pendingOpt.isPresent()) {
+                DoctorVerificationRequestEntity pending = pendingOpt.get();
+                pending.setStatus(RequestStatus.REJECTED);
+                pending.setReviewedAt(new Date());
+                doctorVerificationRequestRepository.save(pending);
+
+                licenseNumber = pending.getLicenseNumber();
+                licensingAuthority = pending.getLicensingAuthority();
+                expiryDateStr = pending.getLicenseExpiryDate() != null ? pending.getLicenseExpiryDate().toString() : "N/A";
+            }
+            if (doctor.getVerificationStatus() != VerificationStatus.VERIFIED) {
+                doctor.setVerificationStatus(status);
+            }
+        } else {
+            doctor.setVerificationStatus(status);
+        }
+
+        doctor.setUpdatedAt(new Date());
+        DoctorEntity savedDoctor = doctorRepository.save(doctor);
+
+        if (oldStatus != doctor.getVerificationStatus()) {
+            String title;
+            String message;
+            String templateName;
+            String subject;
+
+            if (doctor.getVerificationStatus() == VerificationStatus.VERIFIED) {
+                title = "Practice Account Verified";
+                message = "Congratulations! Your practice account has been verified successfully. You can now configure availability and accept appointments.";
+                templateName = "license-verified.template.html";
+                subject = "Practice Account Verified - " + companyName;
+            } else if (doctor.getVerificationStatus() == VerificationStatus.REJECTED || doctor.getVerificationStatus() == VerificationStatus.DENIED) {
+                title = "Verification Rejected";
+                message = "Your verification request has been rejected or denied. Please review your credentials and re-submit.";
+                templateName = "license-rejected.template.html";
+                subject = "Practice Verification Rejected - " + companyName;
+            } else if (doctor.getVerificationStatus() == VerificationStatus.SUSPENDED) {
+                title = "Practice Account Suspended";
+                message = "Your practice account verification has been suspended. Please check your license status or contact support.";
+                templateName = "license-suspended.template.html";
+                subject = "Practice Account Suspended - " + companyName;
+            } else if (doctor.getVerificationStatus() == VerificationStatus.TERMINATED) {
+                title = "Practice Account Terminated";
+                message = "Your practice account verification has been terminated. Please contact support if you believe this is an error.";
+                templateName = "license-terminated.template.html";
+                subject = "Practice Account Terminated - " + companyName;
+            } else {
+                title = "Verification Status Update";
+                message = "Your verification status has been updated to " + doctor.getVerificationStatus() + ".";
+                templateName = null;
+                subject = null;
+            }
+
+            NotificationEntity notification = NotificationEntity.builder()
+                    .targetId(doctorId)
+                    .recipientType(NotificationRecipientType.INDIVIDUAL)
+                    .type(NotificationType.SYSTEM)
+                    .title(title)
+                    .message(message)
+                    .createdAt(java.time.Instant.now())
+                    .build();
+
+            notificationService.createNotificationAsync(notification).exceptionally(ex -> {
+                logger.error("Failed to create verification status notification asynchronously for doctorId: {}, error: {}", 
+                        doctorId, ex.getMessage(), ex);
+                return null;
+            });
+
+            if (templateName != null) {
+                try {
+                    String doctorEmail = doctor.getClinicEmail();
+                    Optional<UserEntity> userOpt = userRepository.findByUserId(doctorId);
+                    if (userOpt.isPresent()) {
+                        doctorEmail = userOpt.get().getEmail();
+                    }
+
+                    if (doctorEmail != null && !doctorEmail.isEmpty()) {
+                        final String toEmail = doctorEmail;
+                        final String doctorName = doctor.getFirstName() + " " + doctor.getLastName();
+                        final String finalLicenseNumber = licenseNumber;
+                        final String finalLicensingAuthority = licensingAuthority;
+                        final String finalExpiryDateStr = expiryDateStr;
+
+                        emailService.sendHtmlEmail(
+                                toEmail,
+                                subject,
+                                templateName,
+                                Map.of(
+                                        "companyName", companyName,
+                                        "doctorName", doctorName,
+                                        "licenseNumber", finalLicenseNumber,
+                                        "licensingAuthority", finalLicensingAuthority,
+                                        "expiryDate", finalExpiryDateStr
+                                )
+                        ).exceptionally(ex -> {
+                            logger.error("Failed to send verification status email to doctorId: {}, email: {}, error: {}", 
+                                    doctorId, toEmail, ex.getMessage());
+                            return null;
+                        });
+                    }
+                } catch (Exception ex) {
+                    logger.error("Error setting up verification status email for doctorId: {}", doctorId, ex);
+                }
             }
         }
+
+        DoctorProfileDTO doctorDTO = new DoctorProfileDTO();
+        modelMapper.map(savedDoctor, doctorDTO);
+        populatePendingVerificationFields(savedDoctor, doctorDTO);
+        return doctorDTO;
+    }
+
+    private void populatePendingVerificationFields(DoctorEntity doctor, DoctorProfileDTO dto) {
+        doctorVerificationRequestRepository.findFirstByDoctorIdAndStatusOrderBySubmittedAtDesc(doctor.getDoctorId(), RequestStatus.PENDING)
+                .ifPresent(req -> {
+                    dto.setHasPendingVerification(true);
+                    dto.setPendingLicenseNumber(req.getLicenseNumber());
+                    dto.setPendingLicensingAuthority(req.getLicensingAuthority());
+                    dto.setPendingLicenseExpiryDate(req.getLicenseExpiryDate());
+                });
     }
 
 }

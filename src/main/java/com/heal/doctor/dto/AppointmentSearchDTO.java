@@ -19,4 +19,8 @@ public class AppointmentSearchDTO {
     private String status;
     private Boolean treated;
     private AppointmentType appointmentType;
+    private Integer page;
+    private Integer size;
+    private String sortBy;
+    private String sortDirection;
 }

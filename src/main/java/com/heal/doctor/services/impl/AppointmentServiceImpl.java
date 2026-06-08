@@ -2,8 +2,13 @@ package com.heal.doctor.services.impl;
 
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.AppointmentEntity;
+import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.NotificationEntity;
+import com.heal.doctor.models.TimeSlot;
+import com.heal.doctor.models.DayAvailability;
+import com.heal.doctor.models.enums.AvailableDayEnum;
+import com.heal.doctor.models.enums.VerificationStatus;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
 import com.heal.doctor.models.enums.NotificationRecipientType;
@@ -63,6 +68,13 @@ public class AppointmentServiceImpl implements IAppointmentService {
         String doctorId = CurrentUserName.getCurrentDoctorId();
         logger.info("Booking appointment for doctorId: {}, patientName: {}", doctorId, requestDTO.getPatientName());
 
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+
+        if (doctor.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new ValidationException("This practice account is not verified to practice.");
+        }
+
         if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
             logger.warn("Appointment booking failed: Patient name is empty for doctorId: {}", doctorId);
             throw new ValidationException("Patient name is required and cannot be empty.");
@@ -106,6 +118,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 appointmentDate = new Date();
             }
         }
+
+        validateDoctorAvailability(doctor, appointmentDate);
         
         Date[] date = DateUtils.getStartAndEndOfDay(new Date());
 
@@ -195,12 +209,18 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
 
 
-        if (!doctorRepository.existsByDoctorId(doctorId)) {
-            throw new ResourceNotFoundException("Doctor", doctorId);
+        DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+
+        if (doctor.getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new ValidationException("This practice account is not verified to practice.");
         }
 
 
         Date appointmentDate = requestDTO.getAppointmentDateTime();
+        
+        validateDoctorAvailability(doctor, appointmentDate);
+        
         Date currentTime = new Date();
 
         // 4. Date Validation (Exactly as bookAppointment)
@@ -575,10 +595,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentEntity appointment=appointmentRepository.findByAppointmentId(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
         String currentDoctorId = appointment.getDoctorId();
+        String requestingUserId = CurrentUserName.getCurrentUserId();
+        if (!RoleUtils.isAdminOrOwnerOrCollaborator(currentDoctorId, requestingUserId)) {
+            logger.warn("Unauthorized appointment details update attempt: appointmentId: {}, owner: {}, requester: {}", 
+                    appointmentId, currentDoctorId, requestingUserId);
+            throw new ForbiddenException("appointment", "update");
+        }
         if (appointment.getTreated()) {
             logger.warn("Updation failed - already treated: appointmentId: {}, doctorId: {}",
                     appointmentId, currentDoctorId);
-            throw new BusinessRuleException("cancel appointment", "Patient is already treated");
+            throw new BusinessRuleException("update details", "Patient is already treated");
         }
         appointment.setPatientName(updateDTO.getPatientName());
         appointment.setDescription(updateDTO.getDescription());
@@ -793,5 +819,95 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 })
                 .sorted(Comparator.comparing(AppointmentDetailsDTO::getAppointmentDateTime).reversed())
                 .collect(Collectors.toList());
+    }
+
+    private void validateDoctorAvailability(DoctorEntity doctor, Date appointmentDateTime) {
+        if (doctor.getAvailability() == null || doctor.getAvailability().isEmpty()) {
+            throw new ValidationException("The doctor has not configured their availability.");
+        }
+        
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(appointmentDateTime);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        
+        AvailableDayEnum dayEnum;
+        switch (dayOfWeek) {
+            case Calendar.SUNDAY: dayEnum = AvailableDayEnum.SUNDAY; break;
+            case Calendar.MONDAY: dayEnum = AvailableDayEnum.MONDAY; break;
+            case Calendar.TUESDAY: dayEnum = AvailableDayEnum.TUESDAY; break;
+            case Calendar.WEDNESDAY: dayEnum = AvailableDayEnum.WEDNESDAY; break;
+            case Calendar.THURSDAY: dayEnum = AvailableDayEnum.THURSDAY; break;
+            case Calendar.FRIDAY: dayEnum = AvailableDayEnum.FRIDAY; break;
+            case Calendar.SATURDAY: dayEnum = AvailableDayEnum.SATURDAY; break;
+            default: dayEnum = null;
+        }
+        
+        if (dayEnum == null) {
+            throw new ValidationException("Invalid appointment date.");
+        }
+
+        final AvailableDayEnum finalDayEnum = dayEnum;
+        DayAvailability dayAvailability = doctor.getAvailability().stream()
+                .filter(a -> a.getDay() == finalDayEnum)
+                .findFirst()
+                .orElse(null);
+
+        if (dayAvailability == null) {
+            throw new ValidationException("The doctor is not available on " + dayEnum.name() + ".");
+        }
+
+        if (dayAvailability.getSlots() == null || dayAvailability.getSlots().isEmpty()) {
+            throw new ValidationException("The doctor has not configured any available time slots for " + dayEnum.name() + ".");
+        }
+
+        int apptHour = cal.get(Calendar.HOUR_OF_DAY);
+        int apptMinute = cal.get(Calendar.MINUTE);
+        int apptMinutes = apptHour * 60 + apptMinute;
+
+        boolean isWithinSlot = false;
+        for (TimeSlot slot : dayAvailability.getSlots()) {
+            try {
+                int startMinutes = parseTimeToMinutes(slot.getStartTime());
+                int endMinutes = parseTimeToMinutes(slot.getEndTime());
+                
+                if (apptMinutes >= startMinutes && apptMinutes <= endMinutes) {
+                    isWithinSlot = true;
+                    break;
+                }
+            } catch (Exception e) {
+                logger.error("Error parsing doctor time slot: start={}, end={}", slot.getStartTime(), slot.getEndTime(), e);
+            }
+        }
+
+        if (!isWithinSlot) {
+            throw new ValidationException("The selected time is outside the doctor's available slots for " + dayEnum.name() + ".");
+        }
+    }
+
+    private int parseTimeToMinutes(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Time string is empty");
+        }
+        String cleanStr = timeStr.trim().toLowerCase();
+        boolean isPm = cleanStr.contains("pm");
+        String temp = cleanStr.replaceAll("[^0-9:]", "");
+        String[] parts = temp.split(":");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid time format: " + timeStr);
+        }
+        int hour = Integer.parseInt(parts[0].trim());
+        int minute = Integer.parseInt(parts[1].trim());
+        
+        if (hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+            throw new IllegalArgumentException("Invalid time values: " + timeStr);
+        }
+        
+        if (hour == 12) {
+            hour = 0;
+        }
+        if (isPm) {
+            hour += 12;
+        }
+        return hour * 60 + minute;
     }
 }
