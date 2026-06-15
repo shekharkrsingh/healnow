@@ -34,7 +34,7 @@ public interface AppointmentRepository extends MongoRepository<AppointmentEntity
             String doctorId, Date fromDate, Date toDate
     );
 
-    @Query(value = "{ 'appointmentDateTime' : { $lt : ?0 }, 'status' : { $in : ?1 } }", fields = "{ 'appointmentId' : 1 }")
+    @Query(value = "{ 'appointmentDateTime' : { $lt : ?0 }, 'status' : { $in : ?1 }, 'treated' : { $ne : true } }", fields = "{ 'appointmentId' : 1 }")
     List<AppointmentEntity> findExpiredAppointmentIds(Date date, List<AppointmentStatus> statuses);
 
     @Query("""
