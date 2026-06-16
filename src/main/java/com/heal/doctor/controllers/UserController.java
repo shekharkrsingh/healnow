@@ -24,9 +24,9 @@ public class UserController {
 
 
     @PostMapping("/update-email")
-    public ResponseEntity<ApiResponse<String>> updateEmail(@RequestBody UpdateEmailDTO updateEmailDTO) {
-        String newAuthToken=userService.updateEmail(updateEmailDTO);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Email updated successfully", newAuthToken));
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> updateEmail(@RequestBody UpdateEmailDTO updateEmailDTO) {
+        LoginResponseDTO loginResponse = userService.updateEmail(updateEmailDTO);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Email updated successfully", loginResponse));
     }
 
     @PostMapping("/change-password")

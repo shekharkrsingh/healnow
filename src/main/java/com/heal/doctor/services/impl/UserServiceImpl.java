@@ -36,13 +36,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import com.heal.doctor.dto.LoginResponseDTO;
+import com.heal.doctor.models.RefreshTokenEntity;
+import com.heal.doctor.repositories.RefreshTokenRepository;
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -66,6 +72,13 @@ public class UserServiceImpl implements IUserService {
     private final INotificationService notificationService;
     private final IUserAccountEmailService userAccountEmailService;
     private final Executor taskExecutor;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    @Value("${refresh.token.expiry.days:30}")
+    private int refreshTokenExpiryDays;
+
+    @Value("${refresh.token.absolute.expiry.days:90}")
+    private int refreshTokenAbsoluteExpiryDays;
 
     public UserServiceImpl(
             DoctorRepository doctorRepository,
@@ -79,6 +92,7 @@ public class UserServiceImpl implements IUserService {
             OtpServiceImpl otpService,
             INotificationService notificationService,
             IUserAccountEmailService userAccountEmailService,
+            RefreshTokenRepository refreshTokenRepository,
             @Qualifier("notificationTaskExecutor") Executor taskExecutor) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
@@ -91,13 +105,14 @@ public class UserServiceImpl implements IUserService {
         this.otpService = otpService;
         this.notificationService = notificationService;
         this.userAccountEmailService = userAccountEmailService;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.taskExecutor = taskExecutor;
     }
 
 
     @Override
     @Transactional
-    public String login(String username, String password) {
+    public LoginResponseDTO login(String username, String password) {
         logger.info("Login attempt: username: {}", username);
         try {
             UsernamePasswordAuthenticationToken authenticationToken =
@@ -131,12 +146,124 @@ public class UserServiceImpl implements IUserService {
             }
 
             String token = jwtUtil.generateToken(userDetails.getUsername(), userId, doctorId, role);
+            
+            // Create a new token family for this session
+            String tokenFamily = UUID.randomUUID().toString();
+            String rawRefreshToken = createRefreshToken(userId, userDetails.getUsername(), role, doctorId, tokenFamily, null);
+            
             logger.info("Login successful: username: {}, userId: {}, doctorId: {}, role: {}", username, userId, doctorId, role);
-            return token;
+            return new LoginResponseDTO(token, rawRefreshToken);
         } catch (Exception e) {
             logger.warn("Login failed: username: {}, error: {}", username, e.getMessage());
             throw e;
         }
+    }
+
+    private String createRefreshToken(String userId, String email, String role, String doctorId, String tokenFamily, Date absoluteExpiresAt) {
+        String rawToken = jwtUtil.generateRefreshToken();
+        String tokenHash = jwtUtil.hashToken(rawToken);
+
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_YEAR, refreshTokenExpiryDays);
+        Date slidingExpiresAt = cal.getTime();
+
+        if (absoluteExpiresAt == null) {
+            Calendar absCal = Calendar.getInstance();
+            absCal.add(Calendar.DAY_OF_YEAR, refreshTokenAbsoluteExpiryDays);
+            absoluteExpiresAt = absCal.getTime();
+        }
+
+        RefreshTokenEntity entity = RefreshTokenEntity.builder()
+                .tokenHash(tokenHash)
+                .tokenFamily(tokenFamily)
+                .userId(userId)
+                .email(email)
+                .role(role)
+                .doctorId(doctorId)
+                .expiresAt(slidingExpiresAt)
+                .absoluteExpiresAt(absoluteExpiresAt)
+                .createdAt(new Date())
+                .revoked(false)
+                .build();
+
+        refreshTokenRepository.save(entity);
+        return rawToken;
+    }
+
+    @Override
+    @Transactional
+    public LoginResponseDTO refreshAccessToken(String rawRefreshToken) {
+        String tokenHash = jwtUtil.hashToken(rawRefreshToken);
+        
+        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+
+        // Check if revoked (Reuse detection)
+        if (refreshTokenEntity.isRevoked()) {
+            logger.warn("Revoked refresh token used! Token family: {}, User: {}", refreshTokenEntity.getTokenFamily(), refreshTokenEntity.getEmail());
+            // Someone tried to use a stolen token that was already rotated.
+            // Revoke the ENTIRE token family.
+            revokeTokenFamily(refreshTokenEntity.getTokenFamily());
+            throw new UnauthorizedException("Refresh token was revoked. Please log in again.");
+        }
+
+        // Check sliding expiry
+        if (refreshTokenEntity.getExpiresAt().before(new Date())) {
+            throw new UnauthorizedException("Refresh token expired");
+        }
+
+        // Check absolute expiry
+        if (refreshTokenEntity.getAbsoluteExpiresAt() != null && refreshTokenEntity.getAbsoluteExpiresAt().before(new Date())) {
+            throw new UnauthorizedException("Session absolute expiry reached. Please log in again.");
+        }
+
+        // It is valid. Rotate the token.
+        // 1. Mark old token as revoked (or delete it)
+        // We choose to delete it here to save space, but marking revoked is safer for reuse detection.
+        refreshTokenEntity.setRevoked(true);
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        // 2. Issue new refresh token in the SAME family, preserving the original absolute expiry
+        String newRawRefreshToken = createRefreshToken(
+                refreshTokenEntity.getUserId(),
+                refreshTokenEntity.getEmail(),
+                refreshTokenEntity.getRole(),
+                refreshTokenEntity.getDoctorId(),
+                refreshTokenEntity.getTokenFamily(),
+                refreshTokenEntity.getAbsoluteExpiresAt()
+        );
+
+        // 3. Issue new access token
+        String newAccessToken = jwtUtil.generateToken(
+                refreshTokenEntity.getEmail(),
+                refreshTokenEntity.getUserId(),
+                refreshTokenEntity.getDoctorId(),
+                refreshTokenEntity.getRole()
+        );
+
+        return new LoginResponseDTO(newAccessToken, newRawRefreshToken);
+    }
+
+    private void revokeTokenFamily(String tokenFamily) {
+        if (tokenFamily == null) return;
+        var familyTokens = refreshTokenRepository.findByTokenFamily(tokenFamily);
+        for (RefreshTokenEntity token : familyTokens) {
+            token.setRevoked(true);
+        }
+        refreshTokenRepository.saveAll(familyTokens);
+    }
+
+    @Override
+    @Transactional
+    public void revokeRefreshToken(String rawRefreshToken) {
+        String tokenHash = jwtUtil.hashToken(rawRefreshToken);
+        refreshTokenRepository.deleteByTokenHash(tokenHash);
+    }
+
+    @Override
+    @Transactional
+    public void revokeAllUserTokens(String userId) {
+        refreshTokenRepository.deleteAllByUserId(userId);
     }
 
     @Override
@@ -177,7 +304,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional
-    public String updateEmail(UpdateEmailDTO updateEmailDTO) {
+    public LoginResponseDTO updateEmail(UpdateEmailDTO updateEmailDTO) {
         String username = CurrentUserName.getCurrentUsername();
         String userId = CurrentUserName.getCurrentUserId();
         logger.info("Updating email: oldEmail: {}, newEmail: {}, userId: {}", username, updateEmailDTO.getNewEmail(), userId);

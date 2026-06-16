@@ -50,27 +50,45 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
 
         CompletableFuture<Integer> totalAppointmentsFuture = CompletableFuture.supplyAsync(
                 () -> Objects.requireNonNullElse(statisticsRepository.getTotalAppointmentsToday(startOfDay, endOfDay, doctorId), 0),
-                taskExecutor);
+                taskExecutor).exceptionally(ex -> {
+                    logger.error("Error fetching totalAppointmentsFuture", ex);
+                    return 0;
+                });
         
         CompletableFuture<Integer> untreatedNotAvailableFuture = CompletableFuture.supplyAsync(
                 () -> Objects.requireNonNullElse(statisticsRepository.getTotalUntreatedAppointmentsTodayAndNotAvailable(startOfDay, endOfDay, doctorId), 0),
-                taskExecutor);
+                taskExecutor).exceptionally(ex -> {
+                    logger.error("Error fetching untreatedNotAvailableFuture", ex);
+                    return 0;
+                });
         
         CompletableFuture<Integer> treatedAppointmentsFuture = CompletableFuture.supplyAsync(
                 () -> Objects.requireNonNullElse(statisticsRepository.getTotalTreatedAppointmentsToday(startOfDay, endOfDay, doctorId), 0),
-                taskExecutor);
+                taskExecutor).exceptionally(ex -> {
+                    logger.error("Error fetching treatedAppointmentsFuture", ex);
+                    return 0;
+                });
         
         CompletableFuture<Integer> availableAtClinicFuture = CompletableFuture.supplyAsync(
                 () -> Objects.requireNonNullElse(statisticsRepository.getTotalAvailableAtClinicToday(startOfDay, endOfDay, doctorId), 0),
-                taskExecutor);
+                taskExecutor).exceptionally(ex -> {
+                    logger.error("Error fetching availableAtClinicFuture", ex);
+                    return 0;
+                });
         
         CompletableFuture<List<DailyTreatedPatients>> dailyTreatedFuture = CompletableFuture.supplyAsync(
                 () -> getProcessedDailyTreatedPatients(startOfWeek, endOfYesterday, doctorId),
-                taskExecutor);
+                taskExecutor).exceptionally(ex -> {
+                    logger.error("Error fetching dailyTreatedFuture", ex);
+                    return new ArrayList<>();
+                });
         
         CompletableFuture<DoctorStatisticsRepository.LastActiveDayStats> lastActiveDayStatsFuture = CompletableFuture.supplyAsync(
                 () -> statisticsRepository.getLastActiveDayStats(doctorId, startOfWeek, endOfYesterday).orElse(null),
-                taskExecutor);
+                taskExecutor).exceptionally(ex -> {
+                    logger.error("Error fetching lastActiveDayStatsFuture", ex);
+                    return null;
+                });
 
         CompletableFuture.allOf(totalAppointmentsFuture, untreatedNotAvailableFuture, treatedAppointmentsFuture,
                 availableAtClinicFuture, dailyTreatedFuture, lastActiveDayStatsFuture).join();
@@ -124,8 +142,9 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
     private List<DailyTreatedPatients> getProcessedDailyTreatedPatients(Date startOfWeek, Date endOfYesterday, String doctorId) {
         List<DailyTreatedPatients> rawData = statisticsRepository.getDailyTreatedPatientsLastWeek(startOfWeek, endOfYesterday, doctorId);
 
-        Map<String, Integer> treatedDataMap = rawData.parallelStream()
-                .collect(Collectors.toConcurrentMap(DailyTreatedPatients::getDate, DailyTreatedPatients::getCount));
+        Map<String, Integer> treatedDataMap = rawData == null ? new HashMap<>() : rawData.stream()
+                .filter(d -> d != null && d.getDate() != null && d.getCount() != null)
+                .collect(Collectors.toMap(DailyTreatedPatients::getDate, DailyTreatedPatients::getCount));
 
         List<DailyTreatedPatients> finalList = new ArrayList<>();
         LocalDate startDate = startOfWeek.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();

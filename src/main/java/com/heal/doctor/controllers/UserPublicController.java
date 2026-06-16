@@ -105,9 +105,20 @@ public class UserPublicController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@RequestBody LoginRequestDTO loginRequestDTO) {
-        String token = userService.login(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
-        LoginResponseDTO loginResponseDTO = new LoginResponseDTO(token);
+        LoginResponseDTO loginResponseDTO = userService.login(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
         return ResponseEntity.ok(new ApiResponse<>(true, "login successfully", loginResponseDTO));
+    }
+
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> refreshTokens(@RequestBody RefreshTokenRequestDTO requestDTO) {
+        LoginResponseDTO loginResponseDTO = userService.refreshAccessToken(requestDTO.getRefreshToken());
+        return ResponseEntity.ok(new ApiResponse<>(true, "Tokens refreshed successfully", loginResponseDTO));
+    }
+
+    @PostMapping("/auth/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestBody RefreshTokenRequestDTO requestDTO) {
+        userService.revokeRefreshToken(requestDTO.getRefreshToken());
+        return ResponseEntity.ok(new ApiResponse<>(true, "Logged out successfully", null));
     }
 
     @PostMapping("/send-otp")

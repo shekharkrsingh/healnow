@@ -1,5 +1,6 @@
 package com.heal.doctor.services.impl;
 
+import com.heal.doctor.dto.LoginResponseDTO;
 import com.heal.doctor.dto.RogerProfileDTO;
 import com.heal.doctor.dto.RogerRegistrationDTO;
 import com.heal.doctor.exception.ConflictException;
@@ -36,7 +37,7 @@ public class RogerServiceImpl implements IRogerService {
 
     @Override
     @Transactional
-    public String registerRoger(RogerRegistrationDTO rogerRegistrationDTO) {
+    public LoginResponseDTO registerRoger(RogerRegistrationDTO rogerRegistrationDTO) {
         logger.info("Registering new roger: email: {}", rogerRegistrationDTO.getEmail());
 
         if (userRepository.existsByEmail(rogerRegistrationDTO.getEmail())) {

@@ -3,6 +3,7 @@ package com.heal.doctor.services.impl;
 import com.heal.doctor.Mail.IDoctorAccountMailService;
 import com.heal.doctor.Mail.impl.OtpServiceImpl;
 import com.heal.doctor.dto.*;
+import com.heal.doctor.models.DayAvailability;
 import com.heal.doctor.models.DoctorEntity;
 import com.heal.doctor.models.DoctorVerificationRequestEntity;
 import com.heal.doctor.models.NotificationEntity;
@@ -37,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Service
@@ -237,7 +239,17 @@ public class DoctorServiceImpl implements IDoctorService {
             existingDoctor.setPhoneNumber(phoneNumber);
         }
         if (updateDoctorDetailsDTO.getAvailability() != null) {
-            existingDoctor.setAvailability(updateDoctorDetailsDTO.getAvailability());
+            List<DayAvailability> availability = updateDoctorDetailsDTO.getAvailability();
+
+            for (DayAvailability dayAvailability : availability) {
+                if (dayAvailability.getSlots() != null && dayAvailability.getSlots().size() > 1) {
+                    dayAvailability.getSlots().sort(Comparator.comparing(slot -> parseTimeTo24Hr(slot.getStartTime())));
+                }
+            }
+
+            availability.sort(Comparator.comparingInt(d -> d.getDay().ordinal()));
+
+            existingDoctor.setAvailability(availability);
         }
         if (updateDoctorDetailsDTO.getClinicAddress() != null && !updateDoctorDetailsDTO.getClinicAddress().isEmpty()) {
             existingDoctor.setClinicAddress(updateDoctorDetailsDTO.getClinicAddress());
@@ -547,6 +559,25 @@ public class DoctorServiceImpl implements IDoctorService {
                     dto.setPendingLicensingAuthority(req.getLicensingAuthority());
                     dto.setPendingLicenseExpiryDate(req.getLicenseExpiryDate());
                 });
+    }
+
+    /**
+     * Converts a 12-hour time string (e.g. "9:00 AM", "12:30 PM") to a 24-hour integer (e.g. 900, 1230)
+     * for comparison-based sorting.
+     */
+    private int parseTimeTo24Hr(String time) {
+        if (time == null || time.isBlank()) return 0;
+        String cleaned = time.trim().toUpperCase();
+        boolean isPM = cleaned.contains("PM");
+        String numericPart = cleaned.replaceAll("[^0-9:]", "").trim();
+        String[] parts = numericPart.split(":");
+        int hours = Integer.parseInt(parts[0]);
+        int minutes = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+
+        if (isPM && hours != 12) hours += 12;
+        if (!isPM && hours == 12) hours = 0;
+
+        return hours * 100 + minutes;
     }
 
 }

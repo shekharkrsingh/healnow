@@ -20,8 +20,7 @@ public class RogerPublicController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> registerRoger(@RequestBody RogerRegistrationDTO rogerRegistrationDTO) {
-        String token = rogerService.registerRoger(rogerRegistrationDTO);
-        LoginResponseDTO loginResponseDTO = new LoginResponseDTO(token);
+        LoginResponseDTO loginResponseDTO = rogerService.registerRoger(rogerRegistrationDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Roger registered successfully", loginResponseDTO));
     }
 }
