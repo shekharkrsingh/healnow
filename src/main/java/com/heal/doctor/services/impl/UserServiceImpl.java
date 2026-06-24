@@ -217,13 +217,18 @@ public class UserServiceImpl implements IUserService {
             throw new UnauthorizedException("Session absolute expiry reached. Please log in again.");
         }
 
-        // It is valid. Rotate the token.
-        // 1. Mark old token as revoked (or delete it)
-        // We choose to delete it here to save space, but marking revoked is safer for reuse detection.
-        refreshTokenEntity.setRevoked(true);
-        refreshTokenRepository.save(refreshTokenEntity);
+        // It is valid. Rotate the token — CREATE NEW FIRST, then revoke old.
+        // This order ensures that if new token creation fails, the user is NOT locked out.
 
-        // 2. Issue new refresh token in the SAME family, preserving the original absolute expiry
+        // Step 1: Issue new access token
+        String newAccessToken = jwtUtil.generateToken(
+                refreshTokenEntity.getEmail(),
+                refreshTokenEntity.getUserId(),
+                refreshTokenEntity.getDoctorId(),
+                refreshTokenEntity.getRole()
+        );
+
+        // Step 2: Create new refresh token in the SAME family, preserving the original absolute expiry
         String newRawRefreshToken = createRefreshToken(
                 refreshTokenEntity.getUserId(),
                 refreshTokenEntity.getEmail(),
@@ -233,13 +238,14 @@ public class UserServiceImpl implements IUserService {
                 refreshTokenEntity.getAbsoluteExpiresAt()
         );
 
-        // 3. Issue new access token
-        String newAccessToken = jwtUtil.generateToken(
-                refreshTokenEntity.getEmail(),
-                refreshTokenEntity.getUserId(),
-                refreshTokenEntity.getDoctorId(),
-                refreshTokenEntity.getRole()
-        );
+        // Step 3: Revoke old token now that the new one is safely saved.
+        // Set expiresAt to now + 24h so MongoDB TTL cleans it up quickly (not after 30 days).
+        // Keep revoked=true so reuse detection still works within the 24h window.
+        Calendar revokedTtl = Calendar.getInstance();
+        revokedTtl.add(Calendar.HOUR_OF_DAY, 24);
+        refreshTokenEntity.setRevoked(true);
+        refreshTokenEntity.setExpiresAt(revokedTtl.getTime());
+        refreshTokenRepository.save(refreshTokenEntity);
 
         return new LoginResponseDTO(newAccessToken, newRawRefreshToken);
     }

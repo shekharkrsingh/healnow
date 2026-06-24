@@ -795,7 +795,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     }
 
     private Date removeTime(Date date) {
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
         cal.setTime(date);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -826,7 +826,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ValidationException("The doctor has not configured their availability.");
         }
         
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
         cal.setTime(appointmentDateTime);
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         
@@ -889,6 +889,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new IllegalArgumentException("Time string is empty");
         }
         String cleanStr = timeStr.trim().toLowerCase();
+        boolean hasAmPm = cleanStr.contains("am") || cleanStr.contains("pm");
         boolean isPm = cleanStr.contains("pm");
         String temp = cleanStr.replaceAll("[^0-9:]", "");
         String[] parts = temp.split(":");
@@ -897,17 +898,27 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
         int hour = Integer.parseInt(parts[0].trim());
         int minute = Integer.parseInt(parts[1].trim());
-        
-        if (hour < 1 || hour > 12 || minute < 0 || minute > 59) {
-            throw new IllegalArgumentException("Invalid time values: " + timeStr);
+
+        if (hasAmPm) {
+            if (hour < 1 || hour > 12) {
+                throw new IllegalArgumentException("Invalid 12-hour format hours: " + timeStr);
+            }
+            if (hour == 12) {
+                hour = 0;
+            }
+            if (isPm) {
+                hour += 12;
+            }
+        } else {
+            if (hour < 0 || hour > 23) {
+                throw new IllegalArgumentException("Invalid 24-hour format hours: " + timeStr);
+            }
         }
-        
-        if (hour == 12) {
-            hour = 0;
+
+        if (minute < 0 || minute > 59) {
+            throw new IllegalArgumentException("Invalid time minutes: " + timeStr);
         }
-        if (isPm) {
-            hour += 12;
-        }
+
         return hour * 60 + minute;
     }
 }

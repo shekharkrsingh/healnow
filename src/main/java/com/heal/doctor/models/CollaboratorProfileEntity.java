@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -33,9 +34,21 @@ public class CollaboratorProfileEntity {
     @Size(max = 50, message = "Collaborator ID must not exceed 50 characters")
     private String collaboratorId;
 
+    /**
+     * @deprecated Use {@link #doctorAssociations} for multi-doctor support.
+     * Retained for backward compatibility with existing data.
+     */
+    @Deprecated
     @Indexed(name = "doctor_id_idx")
     @Size(max = 50, message = "Doctor ID must not exceed 50 characters")
     private String doctorId;
+
+    /** List of doctor associations for multi-doctor collaborator support. */
+    private List<DoctorAssociation> doctorAssociations;
+
+    /** The currently active doctor context for this collaborator. */
+    @Size(max = 50, message = "Active Doctor ID must not exceed 50 characters")
+    private String activeDoctorId;
 
     private CollaboratorStatus status;
 
@@ -63,4 +76,11 @@ public class CollaboratorProfileEntity {
 
     private Date createdAt;
     private Date updatedAt;
+    public String getEffectiveDoctorId() {
+        if (activeDoctorId != null && !activeDoctorId.isBlank()) {
+            return activeDoctorId;
+        }
+        return doctorId;
+    }
 }
+

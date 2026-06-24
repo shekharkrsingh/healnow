@@ -10,6 +10,7 @@ import com.heal.doctor.exception.ForbiddenException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.exception.ValidationException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
+import com.heal.doctor.models.DoctorAssociation;
 import com.heal.doctor.models.InvitationEntity;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.enums.InvitationStatus;
@@ -34,6 +35,7 @@ import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -261,30 +263,84 @@ public class InvitationServiceImpl implements IInvitationService {
         // Generate collaborator ID (same as userId)
         String collaboratorId = userId;
 
+        // Build doctor association with cached doctor info
+        String invitedDoctorId = invitation.getDoctorId();
+        DoctorEntity doctor = doctorRepository.findByDoctorId(invitedDoctorId).orElse(null);
+        String doctorName = doctor != null
+                ? "Dr. " + doctor.getFirstName() + " " + doctor.getLastName()
+                : invitedDoctorId;
+        String specialization = doctor != null ? doctor.getSpecialization() : null;
+        String clinicName = doctor != null ? doctor.getClinicName() : null;
+
+        DoctorAssociation newAssociation = DoctorAssociation.builder()
+                .doctorId(invitedDoctorId)
+                .doctorName(doctorName)
+                .specialization(specialization)
+                .clinicName(clinicName)
+                .role(null) // Role can be set per-doctor later
+                .joinedAt(new Date())
+                .active(true)
+                .build();
+
         // Check if profile exists
         CollaboratorProfileEntity collaboratorProfile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId).orElse(null);
         
         if (collaboratorProfile == null) {
-            // Create New Profile
+            // Create New Profile with first association
+            List<DoctorAssociation> associations = new ArrayList<>();
+            associations.add(newAssociation);
+
             collaboratorProfile = CollaboratorProfileEntity.builder()
                     .collaboratorId(collaboratorId)
-                    .doctorId(invitation.getDoctorId())
+                    .doctorId(invitedDoctorId) // Legacy field for backward compat
+                    .doctorAssociations(associations)
+                    .activeDoctorId(invitedDoctorId)
                     .firstName(invitation.getFirstName())
                     .lastName(invitation.getLastName())
+                    .email(invitation.getEmail())
                     .status(CollaboratorStatus.ACTIVATED)
                     .createdAt(new Date())
                     .updatedAt(new Date())
                     .build();
-            logger.info("Creating new collaborator profile: collaboratorId: {}", collaboratorId);
+            logger.info("Creating new collaborator profile: collaboratorId: {}, doctorId: {}", collaboratorId, invitedDoctorId);
         } else {
-            // Update Existing Profile
-            collaboratorProfile.setDoctorId(invitation.getDoctorId());
+            // Existing profile — append new doctor association
+            List<DoctorAssociation> associations = collaboratorProfile.getDoctorAssociations();
+            if (associations == null) {
+                associations = new ArrayList<>();
+            }
+
+            // Check for duplicate association
+            boolean alreadyAssociated = associations.stream()
+                    .anyMatch(a -> a.getDoctorId().equals(invitedDoctorId) && a.isActive());
+            if (alreadyAssociated) {
+                throw new ConflictException("DoctorAssociation", "Collaborator is already associated with this doctor");
+            }
+
+            // Re-activate if previously deactivated
+            boolean reactivated = false;
+            for (DoctorAssociation a : associations) {
+                if (a.getDoctorId().equals(invitedDoctorId) && !a.isActive()) {
+                    a.setActive(true);
+                    a.setJoinedAt(new Date());
+                    a.setDoctorName(doctorName);
+                    a.setSpecialization(specialization);
+                    a.setClinicName(clinicName);
+                    reactivated = true;
+                    break;
+                }
+            }
+            if (!reactivated) {
+                associations.add(newAssociation);
+            }
+
+            collaboratorProfile.setDoctorAssociations(associations);
             collaboratorProfile.setFirstName(invitation.getFirstName());
             collaboratorProfile.setLastName(invitation.getLastName());
             collaboratorProfile.setEmail(invitation.getEmail());
             collaboratorProfile.setStatus(CollaboratorStatus.ACTIVATED);
             collaboratorProfile.setUpdatedAt(new Date());
-            logger.info("Updating existing collaborator profile for re-invitation: collaboratorId: {}", collaboratorId);
+            logger.info("Appended doctor association for collaborator: collaboratorId: {}, doctorId: {}", collaboratorId, invitedDoctorId);
         }
 
         collaboratorProfileRepository.save(collaboratorProfile);

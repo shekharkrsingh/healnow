@@ -1,15 +1,24 @@
 package com.heal.doctor.utils;
 
+import com.heal.doctor.repositories.CollaboratorProfileRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 
 /**
  * Utility class for role checking and role-related operations.
  */
+@Component
 public class RoleUtils {
+
+    private static CollaboratorProfileRepository collaboratorProfileRepository;
+
+    public RoleUtils(CollaboratorProfileRepository collaboratorProfileRepository) {
+        RoleUtils.collaboratorProfileRepository = collaboratorProfileRepository;
+    }
 
     /**
      * Get the current user's role from SecurityContext.
@@ -122,4 +131,28 @@ public class RoleUtils {
         }
         return false;
     }
+
+    /**
+     * Check if the current user is a collaborator associated with a specific doctor.
+     *
+     * @param doctorId The doctor ID to check association for
+     * @return true if the current user is a collaborator actively associated with the given doctor
+     */
+    public static boolean isCollaboratorForDoctor(String doctorId) {
+        if (!isCollaborator()) return false;
+        String userId = CurrentUserName.getCurrentUserId();
+        if (collaboratorProfileRepository == null) return false;
+        return collaboratorProfileRepository.findByCollaboratorId(userId)
+                .map(profile -> {
+                    if (profile.getDoctorAssociations() != null && !profile.getDoctorAssociations().isEmpty()) {
+                        return profile.getDoctorAssociations().stream()
+                                .anyMatch(a -> a.getDoctorId().equals(doctorId) && a.isActive());
+                    }
+                    return profile.getDoctorId() != null && 
+                           profile.getDoctorId().equals(doctorId) && 
+                           profile.getStatus() == com.heal.doctor.models.enums.CollaboratorStatus.ACTIVATED;
+                })
+                .orElse(false);
+    }
 }
+

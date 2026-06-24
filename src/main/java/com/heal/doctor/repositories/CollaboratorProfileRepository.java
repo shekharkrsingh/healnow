@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface CollaboratorProfileRepository extends MongoRepository<CollaboratorProfileEntity, String> {
     Optional<CollaboratorProfileEntity> findByCollaboratorId(String collaboratorId);
-    List<CollaboratorProfileEntity> findByDoctorId(String doctorId);
     boolean existsByCollaboratorId(String collaboratorId);
+    List<CollaboratorProfileEntity> findByDoctorAssociations_DoctorIdAndDoctorAssociations_Active(String doctorId, boolean active);
 }
+

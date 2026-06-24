@@ -49,7 +49,11 @@ public class CollaboratorUserDetails implements UserDetails {
     }
 
     public String getDoctorId() {
-        return profile.getDoctorId();
+        return profile.getEffectiveDoctorId();
+    }
+
+    public String getActiveDoctorId() {
+        return getDoctorId();
     }
 
     @Override

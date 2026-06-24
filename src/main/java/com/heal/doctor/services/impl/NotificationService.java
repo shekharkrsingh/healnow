@@ -125,11 +125,14 @@ public class NotificationService implements INotificationService {
             case DOCTOR_COLLABORATORS:
                 if (targetId != null) {
                     // Required new NotificationRecipent as DOCTOR_AND_COLLABORATORS for seprate funcnality doctor and collaborator
-                     recipientIds.add(targetId); // Include the doctor themselves
-                     List<CollaboratorProfileEntity> collaborators = collaboratorProfileRepository.findByDoctorId(targetId);
-                     collaborators.stream()
-                             .filter(c -> c.getStatus() == CollaboratorStatus.ACTIVATED)
-                             .forEach(c -> recipientIds.add(c.getCollaboratorId()));
+                    recipientIds.add(targetId); // Include the doctor themselves
+                    
+                    List<CollaboratorProfileEntity> collaborators = collaboratorProfileRepository
+                            .findByDoctorAssociations_DoctorIdAndDoctorAssociations_Active(targetId, true);
+
+                    collaborators.stream()
+                            .filter(c -> c.getStatus() == CollaboratorStatus.ACTIVATED)
+                            .forEach(c -> recipientIds.add(c.getCollaboratorId()));
                 }
                 break;
             case ADMINS:

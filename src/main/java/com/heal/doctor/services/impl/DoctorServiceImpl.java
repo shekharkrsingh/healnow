@@ -568,14 +568,17 @@ public class DoctorServiceImpl implements IDoctorService {
     private int parseTimeTo24Hr(String time) {
         if (time == null || time.isBlank()) return 0;
         String cleaned = time.trim().toUpperCase();
+        boolean hasAmPm = cleaned.contains("AM") || cleaned.contains("PM");
         boolean isPM = cleaned.contains("PM");
         String numericPart = cleaned.replaceAll("[^0-9:]", "").trim();
         String[] parts = numericPart.split(":");
         int hours = Integer.parseInt(parts[0]);
         int minutes = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
 
-        if (isPM && hours != 12) hours += 12;
-        if (!isPM && hours == 12) hours = 0;
+        if (hasAmPm) {
+            if (isPM && hours != 12) hours += 12;
+            if (!isPM && hours == 12) hours = 0;
+        }
 
         return hours * 100 + minutes;
     }

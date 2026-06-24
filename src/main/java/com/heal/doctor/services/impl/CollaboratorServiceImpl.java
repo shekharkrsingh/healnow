@@ -9,7 +9,11 @@ import com.heal.doctor.exception.BadRequestException;
 import com.heal.doctor.exception.ForbiddenException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
+import com.heal.doctor.models.DoctorAssociation;
 import com.heal.doctor.models.DoctorEntity;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.models.enums.CollaboratorStatus;
 import com.heal.doctor.models.enums.RolesEnum;
@@ -44,10 +48,30 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
 
+    private void ensureAssociations(CollaboratorProfileEntity profile) {
+        if (profile.getDoctorAssociations() == null || profile.getDoctorAssociations().isEmpty()) {
+            List<DoctorAssociation> associations = new ArrayList<>();
+            if (profile.getDoctorId() != null) {
+                DoctorEntity doctor = doctorRepository.findByDoctorId(profile.getDoctorId()).orElse(null);
+                associations.add(DoctorAssociation.builder()
+                        .doctorId(profile.getDoctorId())
+                        .doctorName(doctor != null ? "Dr. " + doctor.getFirstName() + " " + doctor.getLastName() : profile.getDoctorId())
+                        .specialization(doctor != null ? doctor.getSpecialization() : null)
+                        .clinicName(doctor != null ? doctor.getClinicName() : null)
+                        .joinedAt(profile.getCreatedAt() != null ? profile.getCreatedAt() : new Date())
+                        .active(profile.getStatus() == CollaboratorStatus.ACTIVATED)
+                        .build());
+            }
+            profile.setDoctorAssociations(associations);
+        }
+    }
+
     @Override
     public List<CollaboratorDTO> getCollaboratorsByDoctor(String doctorId) {
         logger.debug("Fetching collaborators for doctor: {}", doctorId);
-        List<CollaboratorProfileEntity> profiles = collaboratorProfileRepository.findByDoctorId(doctorId);
+        
+        List<CollaboratorProfileEntity> profiles = collaboratorProfileRepository
+                .findByDoctorAssociations_DoctorIdAndDoctorAssociations_Active(doctorId, true);
         
         return profiles.stream()
                 .filter(profile -> profile.getStatus() != CollaboratorStatus.INVITED)
@@ -63,27 +87,45 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", collaboratorId));
 
-        if (!doctorId.equals(profile.getDoctorId())) {
-            throw new ForbiddenException("collaborator", "deactivate");
+        ensureAssociations(profile);
+        DoctorAssociation association = profile.getDoctorAssociations().stream()
+                .filter(a -> a.getDoctorId().equals(doctorId))
+                .findFirst()
+                .orElseThrow(() -> new ForbiddenException("collaborator", "deactivate"));
+
+        if (!association.isActive()) {
+            throw new BadRequestException("Collaborator is already deactivated for this doctor");
         }
+
+        association.setActive(false);
+        profile.setUpdatedAt(new Date());
+
+        boolean hasOtherActive = profile.getDoctorAssociations().stream()
+                .anyMatch(a -> !a.getDoctorId().equals(doctorId) && a.isActive());
 
         UserEntity user = userRepository.findByUserId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator user", collaboratorId));
 
-        if (!user.getIsActive() && profile.getStatus() == CollaboratorStatus.DEACTIVATED) {
-            throw new BadRequestException("Collaborator is already deactivated");
+        if (!hasOtherActive) {
+            user.setIsActive(false);
+            user.setUpdatedAt(new Date());
+            userRepository.save(user);
+            profile.setStatus(CollaboratorStatus.DEACTIVATED);
         }
 
-        user.setIsActive(false);
-        userRepository.save(user);
+        if (doctorId.equals(profile.getActiveDoctorId())) {
+            String nextActive = profile.getDoctorAssociations().stream()
+                    .filter(DoctorAssociation::isActive)
+                    .map(DoctorAssociation::getDoctorId)
+                    .findFirst()
+                    .orElse(null);
+            profile.setActiveDoctorId(nextActive);
+        }
 
-        profile.setStatus(CollaboratorStatus.DEACTIVATED);
-        profile.setUpdatedAt(new Date());
         collaboratorProfileRepository.save(profile);
-
         logger.info("Collaborator deactivated: {}", collaboratorId);
         
-        sendStatusChangeEmails(profile, user);
+        sendStatusChangeEmails(profile, user, doctorId);
     }
 
     @Override
@@ -94,27 +136,38 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", collaboratorId));
 
-        if (!doctorId.equals(profile.getDoctorId())) {
-            throw new ForbiddenException("collaborator", "activate");
+        ensureAssociations(profile);
+        DoctorAssociation association = profile.getDoctorAssociations().stream()
+                .filter(a -> a.getDoctorId().equals(doctorId))
+                .findFirst()
+                .orElseThrow(() -> new ForbiddenException("collaborator", "activate"));
+
+        if (association.isActive() && profile.getStatus() == CollaboratorStatus.ACTIVATED) {
+            throw new BadRequestException("Collaborator is already active");
         }
+
+        association.setActive(true);
+        profile.setUpdatedAt(new Date());
 
         UserEntity user = userRepository.findByUserId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator user", collaboratorId));
 
-        if (user.getIsActive() && profile.getStatus() == CollaboratorStatus.ACTIVATED) {
-            throw new BadRequestException("Collaborator is already active");
+        if (!user.getIsActive()) {
+            user.setIsActive(true);
+            user.setUpdatedAt(new Date());
+            userRepository.save(user);
         }
 
-        user.setIsActive(true);
-        userRepository.save(user);
-
         profile.setStatus(CollaboratorStatus.ACTIVATED);
-        profile.setUpdatedAt(new Date());
-        collaboratorProfileRepository.save(profile);
+        
+        if (profile.getActiveDoctorId() == null) {
+            profile.setActiveDoctorId(doctorId);
+        }
 
+        collaboratorProfileRepository.save(profile);
         logger.info("Collaborator activated: {}", collaboratorId);
         
-        sendStatusChangeEmails(profile, user);
+        sendStatusChangeEmails(profile, user, doctorId);
     }
 
     @Override
@@ -124,30 +177,44 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         CollaboratorProfileEntity profile = collaboratorProfileRepository.findByCollaboratorId(collaboratorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Collaborator profile", collaboratorId));
 
-        if (!doctorId.equals(profile.getDoctorId())) {
-            throw new ForbiddenException("collaborator", "remove");
-        }
+        ensureAssociations(profile);
+        DoctorAssociation association = profile.getDoctorAssociations().stream()
+                .filter(a -> a.getDoctorId().equals(doctorId))
+                .findFirst()
+                .orElseThrow(() -> new ForbiddenException("collaborator", "remove"));
 
         // Save info for email before clearing
-        String targetDoctorId = profile.getDoctorId();
-        String colleagueEmail = profile.getEmail(); // Use email from profile
+        String targetDoctorId = doctorId;
+        String colleagueEmail = profile.getEmail();
 
-        // Update profile: clear doctor link and set status
-        profile.setDoctorId(null);
-        profile.setStatus(CollaboratorStatus.REMOVED);
+        association.setActive(false);
         profile.setUpdatedAt(new Date());
+
+        boolean hasOtherActive = profile.getDoctorAssociations().stream()
+                .anyMatch(a -> !a.getDoctorId().equals(doctorId) && a.isActive());
+
+        if (!hasOtherActive) {
+            userRepository.findByUserId(collaboratorId).ifPresent(user -> {
+                user.setIsActive(false);
+                String randomPassword = UUID.randomUUID().toString();
+                user.setPassword(passwordEncoder.encode(randomPassword));
+                user.setUpdatedAt(new Date());
+                userRepository.save(user);
+                logger.info("Associated user deactivated and password reset: {}", collaboratorId);
+            });
+            profile.setStatus(CollaboratorStatus.REMOVED);
+        }
+
+        if (doctorId.equals(profile.getActiveDoctorId())) {
+            String nextActive = profile.getDoctorAssociations().stream()
+                    .filter(DoctorAssociation::isActive)
+                    .map(DoctorAssociation::getDoctorId)
+                    .findFirst()
+                    .orElse(null);
+            profile.setActiveDoctorId(nextActive);
+        }
+
         collaboratorProfileRepository.save(profile);
-
-        // Update user: deactivate and reset password to random (if user exists)
-        userRepository.findByUserId(collaboratorId).ifPresent(user -> {
-            user.setIsActive(false);
-            String randomPassword = UUID.randomUUID().toString();
-            user.setPassword(passwordEncoder.encode(randomPassword));
-            user.setUpdatedAt(new Date());
-            userRepository.save(user);
-            logger.info("Associated user deactivated and password reset: {}", collaboratorId);
-        });
-
         logger.info("Collaborator removed (released): {}", collaboratorId);
 
         // Send emails
@@ -167,11 +234,11 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
         }
     }
 
-    private void sendStatusChangeEmails(CollaboratorProfileEntity profile, UserEntity user) {
-        if (profile.getDoctorId() != null) {
-            DoctorEntity doctor = doctorRepository.findByDoctorId(profile.getDoctorId()).orElse(null);
+    private void sendStatusChangeEmails(CollaboratorProfileEntity profile, UserEntity user, String doctorId) {
+        if (doctorId != null) {
+            DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId).orElse(null);
             if (doctor != null) {
-                UserEntity doctorUser = userRepository.findByUserId(profile.getDoctorId()).orElse(null);
+                UserEntity doctorUser = userRepository.findByUserId(doctorId).orElse(null);
                 if (doctorUser != null) {
                     String docName = doctor.getFirstName() + " " + doctor.getLastName();
                     String colName = profile.getFirstName() + " " + profile.getLastName();
@@ -203,7 +270,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
                 .firstName(collaboratorProfile.getFirstName())
                 .lastName(collaboratorProfile.getLastName())
                 .collaboratorId(collaboratorProfile.getCollaboratorId())
-                .doctorId(collaboratorProfile.getDoctorId())
+                .doctorId(collaboratorProfile.getEffectiveDoctorId())
                 .status(collaboratorProfile.getStatus())
                 .profilePicture(collaboratorProfile.getProfilePicture())
                 .coverPicture(collaboratorProfile.getCoverPicture())
@@ -247,7 +314,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
                 .firstName(updatedProfile.getFirstName())
                 .lastName(updatedProfile.getLastName())
                 .collaboratorId(updatedProfile.getCollaboratorId())
-                .doctorId(updatedProfile.getDoctorId())
+                .doctorId(updatedProfile.getEffectiveDoctorId())
                 .status(updatedProfile.getStatus())
                 .profilePicture(updatedProfile.getProfilePicture())
                 .coverPicture(updatedProfile.getCoverPicture())

@@ -42,6 +42,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String doctorId = jwtUtil.extractDoctorId(token);
                 String role = jwtUtil.extractRole(token);
 
+                // For collaborators: allow overriding doctorId via X-Active-Doctor-Id header
+                if ("COLLABORATOR".equals(role)) {
+                    String activeDoctorHeader = request.getHeader("X-Active-Doctor-Id");
+                    if (activeDoctorHeader != null && !activeDoctorHeader.isBlank()) {
+                        doctorId = activeDoctorHeader.trim();
+                    }
+                }
+
                 if (jwtUtil.validateToken(token, username)) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 

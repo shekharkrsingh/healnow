@@ -7,10 +7,10 @@ import com.heal.doctor.services.IUserService;
 import com.heal.doctor.services.impl.RuntimeApplicationConfigServices;
 import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
-import com.heal.doctor.dto.RogerRegistrationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -110,13 +110,13 @@ public class UserPublicController {
     }
 
     @PostMapping("/auth/refresh")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> refreshTokens(@RequestBody RefreshTokenRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> refreshTokens(@Valid @RequestBody RefreshTokenRequestDTO requestDTO) {
         LoginResponseDTO loginResponseDTO = userService.refreshAccessToken(requestDTO.getRefreshToken());
         return ResponseEntity.ok(new ApiResponse<>(true, "Tokens refreshed successfully", loginResponseDTO));
     }
 
     @PostMapping("/auth/logout")
-    public ResponseEntity<ApiResponse<String>> logout(@RequestBody RefreshTokenRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponse<String>> logout(@Valid @RequestBody RefreshTokenRequestDTO requestDTO) {
         userService.revokeRefreshToken(requestDTO.getRefreshToken());
         return ResponseEntity.ok(new ApiResponse<>(true, "Logged out successfully", null));
     }
