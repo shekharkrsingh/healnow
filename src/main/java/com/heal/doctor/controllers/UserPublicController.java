@@ -91,7 +91,7 @@ public class UserPublicController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor retrieved successfully", publicProfile));
     }
 
-    @PostMapping
+    @PostMapping("/signup")
     public ResponseEntity<ApiResponse<DoctorProfileDTO>> createDoctor(@RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
         DoctorProfileDTO doctorDTO = doctorService.createDoctor(doctorRegistrationDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor created successfully", doctorDTO));

@@ -27,8 +27,66 @@ class ApplicationTests {
 	@Autowired
 	private NotificationRepository notificationRepository;
 
+	@Autowired
+	private com.heal.doctor.services.impl.DoctorStatisticsServiceImpl doctorStatisticsService;
+
+	@Autowired
+	private com.heal.doctor.services.IAppointmentService appointmentService;
+
+	@Autowired
+	private com.heal.doctor.services.INotificationService notificationService;
+
+	@Autowired
+	private DoctorRepository doctorRepository;
+
 	@Test
-	void contextLoads() {
+	void testFetchStatistics() {
+		org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+				new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+						new com.heal.doctor.security.DoctorUserDetails(
+								com.heal.doctor.models.UserEntity.builder().userId("DOC-TEST-123").email("test@doctor.com").build(),
+								com.heal.doctor.models.DoctorEntity.builder().doctorId("DOC-TEST-123").build()
+						),
+						"DOC-TEST-123",
+						List.of()
+				);
+		org.springframework.security.core.context.SecurityContextHolder.setContext(
+				new org.springframework.security.core.context.SecurityContextImpl(auth)
+		);
+
+		try {
+			var stats = doctorStatisticsService.fetchStatistics();
+			System.out.println(">>> Stats fetched successfully: " + stats);
+
+			var appts = appointmentService.getAppointmentsByBookingDate("2026-06-25");
+			System.out.println(">>> Appointments fetched successfully: " + appts.size());
+
+			var notifications = notificationService.getAllNotifications();
+			System.out.println(">>> Notifications fetched successfully: " + notifications.size());
+		} catch (Exception e) {
+			System.out.println(">>> Stats/Appts/Notifications fetched failed with exception: " + e.getMessage());
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	@Test
+	void checkDoctorsInDatabase() {
+		System.out.println(">>> CHECKING DOCTORS AND USERS IN DATABASE <<<");
+		List<UserEntity> allUsers = userRepository.findAll();
+		int totalDoctors = 0;
+		int missingProfiles = 0;
+		for (UserEntity user : allUsers) {
+			if (user.getRolesEnum() == RolesEnum.DOCTOR) {
+				totalDoctors++;
+				boolean profileExists = doctorRepository.findByDoctorId(user.getUserId()).isPresent();
+				System.out.println("DOCTOR User: ID=" + user.getUserId() + ", Email=" + user.getEmail() + ", ProfileExists=" + profileExists);
+				if (!profileExists) {
+					missingProfiles++;
+				}
+			}
+		}
+		System.out.println(">>> SUMMARY: Total Doctor Users = " + totalDoctors + ", Missing Profiles = " + missingProfiles + " <<<");
 	}
 
 	@Test
