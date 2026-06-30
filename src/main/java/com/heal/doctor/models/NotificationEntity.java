@@ -1,5 +1,6 @@
 package com.heal.doctor.models;
 
+import com.heal.doctor.entity.models.NotificationContext;
 import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import jakarta.validation.constraints.NotBlank;
@@ -49,4 +50,6 @@ public class NotificationEntity {
     private Instant createdAt;
 
     private Instant expiryDate;
+
+    private NotificationContext notificationContext;
 }

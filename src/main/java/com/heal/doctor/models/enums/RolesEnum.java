@@ -6,4 +6,7 @@ public enum RolesEnum {
     USER,
     COLLABORATOR,
     ROGER,
+    ENTITY_ADMIN,
+    ENTITY_SUPERVISOR,
+    ENTITY_COLLABORATOR,
 }

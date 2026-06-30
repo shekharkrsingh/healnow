@@ -1,5 +1,6 @@
 package com.heal.doctor.security;
 
+import com.heal.doctor.entity.security.ContextResolutionFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -26,13 +27,17 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
+    private final ContextResolutionFilter contextResolutionFilter;
 
     @org.springframework.beans.factory.annotation.Value("${frontend.domain}")
     private String frontendDomain;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          UserDetailsService userDetailsService,
+                          ContextResolutionFilter contextResolutionFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
+        this.contextResolutionFilter = contextResolutionFilter;
     }
 
     @Bean
@@ -51,7 +56,8 @@ public class SecurityConfig {
                         .requestMatchers("/app/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(contextResolutionFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -68,7 +74,9 @@ public class SecurityConfig {
                 frontendDomain
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Active-Doctor-Id"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept",
+                "X-Requested-With", "Origin",
+                "X-Active-Doctor-Id", "X-Active-Entity-Id", "X-Active-Affiliation-Id"));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(List.of("Authorization"));
 
