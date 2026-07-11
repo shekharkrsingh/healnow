@@ -95,9 +95,5 @@ public class AppointmentEntity {
 
     @NotNull(message = "Emergency status is required")
     private Boolean isEmergency;
-
-    private String entityId;
-    private String affiliationId;
-    private String bookedAtEntityName;
 }
 

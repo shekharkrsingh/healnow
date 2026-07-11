@@ -3,12 +3,6 @@ package com.heal.doctor.services.impl;
 import com.heal.doctor.dto.NotificationResponseDTO;
 import com.heal.doctor.dto.WebSocketResponseType;
 import com.heal.doctor.dto.WebsocketResponseDTO;
-import com.heal.doctor.entity.models.HealthcareEntity;
-import com.heal.doctor.entity.models.NotificationContext;
-import com.heal.doctor.entity.models.enums.EntityMemberRole;
-import com.heal.doctor.entity.repositories.AffiliationStaffRepository;
-import com.heal.doctor.entity.repositories.EntityAffiliationRepository;
-import com.heal.doctor.entity.repositories.HealthcareEntityRepository;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.models.CollaboratorProfileEntity;
 import com.heal.doctor.models.NotificationEntity;
@@ -48,9 +42,6 @@ public class NotificationService implements INotificationService {
     private final CollaboratorProfileRepository collaboratorProfileRepository;
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
-    private final HealthcareEntityRepository healthcareEntityRepository;
-    private final EntityAffiliationRepository affiliationRepository;
-    private final AffiliationStaffRepository staffRepository;
 
     @Override
     public NotificationResponseDTO createNotification(NotificationEntity notification) {
@@ -146,58 +137,6 @@ public class NotificationService implements INotificationService {
                 break;
             case ADMINS:
                 userRepository.findByRolesEnumAndIsActiveTrue(RolesEnum.ADMIN).forEach(u -> recipientIds.add(u.getUserId()));
-                break;
-            case ENTITY_MEMBERS:
-                if (targetId != null) {
-                    healthcareEntityRepository.findByEntityId(targetId).ifPresent(entity -> {
-                        if (entity.getMembers() != null) {
-                            entity.getMembers().stream()
-                                    .filter(m -> m.isActive())
-                                    .forEach(m -> recipientIds.add(m.getUserId()));
-                        }
-                    });
-                }
-                break;
-            case ENTITY_SUPERVISORS:
-                if (targetId != null) {
-                    healthcareEntityRepository.findByEntityId(targetId).ifPresent(entity -> {
-                        if (entity.getMembers() != null) {
-                            entity.getMembers().stream()
-                                    .filter(m -> m.isActive() && m.getRole() == EntityMemberRole.SUPERVISOR)
-                                    .forEach(m -> recipientIds.add(m.getUserId()));
-                        }
-                    });
-                }
-                break;
-            case AFFILIATION_PARTIES:
-                if (targetId != null) {
-                    affiliationRepository.findByAffiliationId(targetId).ifPresent(aff -> {
-                        recipientIds.add(aff.getDoctorId());
-                        healthcareEntityRepository.findByEntityId(aff.getEntityId()).ifPresent(entity -> {
-                            if (entity.getMembers() != null) {
-                                entity.getMembers().stream()
-                                        .filter(m -> m.isActive() && m.getRole() == EntityMemberRole.ENTITY_ADMIN)
-                                        .forEach(m -> recipientIds.add(m.getUserId()));
-                            }
-                        });
-                    });
-                }
-                break;
-            case AFFILIATION_ENTITY_STAFF:
-                if (targetId != null) {
-                    staffRepository.findByAffiliationIdAndActive(targetId, true)
-                            .stream()
-                            .filter(a -> a.getScope() == com.heal.doctor.entity.models.enums.StaffAssignmentScope.ENTITY_CONTEXT)
-                            .forEach(a -> recipientIds.add(a.getUserId()));
-                }
-                break;
-            case AFFILIATION_DOCTOR_STAFF:
-                if (targetId != null) {
-                    staffRepository.findByAffiliationIdAndActive(targetId, true)
-                            .stream()
-                            .filter(a -> a.getScope() == com.heal.doctor.entity.models.enums.StaffAssignmentScope.DOCTOR_CONTEXT)
-                            .forEach(a -> recipientIds.add(a.getUserId()));
-                }
                 break;
             default:
                 break;
