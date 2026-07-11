@@ -65,6 +65,7 @@ public class SecurityConfig {
                 "http://localhost:8081",
                 "http://localhost:8082",
                 "http://localhost:19006",
+                "https://hpotion.netlify.app",
                 frontendDomain
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Invitation</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 20px; }
+        .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
+        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; border-top: 1px solid #ddd; padding-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Welcome to <span th:text="${companyName}">Heal Now</span></h2>
+        </div>
+        <p>Hi <span th:text="${firstName}">there</span>,</p>
+        <p>You have been invited to join the <span th:text="${companyName}">Heal Now</span> platform as an Administrator.</p>
+        <p>To accept your invitation and set up your account, please click the button below:</p>
+        <div style="text-align: center;">
+            <a th:href="${inviteLink}" class="btn">Accept Invitation</a>
+        </div>
+        <p style="margin-top: 20px;">If the button above does not work, copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #007bff;"><span th:text="${inviteLink}">http://localhost:5173/admin/accept-invite</span></p>
+        <p>Note: This invitation link will expire in 7 days.</p>
+        
+        <div class="footer">
+            <p>&copy; 2026 <span th:text="${companyName}">Heal Now</span>. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

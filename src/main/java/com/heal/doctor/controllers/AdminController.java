@@ -1,7 +1,11 @@
 package com.heal.doctor.controllers;
 
+import com.heal.doctor.dto.AdminDashboardDTO;
 import com.heal.doctor.dto.DoctorProfileDTO;
+import com.heal.doctor.dto.CollaboratorProfileDTO;
 import com.heal.doctor.dto.RuntimeApplicationConfigDTO;
+import com.heal.doctor.services.IAdminDashboardService;
+import com.heal.doctor.services.ICollaboratorService;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.IRuntimeApplicationConfigService;
 import com.heal.doctor.models.enums.VerificationStatus;
@@ -21,12 +25,25 @@ public class AdminController {
 
     private final IDoctorService doctorService;
     private final IRuntimeApplicationConfigService runtimeApplicationConfigService;
+    private final IAdminDashboardService adminDashboardService;
+    private final ICollaboratorService collaboratorService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<DoctorProfileDTO>>> getAllDoctors() {
-        List<DoctorProfileDTO> doctors = doctorService.getAllDoctors(null, null);
+    public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<DoctorProfileDTO>>> getAllDoctors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) VerificationStatus status) {
+        
+        org.springframework.data.domain.Sort.Direction sortDirection = org.springframework.data.domain.Sort.Direction.fromString(direction);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(sortDirection, sortBy));
+        
+        org.springframework.data.domain.Page<DoctorProfileDTO> doctors = doctorService.getAllDoctorsPaginated(pageable, search, status);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctors retrieved successfully", doctors));
     }
+
 
     @DeleteMapping("/{doctorId}")
     public ResponseEntity<ApiResponse<Void>> deleteDoctor(@PathVariable String doctorId) {
@@ -56,5 +73,27 @@ public class AdminController {
                                 runtimeApplicationConfigDTO
                         )
                 );
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<AdminDashboardDTO>> getDashboardAnalytics() {
+        AdminDashboardDTO dashboard = adminDashboardService.getDashboardAnalytics();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Dashboard analytics fetched successfully", dashboard));
+    }
+
+    @GetMapping("/collaborators")
+    public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<CollaboratorProfileDTO>>> getAllCollaborators(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) com.heal.doctor.models.enums.CollaboratorStatus status) {
+        
+        org.springframework.data.domain.Sort.Direction sortDirection = org.springframework.data.domain.Sort.Direction.fromString(direction);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(sortDirection, sortBy));
+        
+        org.springframework.data.domain.Page<CollaboratorProfileDTO> collaborators = collaboratorService.getAllCollaboratorsPaginated(pageable, search, status);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Collaborators retrieved successfully", collaborators));
     }
 }

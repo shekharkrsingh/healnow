@@ -13,4 +13,6 @@ public interface ICollaboratorService {
     void removeCollaborator(String collaboratorId, String doctorId);
     CollaboratorProfileDTO getCollaboratorProfile();
     CollaboratorProfileDTO updateCollaboratorProfile(UpdateCollaboratorProfileDTO updateDTO);
+    List<CollaboratorProfileDTO> getAllCollaborators();
+    org.springframework.data.domain.Page<CollaboratorProfileDTO> getAllCollaboratorsPaginated(org.springframework.data.domain.Pageable pageable, String search, com.heal.doctor.models.enums.CollaboratorStatus status);
 }

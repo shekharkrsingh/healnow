@@ -47,6 +47,7 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
     private final ICollaboratorMailService collaboratorMailService;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
     private void ensureAssociations(CollaboratorProfileEntity profile) {
         if (profile.getDoctorAssociations() == null || profile.getDoctorAssociations().isEmpty()) {
@@ -64,6 +65,45 @@ public class CollaboratorServiceImpl implements ICollaboratorService {
             }
             profile.setDoctorAssociations(associations);
         }
+    }
+
+    @Override
+    public List<CollaboratorProfileDTO> getAllCollaborators() {
+        logger.debug("Fetching all collaborators for admin");
+        return collaboratorProfileRepository.findAll().stream()
+                .map(profile -> modelMapper.map(profile, CollaboratorProfileDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<CollaboratorProfileDTO> getAllCollaboratorsPaginated(
+            org.springframework.data.domain.Pageable pageable, String search, CollaboratorStatus status) {
+        
+        org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query();
+        
+        if (status != null) {
+            query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("status").is(status));
+        }
+        
+        if (search != null && !search.trim().isEmpty()) {
+            String regex = ".*" + search.trim() + ".*";
+            query.addCriteria(new org.springframework.data.mongodb.core.query.Criteria().orOperator(
+                org.springframework.data.mongodb.core.query.Criteria.where("collaboratorId").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("firstName").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("lastName").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("email").regex(regex, "i")
+            ));
+        }
+
+        long total = mongoTemplate.count(query, CollaboratorProfileEntity.class);
+        query.with(pageable);
+        List<CollaboratorProfileEntity> collaborators = mongoTemplate.find(query, CollaboratorProfileEntity.class);
+
+        List<CollaboratorProfileDTO> dtos = collaborators.stream()
+                .map(profile -> modelMapper.map(profile, CollaboratorProfileDTO.class))
+                .collect(Collectors.toList());
+                
+        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
     }
 
     @Override

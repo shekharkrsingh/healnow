@@ -10,6 +10,7 @@ public interface IDoctorService {
     DoctorProfileDTO getDoctorById(String doctorId);
     DoctorProfileDTO getDoctorProfile();
     List<DoctorProfileDTO> getAllDoctors(String location, String query);
+    org.springframework.data.domain.Page<DoctorProfileDTO> getAllDoctorsPaginated(org.springframework.data.domain.Pageable pageable, String search, VerificationStatus status);
 
     DoctorProfileDTO updateDoctor(UpdateDoctorDetailsDTO updateDoctorDetailsDTO);
     DoctorProfileDTO updateVerificationStatus(String doctorId, VerificationStatus status);

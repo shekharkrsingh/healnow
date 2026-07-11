@@ -62,15 +62,19 @@ public class DoctorServiceImpl implements IDoctorService {
     private final IEmailService emailService;
     private final String companyName;
     private final DoctorVerificationRequestRepository doctorVerificationRequestRepository;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
-    public DoctorServiceImpl(DoctorRepository doctorRepository, UserRepository userRepository,
-                            ModelMapper modelMapper,
-                            PasswordEncoder passwordEncoder,OtpServiceImpl otpService,
-                            INotificationService notificationService,
-                            IDoctorAccountMailService doctorAccountMailService,
-                            IEmailService emailService,
-                            @Value("${company.name}") String companyName,
-                            DoctorVerificationRequestRepository doctorVerificationRequestRepository) {
+    public DoctorServiceImpl(DoctorRepository doctorRepository, 
+                             UserRepository userRepository,
+                             ModelMapper modelMapper,
+                             PasswordEncoder passwordEncoder,
+                             OtpServiceImpl otpService,
+                             INotificationService notificationService,
+                             IDoctorAccountMailService doctorAccountMailService,
+                             IEmailService emailService,
+                             @Value("${company.name}") String companyName,
+                             DoctorVerificationRequestRepository doctorVerificationRequestRepository,
+                             org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
@@ -81,6 +85,7 @@ public class DoctorServiceImpl implements IDoctorService {
         this.emailService = emailService;
         this.companyName = companyName;
         this.doctorVerificationRequestRepository = doctorVerificationRequestRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     @Transactional
@@ -201,11 +206,58 @@ public class DoctorServiceImpl implements IDoctorService {
             doctors = doctorRepository.findByLocationAndQuery(safeLocation, safeQuery);
         }
 
-        List<DoctorProfileDTO> doctorDTOs = doctors.parallelStream()
-                .map(doctor -> modelMapper.map(doctor, DoctorProfileDTO.class))
+        return doctors.stream()
+                .map(this::mapToDoctorProfileDTOWithPendingStatus)
                 .collect(Collectors.toList());
-        logger.debug("Retrieved {} doctors", doctorDTOs.size());
-        return doctorDTOs;
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<DoctorProfileDTO> getAllDoctorsPaginated(
+            org.springframework.data.domain.Pageable pageable, String search, VerificationStatus status) {
+        
+        org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query();
+        
+        if (status != null) {
+            query.addCriteria(org.springframework.data.mongodb.core.query.Criteria.where("verificationStatus").is(status));
+        }
+        
+        if (search != null && !search.trim().isEmpty()) {
+            String regex = ".*" + search.trim() + ".*";
+            query.addCriteria(new org.springframework.data.mongodb.core.query.Criteria().orOperator(
+                org.springframework.data.mongodb.core.query.Criteria.where("doctorId").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("firstName").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("lastName").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("email").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("specialization").regex(regex, "i"),
+                org.springframework.data.mongodb.core.query.Criteria.where("clinicName").regex(regex, "i")
+            ));
+        }
+
+        long total = mongoTemplate.count(query, DoctorEntity.class);
+        query.with(pageable);
+        List<DoctorEntity> doctors = mongoTemplate.find(query, DoctorEntity.class);
+
+        List<DoctorProfileDTO> dtos = doctors.stream()
+                .map(this::mapToDoctorProfileDTOWithPendingStatus)
+                .collect(Collectors.toList());
+                
+        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+    }
+
+    private DoctorProfileDTO mapToDoctorProfileDTOWithPendingStatus(DoctorEntity doctor) {
+        DoctorProfileDTO dto = modelMapper.map(doctor, DoctorProfileDTO.class);
+        Optional<DoctorVerificationRequestEntity> pendingOpt = doctorVerificationRequestRepository
+                .findFirstByDoctorIdAndStatusOrderBySubmittedAtDesc(doctor.getDoctorId(), RequestStatus.PENDING);
+        if (pendingOpt.isPresent()) {
+            DoctorVerificationRequestEntity pending = pendingOpt.get();
+            dto.setHasPendingVerification(true);
+            dto.setPendingLicenseNumber(pending.getLicenseNumber());
+            dto.setPendingLicensingAuthority(pending.getLicensingAuthority());
+            dto.setPendingLicenseExpiryDate(pending.getLicenseExpiryDate());
+        } else {
+            dto.setHasPendingVerification(false);
+        }
+        return dto;
     }
 
     @Transactional
