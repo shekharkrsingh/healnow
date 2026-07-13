@@ -49,23 +49,16 @@ public class ContentDataSeeder implements CommandLineRunner {
     }
 
     private void seedSiteStatistics() throws Exception {
-        SiteStatistics stats = objectMapper.readValue(
-                new ClassPathResource("seed-data/site-statistics.json").getInputStream(),
-                SiteStatistics.class
-        );
-        stats.setUpdatedAt(Instant.now());
-
-        List<SiteStatistics> existing = statisticsRepository.findAll();
-        if (!existing.isEmpty()) {
-            SiteStatistics current = existing.get(0);
-            stats.setId(current.getId());
-            stats.setCreatedAt(current.getCreatedAt());
-            log.info("Updating existing site statistics");
-        } else {
+        if (statisticsRepository.count() == 0) {
+            SiteStatistics stats = objectMapper.readValue(
+                    new ClassPathResource("seed-data/site-statistics.json").getInputStream(),
+                    SiteStatistics.class
+            );
             stats.setCreatedAt(Instant.now());
+            stats.setUpdatedAt(Instant.now());
+            statisticsRepository.save(stats);
             log.info("Seeded new site statistics");
         }
-        statisticsRepository.save(stats);
     }
 
     private void seedHeroContent() throws Exception {
@@ -185,22 +178,15 @@ public class ContentDataSeeder implements CommandLineRunner {
     }
 
     private void seedSiteSettings() throws Exception {
-        SiteSettings settings = objectMapper.readValue(
-                new ClassPathResource("seed-data/site-settings.json").getInputStream(),
-                SiteSettings.class
-        );
-        settings.setUpdatedAt(Instant.now());
-
-        List<SiteSettings> existing = siteSettingsRepository.findAll();
-        if (!existing.isEmpty()) {
-            SiteSettings current = existing.get(0);
-            settings.setId(current.getId());
-            settings.setCreatedAt(current.getCreatedAt());
-            log.info("Updating existing site settings");
-        } else {
+        if (siteSettingsRepository.count() == 0) {
+            SiteSettings settings = objectMapper.readValue(
+                    new ClassPathResource("seed-data/site-settings.json").getInputStream(),
+                    SiteSettings.class
+            );
             settings.setCreatedAt(Instant.now());
+            settings.setUpdatedAt(Instant.now());
+            siteSettingsRepository.save(settings);
             log.info("Seeded new site settings");
         }
-        siteSettingsRepository.save(settings);
     }
 }

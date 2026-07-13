@@ -723,8 +723,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private Comparator<AppointmentDTO> createFairQueueComparator(Date currentTime) {
         return Comparator
-                .comparing(AppointmentDTO::getTreated)
-                .thenComparing(AppointmentDTO::getIsEmergency, Comparator.reverseOrder())
+                .comparing((AppointmentDTO a) -> a.getTreated() != null ? a.getTreated() : false)
+                .thenComparing(a -> a.getIsEmergency() != null ? a.getIsEmergency() : false, Comparator.reverseOrder())
                 .thenComparing((a, b) -> compareStatus(a.getStatus(), b.getStatus()))
                 .thenComparing((a, b) -> {
                     boolean aOverdue = currentTime.after(a.getAppointmentDateTime());
