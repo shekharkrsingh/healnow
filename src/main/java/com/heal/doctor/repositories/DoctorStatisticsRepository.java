@@ -63,7 +63,7 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
 
     @Aggregation(pipeline = {
             "{ $match: { doctorId: ?2, treatedDateTime: { $gte: ?0, $lte: ?1 }, treated: true } }",
-            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$treatedDateTime' } }, count: { $sum: 1 } } }",
+            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$treatedDateTime', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } }",
             "{ $project: { _id: 0, date: '$_id', count: 1 } }",
             "{ $sort: { date: 1 } }"
     })
@@ -71,7 +71,7 @@ public interface DoctorStatisticsRepository extends MongoRepository<AppointmentE
 
     @Aggregation(pipeline = {
             "{ $match: { doctorId: ?0, appointmentDateTime: { $gte: ?1, $lte: ?2 } } }",
-            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime' } }, totalCount: { $sum: 1 }, treatedCount: { $sum: { $cond: [{ $eq: ['$treated', true] }, 1, 0] } } } }",
+            "{ $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$appointmentDateTime', timezone: 'Asia/Kolkata' } }, totalCount: { $sum: 1 }, treatedCount: { $sum: { $cond: [{ $eq: ['$treated', true] }, 1, 0] } } } }",
             "{ $sort: { _id: -1 } }",
             "{ $limit: 1 }",
             "{ $project: { _id: 0, totalCount: { $ifNull: ['$totalCount', 0] }, treatedCount: { $ifNull: ['$treatedCount', 0] } } }"
