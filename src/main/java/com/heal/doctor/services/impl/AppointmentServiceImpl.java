@@ -19,13 +19,13 @@ import com.heal.doctor.repositories.UserRepository;
 import com.heal.doctor.services.IAppointmentConfirmationService;
 import com.heal.doctor.services.IAppointmentService;
 import com.heal.doctor.services.INotificationService;
+import com.heal.doctor.services.SequenceGeneratorService;
 import com.heal.doctor.Mail.IOtpService;
 import com.heal.doctor.exception.BusinessRuleException;
 import com.heal.doctor.exception.ConflictException;
 import com.heal.doctor.exception.ForbiddenException;
 import com.heal.doctor.exception.ResourceNotFoundException;
 import com.heal.doctor.exception.ValidationException;
-import com.heal.doctor.utils.AppointmentId;
 import com.heal.doctor.utils.CurrentUserName;
 import com.heal.doctor.utils.DateUtils;
 import com.heal.doctor.utils.RoleUtils;
@@ -60,6 +60,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     private final INotificationService notificationService;
     private final IOtpService otpService;
     private final IAppointmentConfirmationService confirmationService;
+    private final SequenceGeneratorService sequenceGeneratorService;
 
 
     @Transactional
@@ -142,7 +143,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setAppointmentDateTime(appointmentDate);
         appointmentEntity.setBookingDateTime(new Date());
         appointmentEntity.setDoctorId(doctorId);
-        appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
+        appointmentEntity.setAppointmentId(sequenceGeneratorService.generateAppointmentId());
         appointmentEntity.setTreated(false);
         appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
         if (Boolean.TRUE.equals(requestDTO.getAvailableAtClinic())) {
@@ -268,7 +269,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         if (patientEmail != null) {
             appointmentEntity.setEmail(patientEmail);
         }
-        appointmentEntity.setAppointmentId(AppointmentId.generateAppointmentId(doctorId));
+        appointmentEntity.setAppointmentId(sequenceGeneratorService.generateAppointmentId());
         appointmentEntity.setDoctorId(doctorId);
         appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
         appointmentEntity.setBookingDateTime(new Date());
