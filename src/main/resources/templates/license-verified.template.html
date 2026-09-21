@@ -1,215 +1,182 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Practice Account Verified</title>
-    <style>
-        :root {
-            --primary: #28a745;
-            --primary-dark: #218838;
-            --secondary: #6c757d;
-            --background: #f8f9fa;
-            --surface: #ffffff;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
-            --border: #dee2e6;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>Your licence is verified</title>
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+        <o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+    <![endif]-->
+    <style type="text/css">
+        /* Client resets */
+        body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+        table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+        img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;}
+        body{margin:0 !important;padding:0 !important;width:100% !important;}
+        a[x-apple-data-detectors]{color:inherit !important;text-decoration:none !important;font-size:inherit !important;}
+        .ExternalClass{width:100%;}
+        .ExternalClass,.ExternalClass p,.ExternalClass td,.ExternalClass div{line-height:inherit;}
+
+        /* Small screens */
+        @media only screen and (max-width:620px){
+            .wrap{padding:16px 0 !important;}
+            .card{width:100% !important;border-radius:0 !important;border-left:0 !important;border-right:0 !important;}
+            .gut{padding-left:24px !important;padding-right:24px !important;}
+            .h1{font-size:23px !important;line-height:31px !important;}
+            .stack{display:block !important;width:100% !important;text-align:left !important;}
+            .stack-v{padding-top:2px !important;text-align:left !important;}
+            .btn a{display:block !important;}
         }
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            margin: 0;
-            padding: 40px 20px;
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .email-container {
-            width: 100%;
-            max-width: 500px;
-            background-color: var(--surface);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            text-align: center;
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        .email-header {
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 16px;
-            letter-spacing: -0.5px;
-        }
-
-        .email-subheader {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 30px;
-            font-weight: 400;
-            line-height: 1.5;
-        }
-
-        .email-body {
-            font-size: 16px;
-            margin-bottom: 20px;
-            line-height: 1.6;
-            text-align: left;
-        }
-
-        .verified-notice {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 25px 0;
-            text-align: center;
-        }
-
-        .verified-notice p {
-            font-size: 14px;
-            color: #155724;
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .info-box {
-            background: var(--background);
-            border-radius: 10px;
-            padding: 20px;
-            margin: 25px 0;
-            text-align: left;
-            border-left: 4px solid var(--primary);
-        }
-
-        .info-box h3 {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-
-        .info-box ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .info-box li {
-            padding: 6px 0;
-            font-size: 14px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-        }
-
-        .info-box li:before {
-            content: "✓";
-            color: var(--primary);
-            font-weight: bold;
-            margin-right: 8px;
-        }
-
-        .details-list {
-            background: #f4faf4;
-            border: 1px solid #e7f5e7;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .details-list p {
-            font-size: 14px;
-            color: #1b5e20;
-            margin: 5px 0;
-            font-weight: 500;
-        }
-
-        .email-footer {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .company-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 10px 0;
-        }
-
-        .support-info {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin: 15px 0;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Dark mode (Apple Mail, iOS Mail, Outlook for Mac) */
+        @media (prefers-color-scheme:dark){
+            .bg{background-color:#020617 !important;}
+            .card{background-color:#0f172a !important;border-color:#1e293b !important;}
+            .ink,.h1{color:#f8fafc !important;}
+            .body{color:#cbd5e1 !important;}
+            .muted{color:#94a3b8 !important;}
+            .rule{border-color:#1e293b !important;}
+            .panel{background-color:#1e293b !important;}
+            .panel-row{border-color:#334155 !important;}
         }
     </style>
 </head>
-<body>
+<body class="bg" style="margin:0;padding:0;background-color:#f1f5f9;">
 
-<div class="email-container">
-    <div class="email-header">Practice Account Verified</div>
+<!-- Inbox preview text -->
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Your licence is verified. You can start accepting bookings.</div>
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;</div>
 
-    <div class="email-subheader">
-        Your professional practitioner profile is now active.
-    </div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background-color:#f1f5f9;">
+    <tr>
+        <td align="center" class="wrap" style="padding:32px 12px;">
 
-    <div class="email-body">
-        <p>Dear Dr. <strong th:text="${doctorName}">Doctor</strong>,</p>
-        <p>We are pleased to inform you that your medical license and credentials have been successfully reviewed and verified by the <span th:text="${companyName}">Heal Now</span> administration team.</p>
-        <p>Your professional profile now displays the verification badge, and you are fully authorized to schedule consultations and accept appointment bookings on the platform.</p>
-    </div>
+            <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="card"
+                   style="width:600px;max-width:600px;background-color:#FFFFFF;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
 
-    <div class="details-list">
-        <p><strong>Verified License Details:</strong></p>
-        <p>License Number: <span th:text="${licenseNumber}">N/A</span></p>
-        <p>Licensing Authority: <span th:text="${licensingAuthority}">N/A</span></p>
-        <p>Expiry Date: <span th:text="${expiryDate}">N/A</span></p>
-    </div>
+                <!-- Status rule -->
+                <tr><td style="height:3px;line-height:3px;font-size:0;background-color:#1B7A4B;">&#160;</td></tr>
 
-    <div class="verified-notice">
-        <p>✅ Your account is active and verified.</p>
-    </div>
+                <!-- Masthead -->
+                <tr>
+                    <td class="gut" style="padding:22px 36px 18px 36px;border-bottom:1px solid #e2e8f0;" bgcolor="#FFFFFF">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td width="38" valign="middle" style="width:38px;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr><td align="center" valign="middle" width="38" height="38"
+                                                style="width:38px;height:38px;background-color:#0ea5e9;border-radius:8px;font-family:Georgia,'Iowan Old Style','Times New Roman',Times,serif;font-size:15px;font-weight:bold;color:#FFFFFF;letter-spacing:0.5px;"
+                                                th:text="${companyName != null and #strings.length(companyName) &gt; 1 ? #strings.toUpperCase(#strings.substring(companyName,0,2)) : 'HN'}">HN</td></tr>
+                                    </table>
+                                </td>
+                                <td valign="middle" style="padding-left:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;font-weight:600;color:#0f172a;letter-spacing:-0.2px;"
+                                    class="ink" th:text="${companyName}">Heal Now</td>
+                                <td valign="middle" align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#64748b;" class="muted">Verification</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
 
-    <div class="info-box">
-        <h3>Next Steps:</h3>
-        <ul>
-            <li>Log into the Heal Now application.</li>
-            <li>Verify your hours in Edit Profile > Availability.</li>
-            <li>You can now start accepting patient bookings!</li>
-        </ul>
-    </div>
+                <!-- Message -->
+                <tr>
+                    <td class="gut" style="padding:34px 36px 8px 36px;">
+                        <h1 class="h1" style="margin:0 0 12px 0;font-family:Georgia,'Iowan Old Style','Times New Roman',Times,serif;font-size:27px;line-height:34px;font-weight:normal;color:#0f172a;letter-spacing:-0.3px;">Your licence is verified</h1>
+                        <p class="body" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:24px;color:#334155;">Dear <span th:text="${doctorName}">Dr. Anita Rao</span>, our administration team has reviewed your credentials. Your profile now carries the verified badge and patients can book consultations with you.</p>
+                    </td>
+                </tr>
 
-    <div class="email-footer">
-        <p>This is an operational notification from <span th:text="${companyName}">Company Name</span>.</p>
-        <p>If you have any questions or require assistance, please contact our support team.</p>
-        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span> Administration</p>
-        <div class="support-info">
-            © 2026 <span th:text="${companyName}">Company Name</span>. All rights reserved.
-        </div>
-    </div>
-</div>
+                <tr><td class="gut" style="padding:22px 36px 0 36px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:7px 14px;background-color:#E7F3EC;border-radius:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.4px;color:#1B7A4B;" th:text="'Verified'">Verified</td></tr></table>
+                </td></tr>
+                <tr><td class="gut" style="padding:24px 36px 0 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel" style="background-color:#f8fafc;border-left:3px solid #1B7A4B;border-radius:0 6px 6px 0;">
+                        <tr><td style="padding:14px 18px 6px 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.3px;color:#64748b;" class="muted">Verified details</td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Licence number</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${licenseNumber}">MCI-448120</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="border-top:1px solid #E6EDED;">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Licensing authority</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${licensingAuthority}">Medical Council of India</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="border-top:1px solid #E6EDED;">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Expires</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${expiryDate}">31 March 2029</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="height:8px;line-height:8px;font-size:0;">&#160;</td></tr>
+                    </table>
+                </td></tr>
+                <tr><td class="gut" style="padding:26px 36px 0 36px;">
+                    <p class="ink" style="margin:0 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#0f172a;">Worth doing next</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Check your consultation hours under Profile &#8250; Availability.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Set your appointment length and daily booking limit.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Share your booking QR card with reception so walk-in patients can scan it.</td>
+                        </tr>
+                    </table>
+                </td></tr>
+                <tr><td class="gut" style="padding:22px 36px 0 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#e0f2fe;border-radius:6px;">
+                        <tr><td style="padding:14px 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:21px;color:#0ea5e9;font-weight:500;">We will remind you 30 days before your licence expires. If it lapses, your verified badge is suspended until you submit renewed details.</td></tr>
+                    </table>
+                </td></tr>
 
+
+                <!-- Sign-off -->
+                <tr>
+                    <td class="gut" style="padding:8px 36px 30px 36px;">
+                        <p class="body" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:24px;color:#334155;">Regards,<br />The <span th:text="${companyName}">Heal Now</span> administration team</p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td class="gut" style="padding:20px 36px 26px 36px;border-top:1px solid #e2e8f0;" bgcolor="#FFFFFF">
+                        <p class="muted" style="margin:0 0 6px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">This is an automated notification about your <span th:text="${companyName}">Heal Now</span> account. For help, contact <span th:text="${supportEmail} ?: 'support@healnow.app'">support@healnow.app</span>.</p>
+                        <p class="muted" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">
+                            &#169; <span th:text="${#dates.year(#dates.createNow())}">2026</span> <span th:text="${companyName}">Heal Now</span>. All rights reserved.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]></td></tr></table><![endif]-->
+
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+                <tr><td class="gut muted" align="center" style="padding:16px 36px 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:11px;line-height:18px;color:#64748b;">
+                    You are receiving this message because you hold an account on <span th:text="${companyName}">Heal Now</span>.
+                    Please do not reply to this address &#8212; the mailbox is not monitored.
+                </td></tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
 </body>
 </html>

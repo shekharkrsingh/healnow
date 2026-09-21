@@ -57,7 +57,7 @@ public class OtpServiceImpl implements IOtpService {
         emailService.sendHtmlEmail(
                 otpRequestDTO.getEmail(),
                 "Your One-Time Password (OTP)",
-                "email.template",
+                "otp.template",
                 Map.of(
                         "companyName", companyName,
                         "otp", otp,

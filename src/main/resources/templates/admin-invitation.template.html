@@ -1,35 +1,191 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Invitation</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 20px; }
-        .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
-        .footer { margin-top: 30px; font-size: 12px; color: #777; text-align: center; border-top: 1px solid #ddd; padding-top: 15px; }
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>You have been invited as an administrator</title>
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+        <o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+    <![endif]-->
+    <style type="text/css">
+        /* Client resets */
+        body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+        table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+        img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;}
+        body{margin:0 !important;padding:0 !important;width:100% !important;}
+        a[x-apple-data-detectors]{color:inherit !important;text-decoration:none !important;font-size:inherit !important;}
+        .ExternalClass{width:100%;}
+        .ExternalClass,.ExternalClass p,.ExternalClass td,.ExternalClass div{line-height:inherit;}
+
+        /* Small screens */
+        @media only screen and (max-width:620px){
+            .wrap{padding:16px 0 !important;}
+            .card{width:100% !important;border-radius:0 !important;border-left:0 !important;border-right:0 !important;}
+            .gut{padding-left:24px !important;padding-right:24px !important;}
+            .h1{font-size:23px !important;line-height:31px !important;}
+            .stack{display:block !important;width:100% !important;text-align:left !important;}
+            .stack-v{padding-top:2px !important;text-align:left !important;}
+            .btn a{display:block !important;}
+        }
+
+        /* Dark mode (Apple Mail, iOS Mail, Outlook for Mac) */
+        @media (prefers-color-scheme:dark){
+            .bg{background-color:#020617 !important;}
+            .card{background-color:#0f172a !important;border-color:#1e293b !important;}
+            .ink,.h1{color:#f8fafc !important;}
+            .body{color:#cbd5e1 !important;}
+            .muted{color:#94a3b8 !important;}
+            .rule{border-color:#1e293b !important;}
+            .panel{background-color:#1e293b !important;}
+            .panel-row{border-color:#334155 !important;}
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Welcome to <span th:text="${companyName}">Heal Now</span></h2>
-        </div>
-        <p>Hi <span th:text="${firstName}">there</span>,</p>
-        <p>You have been invited to join the <span th:text="${companyName}">Heal Now</span> platform as an Administrator.</p>
-        <p>To accept your invitation and set up your account, please click the button below:</p>
-        <div style="text-align: center;">
-            <a th:href="${inviteLink}" class="btn">Accept Invitation</a>
-        </div>
-        <p style="margin-top: 20px;">If the button above does not work, copy and paste this link into your browser:</p>
-        <p style="word-break: break-all; color: #007bff;"><span th:text="${inviteLink}">http://localhost:5173/admin/accept-invite</span></p>
-        <p>Note: This invitation link will expire in 7 days.</p>
-        
-        <div class="footer">
-            <p>&copy; 2026 <span th:text="${companyName}">Heal Now</span>. All rights reserved.</p>
-        </div>
-    </div>
+<body class="bg" style="margin:0;padding:0;background-color:#f1f5f9;">
+
+<!-- Inbox preview text -->
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">You have been invited to administer Heal Now. The link expires in 7 days.</div>
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background-color:#f1f5f9;">
+    <tr>
+        <td align="center" class="wrap" style="padding:32px 12px;">
+
+            <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="card"
+                   style="width:600px;max-width:600px;background-color:#FFFFFF;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+
+                <!-- Status rule -->
+                <tr><td style="height:3px;line-height:3px;font-size:0;background-color:#0ea5e9;">&#160;</td></tr>
+
+                <!-- Masthead -->
+                <tr>
+                    <td class="gut" style="padding:22px 36px 18px 36px;border-bottom:1px solid #e2e8f0;" bgcolor="#FFFFFF">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td width="38" valign="middle" style="width:38px;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr><td align="center" valign="middle" width="38" height="38"
+                                                style="width:38px;height:38px;background-color:#0ea5e9;border-radius:8px;font-family:Georgia,'Iowan Old Style','Times New Roman',Times,serif;font-size:15px;font-weight:bold;color:#FFFFFF;letter-spacing:0.5px;"
+                                                th:text="${companyName != null and #strings.length(companyName) &gt; 1 ? #strings.toUpperCase(#strings.substring(companyName,0,2)) : 'HN'}">HN</td></tr>
+                                    </table>
+                                </td>
+                                <td valign="middle" style="padding-left:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;font-weight:600;color:#0f172a;letter-spacing:-0.2px;"
+                                    class="ink" th:text="${companyName}">Heal Now</td>
+                                <td valign="middle" align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#64748b;" class="muted">Invitation</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Message -->
+                <tr>
+                    <td class="gut" style="padding:34px 36px 8px 36px;">
+                        <h1 class="h1" style="margin:0 0 12px 0;font-family:Georgia,'Iowan Old Style','Times New Roman',Times,serif;font-size:27px;line-height:34px;font-weight:normal;color:#0f172a;letter-spacing:-0.3px;">You have been invited as an administrator</h1>
+                        <p class="body" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:24px;color:#334155;">Hello <strong th:text="${firstName}" style="font-weight:600;color:#0f172a;">Priya</strong>, you have been invited to join <span th:text="${companyName}">Heal Now</span> as an administrator. Accept the invitation to set your password and sign in.</p>
+                    </td>
+                </tr>
+
+                <tr><td class="gut" style="padding:28px 36px 0 36px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn">
+                        <tr><td align="center" bgcolor="#0ea5e9" style="background-color:#0ea5e9;border-radius:6px;mso-padding-alt:15px 30px;">
+                            <a th:href="${inviteLink}" href="#" target="_blank" rel="noopener"
+                               style="display:inline-block;padding:15px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;font-weight:600;line-height:18px;color:#FFFFFF;text-decoration:none;border-radius:6px;">Accept invitation</a>
+                        </td></tr>
+                    </table>
+                </td></tr>
+                <tr><td class="gut" style="padding:16px 36px 0 36px;">
+                    <p class="muted" style="margin:0 0 4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">If the button does not work, paste this address into your browser:</p>
+                    <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;word-break:break-all;"><span th:text="${inviteLink}" style="color:#0ea5e9;">https://app.healnow.app/admin/accept-invite?token=&#8230;</span></p>
+                </td></tr>
+                <tr><td class="gut" style="padding:24px 36px 0 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel" style="background-color:#f8fafc;border-left:3px solid #0ea5e9;border-radius:0 6px 6px 0;">
+                        <tr><td style="padding:14px 18px 6px 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.3px;color:#64748b;" class="muted">Invitation</td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Role</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;">Administrator</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="border-top:1px solid #E6EDED;">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Invited by</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${invitedBy} ?: 'Platform administration'">Platform administration</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="border-top:1px solid #E6EDED;">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Link expires</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${expiresIn} ?: '7 days from now'">7 days from now</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="height:8px;line-height:8px;font-size:0;">&#160;</td></tr>
+                    </table>
+                </td></tr>
+                <tr><td class="gut" style="padding:26px 36px 0 36px;">
+                    <p class="ink" style="margin:0 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#0f172a;">What an administrator can do</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Review practitioner licences and approve or reject verification requests.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Manage clinics, practitioner accounts and platform-wide settings.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Read operational reports and audit logs.</td>
+                        </tr>
+                    </table>
+                </td></tr>
+                <tr><td class="gut" style="padding:22px 36px 0 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FBF1DC;border-radius:6px;">
+                        <tr><td style="padding:14px 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:21px;color:#94620A;font-weight:500;">This link is unique to you and grants administrative access. Do not forward it. If you were not expecting this invitation, ignore this email and the link will lapse on its own.</td></tr>
+                    </table>
+                </td></tr>
+
+
+                <!-- Sign-off -->
+                <tr>
+                    <td class="gut" style="padding:8px 36px 30px 36px;">
+                        <p class="body" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:24px;color:#334155;">Regards,<br />The <span th:text="${companyName}">Heal Now</span> team</p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td class="gut" style="padding:20px 36px 26px 36px;border-top:1px solid #e2e8f0;" bgcolor="#FFFFFF">
+                        <p class="muted" style="margin:0 0 6px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">Questions about this message? Reply to your clinic administrator or contact <span th:text="${supportEmail} ?: 'support@healnow.app'">support@healnow.app</span>.</p>
+                        <p class="muted" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">
+                            &#169; <span th:text="${#dates.year(#dates.createNow())}">2026</span> <span th:text="${companyName}">Heal Now</span>. All rights reserved.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]></td></tr></table><![endif]-->
+
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+                <tr><td class="gut muted" align="center" style="padding:16px 36px 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:11px;line-height:18px;color:#64748b;">
+                    You are receiving this message because you hold an account on <span th:text="${companyName}">Heal Now</span>.
+                    Please do not reply to this address &#8212; the mailbox is not monitored.
+                </td></tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
 </body>
 </html>

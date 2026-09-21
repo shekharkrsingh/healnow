@@ -1,313 +1,220 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Collaborator Account Status Update</title>
-    <style>
-        :root {
-            --primary: #007bff;
-            --primary-dark: #0056b3;
-            --secondary: #6c757d;
-            --background: #f8f9fa;
-            --surface: #ffffff;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
-            --border: #dee2e6;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
-            --info: #17a2b8;
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>Your collaborator access has changed</title>
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
+        <o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+    <![endif]-->
+    <style type="text/css">
+        /* Client resets */
+        body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+        table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+        img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;}
+        body{margin:0 !important;padding:0 !important;width:100% !important;}
+        a[x-apple-data-detectors]{color:inherit !important;text-decoration:none !important;font-size:inherit !important;}
+        .ExternalClass{width:100%;}
+        .ExternalClass,.ExternalClass p,.ExternalClass td,.ExternalClass div{line-height:inherit;}
+
+        /* Small screens */
+        @media only screen and (max-width:620px){
+            .wrap{padding:16px 0 !important;}
+            .card{width:100% !important;border-radius:0 !important;border-left:0 !important;border-right:0 !important;}
+            .gut{padding-left:24px !important;padding-right:24px !important;}
+            .h1{font-size:23px !important;line-height:31px !important;}
+            .stack{display:block !important;width:100% !important;text-align:left !important;}
+            .stack-v{padding-top:2px !important;text-align:left !important;}
+            .btn a{display:block !important;}
         }
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 40px 20px;
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .email-container {
-            width: 100%;
-            max-width: 550px;
-            background-color: var(--surface);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            text-align: center;
-        }
-
-        .email-header {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 20px;
-            letter-spacing: -0.5px;
-        }
-
-        .status-section {
-            margin: 25px 0;
-            text-align: center;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 15px 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .status-ACTIVATED { 
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            border: 2px solid #28a745;
-        }
-        .status-DEACTIVATED { 
-            background: linear-gradient(135deg, #ffc107, #fd7e14);
-            color: white;
-            border: 2px solid #ffc107;
-        }
-        .status-REMOVED { 
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-            border: 2px solid #dc3545;
-        }
-
-        .email-body {
-            font-size: 16px;
-            margin-bottom: 25px;
-            line-height: 1.6;
-            text-align: center;
-        }
-
-        .status-details {
-            background: var(--background);
-            border-radius: 12px;
-            padding: 25px;
-            margin: 25px 0;
-            text-align: left;
-            border-left: 5px solid var(--primary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .status-details h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: var(--text-primary);
-            text-align: left;
-        }
-
-        .status-details p {
-            font-size: 15px;
-            color: var(--text-secondary);
-            margin: 10px 0;
-            text-align: left;
-            padding-left: 20px;
-            position: relative;
-        }
-
-        .status-details p:before {
-            content: "•";
-            color: var(--primary);
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
-
-        .change-info {
-            background: #e8f4fc;
-            border: 1px solid #b3e0ff;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 25px 0;
-            text-align: left;
-        }
-
-        .change-info p {
-            font-size: 14px;
-            color: #0066cc;
-            margin: 8px 0;
-            font-weight: 500;
-        }
-
-        .security-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 25px 0;
-            text-align: center;
-        }
-
-        .security-notice p {
-            font-size: 14px;
-            color: #856404;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .action-section {
-            margin: 30px 0;
-            text-align: center;
-        }
-
-        .action-button {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-            border: none;
-            cursor: pointer;
-        }
-
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-        }
-
-        .email-footer {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .company-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 10px 0;
-        }
-
-        .support-info {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin: 15px 0;
-        }
-
-        /* Responsive Design */
-        @media screen and (max-width: 600px) {
-            body {
-                padding: 20px 15px;
-                background: var(--background);
-            }
-
-            .email-container {
-                width: 95%;
-                padding: 30px 20px;
-                border-radius: 12px;
-            }
-
-            .email-header {
-                font-size: 24px;
-            }
-
-            .status-badge {
-                font-size: 14px;
-                padding: 10px 20px;
-            }
-
-            .status-details {
-                padding: 20px 15px;
-            }
-        }
-
-        /* Animation */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .email-container {
-            animation: fadeIn 0.6s ease-out;
+        /* Dark mode (Apple Mail, iOS Mail, Outlook for Mac) */
+        @media (prefers-color-scheme:dark){
+            .bg{background-color:#020617 !important;}
+            .card{background-color:#0f172a !important;border-color:#1e293b !important;}
+            .ink,.h1{color:#f8fafc !important;}
+            .body{color:#cbd5e1 !important;}
+            .muted{color:#94a3b8 !important;}
+            .rule{border-color:#1e293b !important;}
+            .panel{background-color:#1e293b !important;}
+            .panel-row{border-color:#334155 !important;}
         }
     </style>
 </head>
-<body>
+<body class="bg" style="margin:0;padding:0;background-color:#f1f5f9;">
 
-<div class="email-container">
-    <div class="email-header">Account Status Updated</div>
+<!-- Inbox preview text -->
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Your collaborator access on Heal Now has been updated.</div>
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;&#8204;&#160;</div>
 
-    <div class="status-section">
-        <div th:class="'status-badge status-' + ${status}" th:text="${status}">STATUS</div>
-    </div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background-color:#f1f5f9;">
+    <tr>
+        <td align="center" class="wrap" style="padding:32px 12px;">
 
-    <div class="email-body">
-        <p>Hello <strong th:text="${collaboratorName}">Collaborator</strong>,</p>
-        <p>This is to inform you that your collaborator account associated with <strong th:text="${doctorName}">Dr. Name</strong> has been <strong th:text="${status}">updated</strong>.</p>
-    </div>
+            <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="card"
+                   style="width:600px;max-width:600px;background-color:#FFFFFF;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
 
-    <div class="change-info">
-        <p><strong>Update Details:</strong></p>
-        <p>Date: <span th:text="${changeDate}">January 1, 2024</span></p>
-        <p>Time: <span th:text="${changeTime}">12:00 PM</span></p>
-        <p>Doctor: <span th:text="${doctorName}">Dr. Name</span></p>
-    </div>
+                <!-- Status rule -->
+                <tr><td style="height:3px;line-height:3px;font-size:0;background-color:#0ea5e9;">&#160;</td></tr>
 
-    <div class="status-details">
-        <h3>What This Means:</h3>
-        <div th:if="${status == 'REMOVED'}">
-            <p>Your access to the doctor's dashboard has been permanently revoked</p>
-            <p>You can no longer view or manage appointments</p>
-            <p>If this was an error, you need to be re-invited</p>
-        </div>
-        <div th:if="${status == 'DEACTIVATED'}">
-            <p>Your account is currently inactive</p>
-            <p>You cannot access the doctor's dashboard</p>
-            <p>Contact the doctor to reactivate your account</p>
-        </div>
-        <div th:if="${status == 'ACTIVATED'}">
-            <p>Your account is now active</p>
-            <p>You can log in and manage appointments</p>
-            <p>Full dashboard access restored</p>
-        </div>
-    </div>
+                <!-- Masthead -->
+                <tr>
+                    <td class="gut" style="padding:22px 36px 18px 36px;border-bottom:1px solid #e2e8f0;" bgcolor="#FFFFFF">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td width="38" valign="middle" style="width:38px;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr><td align="center" valign="middle" width="38" height="38"
+                                                style="width:38px;height:38px;background-color:#0ea5e9;border-radius:8px;font-family:Georgia,'Iowan Old Style','Times New Roman',Times,serif;font-size:15px;font-weight:bold;color:#FFFFFF;letter-spacing:0.5px;"
+                                                th:text="${companyName != null and #strings.length(companyName) &gt; 1 ? #strings.toUpperCase(#strings.substring(companyName,0,2)) : 'HN'}">HN</td></tr>
+                                    </table>
+                                </td>
+                                <td valign="middle" style="padding-left:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:16px;font-weight:600;color:#0f172a;letter-spacing:-0.2px;"
+                                    class="ink" th:text="${companyName}">Heal Now</td>
+                                <td valign="middle" align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#64748b;" class="muted">Account</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
 
-    <div th:if="${status == 'ACTIVATED'}" class="action-section">
-        <a th:href="${dashboardUrl}" class="action-button">
-            Access Dashboard
-        </a>
-    </div>
+                <!-- Message -->
+                <tr>
+                    <td class="gut" style="padding:34px 36px 8px 36px;">
+                        <h1 class="h1" style="margin:0 0 12px 0;font-family:Georgia,'Iowan Old Style','Times New Roman',Times,serif;font-size:27px;line-height:34px;font-weight:normal;color:#0f172a;letter-spacing:-0.3px;">Your collaborator access has changed</h1>
+                        <p class="body" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:24px;color:#334155;">Hello <strong th:text="${collaboratorName}" style="font-weight:600;color:#0f172a;">Priya</strong>, your collaborator access to <span th:text="${doctorName}">Dr. Anita Rao</span>'s practice dashboard has been updated.</p>
+                    </td>
+                </tr>
 
-    <div class="security-notice">
-        <p>🔒 This is an automated security notification. Contact support if you have concerns.</p>
-    </div>
+                <tr th:if="${status == 'ACTIVATED'}"><td class="gut" style="padding:22px 36px 0 36px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:7px 14px;background-color:#E7F3EC;border-radius:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.4px;color:#1B7A4B;">Active</td></tr></table></td></tr>
+                <tr th:if="${status == 'DEACTIVATED'}"><td class="gut" style="padding:22px 36px 0 36px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:7px 14px;background-color:#FBF1DC;border-radius:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.4px;color:#94620A;">Paused</td></tr></table></td></tr>
+                <tr th:if="${status == 'REMOVED'}"><td class="gut" style="padding:22px 36px 0 36px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:7px 14px;background-color:#F9E8E8;border-radius:4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.4px;color:#A52A2A;">Removed</td></tr></table></td></tr>
+                <tr><td class="gut" style="padding:24px 36px 0 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel" style="background-color:#f8fafc;border-left:3px solid #0ea5e9;border-radius:0 6px 6px 0;">
+                        <tr><td style="padding:14px 18px 6px 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.3px;color:#64748b;" class="muted">Update details</td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Practitioner</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${doctorName}">Dr. Anita Rao</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="border-top:1px solid #E6EDED;">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Date</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${changeDate}">21 September 2026</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="padding:0 18px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="panel-row" style="border-top:1px solid #E6EDED;">
+                                <tr>
+                                    <td class="stack muted" valign="top" style="padding:10px 12px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:20px;color:#64748b;">Time</td>
+                                    <td class="stack stack-v ink" valign="top" align="right" style="padding:10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#0f172a;"><span th:text="${changeTime}">14:32 IST</span></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        <tr><td style="height:8px;line-height:8px;font-size:0;">&#160;</td></tr>
+                    </table>
+                </td></tr>
+                <tr th:if="${status == 'ACTIVATED'}"><td class="gut" style="padding:26px 36px 0 36px;">
+                    <p class="ink" style="margin:0 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#0f172a;">What this means</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Your access is active. You can sign in and manage appointments as before.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Everything you could do before this change is available again.</td>
+                        </tr>
+                    </table>
+                </td></tr>
+                <tr th:if="${status == 'DEACTIVATED'}"><td class="gut" style="padding:26px 36px 0 36px;">
+                    <p class="ink" style="margin:0 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#0f172a;">What this means</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Your access is paused, so you cannot open the dashboard for now.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Nothing has been deleted &#8212; the practitioner can switch access back on at any time.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Contact the practitioner if you think this was unintended.</td>
+                        </tr>
+                    </table>
+                </td></tr>
+                <tr th:if="${status == 'REMOVED'}"><td class="gut" style="padding:26px 36px 0 36px;">
+                    <p class="ink" style="margin:0 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:600;color:#0f172a;">What this means</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">Your access has been withdrawn and you can no longer open the dashboard.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">You will not receive further appointment notifications from this practice.</td>
+                        </tr>
+                        <tr>
+                            <td width="14" valign="top" style="width:14px;padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#0ea5e9;">&#8226;</td>
+                            <td valign="top" style="padding:0 0 9px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:21px;color:#334155;" class="body">To work with this practice again, you will need a fresh invitation.</td>
+                        </tr>
+                    </table>
+                </td></tr>
+                <tr th:if="${status == 'ACTIVATED'}"><td class="gut" style="padding:28px 36px 0 36px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn">
+                        <tr><td align="center" bgcolor="#0ea5e9" style="background-color:#0ea5e9;border-radius:6px;mso-padding-alt:15px 30px;">
+                            <a th:href="${dashboardUrl}" href="#" target="_blank" rel="noopener"
+                               style="display:inline-block;padding:15px 30px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;font-weight:600;line-height:18px;color:#FFFFFF;text-decoration:none;border-radius:6px;">Open dashboard</a>
+                        </td></tr>
+                    </table>
+                </td></tr>
+                <tr><td class="gut" style="padding:22px 36px 0 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#e0f2fe;border-radius:6px;">
+                        <tr><td style="padding:14px 18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:21px;color:#0ea5e9;font-weight:500;">You did not need to do anything for this change to take effect. If it looks wrong, speak to the practitioner who manages your access.</td></tr>
+                    </table>
+                </td></tr>
 
-    <div class="email-footer">
-        <p>This is an official notification from <span class="company-name" th:text="${companyName}">Company Name</span>.</p>
-        <p>If you need assistance, please contact our support team.</p>
-        <p>Regards, <br/> <span class="company-name" th:text="${companyName}">Company Name</span> Team</p>
-        <div class="support-info">
-            © 2024 <span th:text="${companyName}">Company Name</span>. All rights reserved.
-        </div>
-    </div>
-</div>
 
+                <!-- Sign-off -->
+                <tr>
+                    <td class="gut" style="padding:8px 36px 30px 36px;">
+                        <p class="body" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:24px;color:#334155;">Regards,<br />The <span th:text="${companyName}">Heal Now</span> team</p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td class="gut" style="padding:20px 36px 26px 36px;border-top:1px solid #e2e8f0;" bgcolor="#FFFFFF">
+                        <p class="muted" style="margin:0 0 6px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">This is a security notification about your <span th:text="${companyName}">Heal Now</span> account. If anything here looks wrong, contact <span th:text="${supportEmail} ?: 'support@healnow.app'">support@healnow.app</span> straight away.</p>
+                        <p class="muted" style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:19px;color:#64748b;">
+                            &#169; <span th:text="${#dates.year(#dates.createNow())}">2026</span> <span th:text="${companyName}">Heal Now</span>. All rights reserved.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]></td></tr></table><![endif]-->
+
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+                <tr><td class="gut muted" align="center" style="padding:16px 36px 0 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;font-size:11px;line-height:18px;color:#64748b;">
+                    You are receiving this message because you hold an account on <span th:text="${companyName}">Heal Now</span>.
+                    Please do not reply to this address &#8212; the mailbox is not monitored.
+                </td></tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
 </body>
 </html>

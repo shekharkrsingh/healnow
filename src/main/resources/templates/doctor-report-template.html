@@ -1,428 +1,257 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    </meta>
-    <title>Doctor Appointment Report</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Appointment report</title>
+    <style type="text/css">
+        /* ------------------------------------------------------------------
+           Practitioner appointment report — A4 portrait, paginates cleanly.
+           Print/PDF safe: table layout, no flexbox, no grid, no CSS variables.
+           The table header repeats on every page and rows never split.
+           ------------------------------------------------------------------ */
+        @page {
+            size: A4 portrait;
+            margin: 16mm 14mm 16mm 14mm;
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 7pt;
+                color: #9AACB1;
+            }
+            @bottom-left {
+                content: "Confidential — contains patient information";
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 7pt;
+                color: #9AACB1;
+            }
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
-            background-color: #ffffff;
+        html, body {
+            margin: 0; padding: 0;
+            background-color: #FFFFFF;
+            color: #334155;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.45;
         }
 
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+        table { border-collapse: collapse; width: 100%; }
+        td, th { vertical-align: top; }
 
-        .header {
-            border-bottom: 2px solid #1a73e8;
-            padding-bottom: 20px;
-            margin-bottom: 25px;
-            display: table;
-            width: 100%;
-        }
+        .serif { font-family: Georgia, "Times New Roman", Times, serif; }
 
-        .header-top {
-            display: table;
-            width: 100%;
-            margin-bottom: 15px;
-        }
+        /* ---- masthead ---- */
+        .rule-top { height: 3px; background-color: #0ea5e9; font-size: 0; line-height: 0; }
 
-        .logo-section {
-            display: table-cell;
-            vertical-align: middle;
+        .masthead { padding: 10pt 0 9pt 0; border-bottom: 1px solid #e2e8f0; }
+        .monogram {
+            width: 34px; height: 34px; background-color: #0ea5e9; color: #FFFFFF;
+            font-family: Georgia, "Times New Roman", Times, serif;
+            font-size: 13pt; text-align: center; vertical-align: middle;
         }
+        .brand-name { font-size: 12pt; font-weight: bold; color: #0f172a; letter-spacing: -0.2pt; }
+        .brand-sub { font-size: 7.5pt; color: #64748b; }
+        .doc-kind { font-size: 10pt; color: #0ea5e9; font-weight: bold; text-align: right; }
+        .doc-meta { font-size: 7.5pt; color: #64748b; text-align: right; }
 
-        .logo {
-            width: 70px;
-            height: 70px;
-            background-color: #1a73e8;
-            border-radius: 8px;
-            display: block;
-            line-height: 70px;
-            text-align: center;
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
-            float: left;
-            margin-right: 15px;
-        }
+        .title { font-size: 19pt; color: #0f172a; letter-spacing: -0.4pt; padding: 14pt 0 2pt 0; }
+        .period { font-size: 9.5pt; color: #334155; padding-bottom: 12pt; }
 
-        .company-info {
-            display: block;
-        }
+        /* ---- practitioner meta ---- */
+        .meta { border: 1px solid #e2e8f0; border-left: 3px solid #0ea5e9; background-color: #f8fafc; }
+        .meta td { padding: 8pt 12pt; }
+        .meta-label { font-size: 7.5pt; color: #64748b; padding-bottom: 2pt; }
+        .meta-value { font-size: 9.5pt; color: #0f172a; font-weight: bold; }
+        .meta-div { border-left: 1px solid #E6EDED; }
 
-        .company-info h1 {
-            font-size: 24px;
-            color: #1a73e8;
-            margin-bottom: 5px;
-        }
-
-        .company-info p {
-            color: #666;
-            font-size: 12px;
-        }
-
-        .report-info {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: right;
-        }
-
-        .report-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .report-period {
-            color: #666;
-            font-size: 12px;
-        }
-
-        .doctor-details {
-            display: table;
-            width: 100%;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #1a73e8;
-        }
-
-        .detail-item {
-            display: table-cell;
-            padding-right: 15px;
-        }
-
-        .detail-label {
-            font-size: 11px;
-            color: #666;
-            margin-bottom: 3px;
-            font-weight: 600;
-            display: block;
-        }
-
-        .detail-value {
-            font-weight: 600;
-            font-size: 13px;
-            color: #333;
-            display: block;
-        }
-
+        /* ---- summary ---- */
         .section-title {
-            font-size: 16px;
-            color: #1a73e8;
-            margin: 25px 0 15px 0;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e0e0e0;
+            font-size: 8pt; font-weight: bold; color: #0f172a; letter-spacing: 0.2pt;
+            padding: 18pt 0 6pt 0; border-bottom: 1px solid #e2e8f0;
         }
+        .summary { margin-top: 10pt; page-break-inside: avoid; }
+        .summary td { border: 1px solid #e2e8f0; padding: 11pt 12pt; width: 25%; }
+        .sum-value { font-family: Georgia, "Times New Roman", Times, serif; font-size: 22pt; color: #0f172a; line-height: 1.1; }
+        .sum-value-ok { color: #1B7A4B; }
+        .sum-value-no { color: #A52A2A; }
+        .sum-label { font-size: 7.5pt; color: #64748b; padding-top: 4pt; }
 
-        .appointment-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-            page-break-inside: avoid;
+        /* ---- appointment table ---- */
+        .grid { margin-top: 10pt; -fs-table-paginate: paginate; }
+        .grid thead { display: table-header-group; }
+        .grid tfoot { display: table-footer-group; }
+        .grid th {
+            background-color: #0f172a; color: #FFFFFF; text-align: left;
+            font-size: 7.5pt; font-weight: bold; letter-spacing: 0.2pt;
+            padding: 7pt 8pt; border: 1px solid #0f172a;
         }
-
-        .appointment-table th {
-            background-color: #1a73e8;
-            color: white;
-            text-align: left;
-            padding: 10px 8px;
-            font-weight: 600;
-            font-size: 11px;
-            border: 1px solid #e0e0e0;
+        .grid td {
+            font-size: 8pt; color: #334155; padding: 7pt 8pt;
+            border: 1px solid #E6EDED; vertical-align: middle;
         }
+        .grid tr { page-break-inside: avoid; }
+        .grid tr:nth-child(even) td { background-color: #f8fafc; }
+        .grid .id { font-weight: bold; color: #0f172a; }
+        .grid .empty { text-align: center; color: #64748b; padding: 22pt 8pt; font-size: 8.5pt; }
 
-        .appointment-table td {
-            padding: 8px;
-            border: 1px solid #e0e0e0;
-            font-size: 11px;
-            vertical-align: top;
+        .tag {
+            display: inline-block; padding: 2pt 6pt; font-size: 7pt;
+            font-weight: bold; letter-spacing: 0.2pt; border-radius: 3px; white-space: nowrap;
         }
+        .tag-treated   { background-color: #E7F3EC; color: #1B7A4B; border: 1px solid #C9E4D4; }
+        .tag-cancelled { background-color: #F9E8E8; color: #A52A2A; border: 1px solid #EFC9C9; }
+        .tag-other     { background-color: #F0F4F4; color: #566B72; border: 1px solid #e2e8f0; }
+        .tag-online    { background-color: #e0f2fe; color: #0ea5e9; border: 1px solid #bae6fd; }
+        .tag-onsite    { background-color: #FBF1DC; color: #94620A; border: 1px solid #F0DFB6; }
 
-        .appointment-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-
-        .status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            text-align: center;
-            display: inline-block;
-            min-width: 70px;
-        }
-
-        .status.cancelled {
-            background-color: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
-        }
-
-        .status.treated {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-
-        .booking-mode {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            text-align: center;
-            display: inline-block;
-            min-width: 70px;
-        }
-
-        .booking-mode.online {
-            background-color: #e3f2fd;
-            color: #1565c0;
-            border: 1px solid #bbdefb;
-        }
-
-        .booking-mode.onsite {
-            background-color: #fff3e0;
-            color: #ef6c00;
-            border: 1px solid #ffe0b2;
-        }
-
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #1a73e8;
-        }
-
-        .summary-section {
-            display: table;
-            width: 100%;
-            border-spacing: 15px 0;
-            margin: 0 -15px 25px -15px;
-        }
-
-        .summary-card {
-            display: table-cell;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            border: 1px solid #e0e0e0;
-            width: 33%;
-        }
-
-        .summary-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1a73e8;
-            margin: 8px 0;
-        }
-
-        .summary-label {
-            font-size: 12px;
-            color: #666;
-            font-weight: 600;
-        }
-
-        .footer-bottom {
-            display: table;
-            width: 100%;
-            padding-top: 15px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .copyright {
-            display: table-cell;
-            font-size: 11px;
-            color: #666;
-            vertical-align: middle;
-        }
-
-        .warning {
-            display: table-cell;
-            color: #d32f2f;
-            font-size: 10px;
-            font-style: italic;
-            text-align: right;
-            vertical-align: middle;
-        }
-
-        @media print {
-            body {
-                font-size: 10pt;
-            }
-
-            .container {
-                padding: 0;
-                width: 100%;
-            }
-
-            .header {
-                margin-bottom: 15px;
-            }
-
-            .section-title {
-                margin: 15px 0 10px 0;
-            }
-
-            .appointment-table {
-                font-size: 9pt;
-            }
-
-            .appointment-table th,
-            .appointment-table td {
-                padding: 6px 4px;
-            }
-
-            .footer {
-                margin-top: 20px;
-            }
-
-            .summary-value {
-                font-size: 20pt;
-            }
-
-            .header,
-            .summary-section,
-            .footer-bottom {
-                page-break-inside: avoid;
-            }
-
-            .appointment-table {
-                page-break-inside: auto;
-            }
-
-            .appointment-table tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
-            }
-        }
+        /* ---- footer ---- */
+        .footer { border-top: 1px solid #e2e8f0; margin-top: 16pt; padding-top: 9pt; page-break-inside: avoid; }
+        .footer td { font-size: 7.5pt; color: #64748b; padding-right: 12pt; }
+        .footer .fl { font-size: 7.5pt; font-weight: bold; color: #0f172a; padding-bottom: 2pt; }
+        .legal { border-top: 1px solid #EEF3F3; margin-top: 8pt; padding-top: 7pt; font-size: 7pt; color: #9AACB1; }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-top">
-                <div class="logo-section">
-                    <div class="logo" th:text="${#strings.substring(companyName, 0, 2)}">MC</div>
-                    <div class="company-info">
-                        <h1 th:text="${companyName}">MediCare Solutions</h1>
-                        <p>Comprehensive Healthcare Services</p>
-                    </div>
-                </div>
-                <div class="report-info">
-                    <div class="report-title">Appointment Report</div>
-                    <div class="report-period" th:text="'Period: ' + ${reportFromDate} + ' to ' + ${reportToDate}">
-                        Period: Oct 1, 2023 - Oct 31, 2023</div>
-                </div>
+
+<div class="rule-top">&#160;</div>
+
+<!-- Masthead -->
+<table class="masthead">
+    <tr>
+        <td width="44" style="width:44px;">
+            <table><tr><td class="monogram"
+                th:text="${companyName != null and #strings.length(companyName) > 1 ? #strings.toUpperCase(#strings.substring(companyName,0,2)) : 'HN'}">HN</td></tr></table>
+        </td>
+        <td style="padding-left:10pt;" valign="middle">
+            <div class="brand-name" th:text="${companyName}">Heal Now</div>
+            <div class="brand-sub">Practice management</div>
+        </td>
+        <td valign="middle">
+            <div class="doc-kind">Appointment report</div>
+            <div class="doc-meta">Generated <span th:text="${reportGeneratedOn}">21 Sep 2026</span></div>
+        </td>
+    </tr>
+</table>
+
+<div class="title serif">Appointments, <span th:text="${reportFromDate}">1 Aug 2026</span> to <span th:text="${reportToDate}">31 Aug 2026</span></div>
+<div class="period">
+    Every appointment recorded for <span th:text="${doctorName}">Dr. Anita Rao</span> in this period, with its final status.
+</div>
+
+<!-- Practitioner -->
+<table class="meta">
+    <tr>
+        <td width="34%">
+            <div class="meta-label">Practitioner</div>
+            <div class="meta-value" th:text="${doctorName}">Dr. Anita Rao</div>
+            <div class="meta-label" style="padding-top:6pt;">Specialisation</div>
+            <div class="meta-value" th:text="${specialization}">Cardiology</div>
+        </td>
+        <td width="33%" class="meta-div">
+            <div class="meta-label">Clinic</div>
+            <div class="meta-value" th:text="${clinicName}">Lotus Family Clinic</div>
+            <div class="meta-label" style="padding-top:6pt;">Phone</div>
+            <div class="meta-value" th:text="${clinicContactNumber}">+91 6243 000 000</div>
+        </td>
+        <td width="33%" class="meta-div">
+            <div class="meta-label">Email</div>
+            <div class="meta-value" th:text="${clinicEmail}">hello@lotusclinic.in</div>
+            <div class="meta-label" style="padding-top:6pt;">Reporting period</div>
+            <div class="meta-value">
+                <span th:text="${reportFromDate}">1 Aug 2026</span> &#8211; <span th:text="${reportToDate}">31 Aug 2026</span>
             </div>
+        </td>
+    </tr>
+</table>
 
-            <div class="doctor-details">
-                <div class="detail-item">
-                    <span class="detail-label">Doctor Name</span>
-                    <span class="detail-value" th:text="${doctorName}">Dr. Sarah Johnson</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Specialization</span>
-                    <span class="detail-value" th:text="${specialization}">Cardiology</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Clinic Name</span>
-                    <span class="detail-value" th:text="${clinicName}">City General Clinic</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Clinic Email</span>
-                    <span class="detail-value" th:text="${clinicEmail}">clinic@example.com</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Clinic Contact</span>
-                    <span class="detail-value" th:text="${clinicContactNumber}">123-456-7890</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Report Generated On</span>
-                    <span class="detail-value" th:text="${reportGeneratedOn}">15 Nov, 2023</span>
-                </div>
-            </div>
-        </header>
+<!-- Summary -->
+<div class="section-title">Summary</div>
+<table class="summary">
+    <tr>
+        <td>
+            <div class="sum-value" th:text="${totalAppointments}">128</div>
+            <div class="sum-label">Appointments booked</div>
+        </td>
+        <td>
+            <div class="sum-value sum-value-ok" th:text="${treatedAppointments}">112</div>
+            <div class="sum-label">Patients seen</div>
+        </td>
+        <td>
+            <div class="sum-value sum-value-no" th:text="${cancelledAppointments}">16</div>
+            <div class="sum-label">Cancelled</div>
+        </td>
+        <td>
+            <div class="sum-value"
+                 th:text="${totalAppointments != null and totalAppointments > 0 ? #numbers.formatDecimal(treatedAppointments * 100.0 / totalAppointments, 1, 0) + '%' : '—'}">88%</div>
+            <div class="sum-label">Seen as a share of booked</div>
+        </td>
+    </tr>
+</table>
 
-        <section class="report-body">
-            <h2 class="section-title">Appointment Details</h2>
+<!-- Detail -->
+<div class="section-title">Appointment detail</div>
+<table class="grid">
+    <thead>
+        <tr>
+            <th width="17%">Reference</th>
+            <th width="24%">Patient</th>
+            <th width="17%">Phone</th>
+            <th width="18%">Date</th>
+            <th width="12%">Status</th>
+            <th width="12%">Mode</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="appointment : ${appointments}">
+            <td class="id" th:text="${appointment.appointmentId}">APT-2026-00418</td>
+            <td th:text="${appointment.patientName}">Rahul Verma</td>
+            <td th:text="${appointment.contact}">+91 98xxx xxxxx</td>
+            <td th:text="${#dates.format(appointment.appointmentDateTime, 'dd MMM yyyy, HH:mm')}">12 Aug 2026, 14:30</td>
+            <td>
+                <span class="tag tag-treated"
+                      th:class="${appointment.status.name() == 'TREATED' ? 'tag tag-treated' : (appointment.status.name() == 'CANCELLED' ? 'tag tag-cancelled' : 'tag tag-other')}"
+                      th:text="${#strings.capitalizeWords(#strings.replace(#strings.toLowerCase(appointment.status),'_',' '))}">Treated</span>
+            </td>
+            <td>
+                <span class="tag tag-online"
+                      th:class="${appointment.appointmentType.name() == 'ONLINE' ? 'tag tag-online' : 'tag tag-onsite'}"
+                      th:text="${appointment.appointmentType.name() == 'ONLINE' ? 'Online' : 'In clinic'}">Online</span>
+            </td>
+        </tr>
+        <tr th:if="${appointments == null or #lists.isEmpty(appointments)}">
+            <td colspan="6" class="empty">No appointments were recorded in this period.</td>
+        </tr>
+    </tbody>
+</table>
 
-            <table class="appointment-table">
-                <thead>
-                    <tr>
-                        <th>Appointment ID</th>
-                        <th>Patient Name</th>
-                        <th>Contact Number</th>
-                        <th>Appointment Date</th>
-                        <th>Status</th>
-                        <th>Booking Mode</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="appointment : ${appointments}">
-                        <td th:text="${appointment.appointmentId}">APT-1001</td>
-                        <td th:text="${appointment.patientName}">Robert Wilson</td>
-                        <td th:text="${appointment.contact}">(555) 123-4567</td>
-                        <td th:text="${#dates.format(appointment.appointmentDateTime, 'dd MMM, yyyy')}">Oct 3, 2023</td>
-                        <td>
-                            <span
-                                th:classappend="${appointment.status.name() == 'TREATED'} ? 'status treated' : 'status cancelled'"
-                                th:text="${appointment.status}">Treated</span>
-                        </td>
-                        <td>
-                            <span
-                                th:classappend="${appointment.appointmentType.name() == 'ONLINE'} ? 'booking-mode online' : 'booking-mode onsite'"
-                                th:text="${appointment.appointmentType}">Online</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <footer class="footer">
-            <div class="summary-section">
-                <div class="summary-card">
-                    <div class="summary-value" th:text="${totalAppointments}">10</div>
-                    <div class="summary-label">Total Appointments</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-value" th:text="${cancelledAppointments}">3</div>
-                    <div class="summary-label">Cancelled Appointments</div>
-                </div>
-                <div class="summary-card">
-                    <div class="summary-value" th:text="${treatedAppointments}">7</div>
-                    <div class="summary-label">Treated Appointments</div>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <div class="copyright">
-                    &#169; 2023 <span th:text="${companyName}">MediCare Solutions</span>. All rights reserved.
-                </div>
-                <div class="warning">
-                    CONFIDENTIAL: This report contains sensitive information. If you received this in error, please
-                    delete immediately.
-                </div>
-            </div>
-        </footer>
+<!-- Footer -->
+<div class="footer">
+    <table>
+        <tr>
+            <td width="34%">
+                <div class="fl">Prepared for</div>
+                <div th:text="${doctorName}">Dr. Anita Rao</div>
+                <div th:text="${clinicName}">Lotus Family Clinic</div>
+            </td>
+            <td width="33%">
+                <div class="fl">Contact</div>
+                <div th:text="${clinicContactNumber}">+91 6243 000 000</div>
+                <div th:text="${clinicEmail}">hello@lotusclinic.in</div>
+            </td>
+            <td width="33%">
+                <div class="fl">Generated</div>
+                <div th:text="${reportGeneratedOn}">21 Sep 2026</div>
+                <div>By <span th:text="${companyName}">Heal Now</span></div>
+            </td>
+        </tr>
+    </table>
+    <div class="legal">
+        &#169; <span th:text="${#dates.year(#dates.createNow())}">2026</span>
+        <span th:text="${companyName}">Heal Now</span>.
+        This report contains patient-identifiable information and is intended only for the practitioner named above.
+        If you received it in error, delete it and tell us. Store and dispose of printed copies securely.
     </div>
-</body>
+</div>
 
+</body>
 </html>

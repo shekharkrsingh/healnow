@@ -1,340 +1,190 @@
 <!DOCTYPE html>
-<html xmlns="http://www.thymeleaf.org" lang="">
-
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Digital Appointment Card</title>
-    <style>
-        /* Page setup for A4 landscape */
-        @page {
-            size: A4 landscape;
-            margin: 20mm;
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Booking card</title>
+    <style type="text/css">
+        /* ------------------------------------------------------------------
+           Counter-top booking card — A4 landscape, printed once and stood up
+           at clinic reception so patients can scan and book themselves.
+           Print/PDF safe: real tables, solid fills, no gradients, no flexbox.
+           ------------------------------------------------------------------ */
+        @page { size: A4 landscape; margin: 0; }
+
+        html, body {
+            margin: 0; padding: 0;
+            background-color: #FFFFFF;
+            color: #334155;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.45;
         }
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f5f7fa;
-            width: 297mm;
-            /* A4 landscape width */
-            height: 210mm;
-            /* A4 landscape height */
-        }
+        table { border-collapse: collapse; }
+        td { vertical-align: top; }
 
-        .card-container {
-            width: 250mm;
-            /* Slightly reduced for margins */
-            height: 160mm;
-            /* Slightly reduced for margins */
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            display: table;
-            margin: 25mm auto;
-            border: 1px solid #ddd;
-        }
+        .serif { font-family: Georgia, "Times New Roman", Times, serif; }
 
-        .qr-section {
-            width: 45%;
-            background: #4f46e5;
-            /* SOLID COLOR - PDF safe */
-            display: table-cell;
-            vertical-align: middle;
-            padding: 25px;
-            color: white;
-            text-align: center;
-            position: relative;
-        }
+        .sheet { width: 297mm; height: 210mm; }
+        .sheet > tbody > tr > td { vertical-align: middle; text-align: center; }
 
-        /* Add pattern overlay for visual interest without gradient */
-        .qr-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                linear-gradient(45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%),
-                linear-gradient(-45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.03) 75%),
-                linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.03) 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-        }
+        .card { width: 237mm; border: 1px solid #e2e8f0; }
 
-        .qr-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 25px;
-            color: white;
-            position: relative;
-            z-index: 2;
-        }
+        /* ---------- left panel ---------- */
+        .panel { width: 92mm; background-color: #0ea5e9; }
+        .panel td { text-align: center; }
+        .panel-pad { padding: 20mm 12mm; }
 
-        .qr-code-container {
-            background: white;
-            padding: 12px;
+        .panel-kicker { font-size: 9pt; color: #9FCFC9; letter-spacing: 0.6pt; padding-bottom: 4mm; }
+        .panel-title { font-size: 21pt; color: #FFFFFF; line-height: 1.2; padding-bottom: 8mm; }
+
+        .qr-tile { background-color: #FFFFFF; padding: 6mm; }
+        .qr-image { width: 148px; height: 148px; display: block; }
+
+        .panel-note { font-size: 9.5pt; color: #C9E6E2; padding-top: 8mm; line-height: 1.5; }
+
+        /* ---------- right panel ---------- */
+        .info { background-color: #FFFFFF; }
+        .info-pad { padding: 16mm 16mm 12mm 16mm; }
+
+        .brandline { padding-bottom: 6mm; border-bottom: 1px solid #e2e8f0; }
+        .monogram {
+            width: 38px; height: 38px; background-color: #0ea5e9; color: #FFFFFF;
+            font-family: Georgia, "Times New Roman", Times, serif;
+            font-size: 14pt; text-align: center; vertical-align: middle;
+        }
+        .brand-name { font-size: 13pt; font-weight: bold; color: #0f172a; letter-spacing: -0.2pt; }
+        .brand-sub { font-size: 8.5pt; color: #64748b; }
+
+        .clinic { padding-top: 8mm; }
+        .clinic-name { font-size: 19pt; color: #0f172a; letter-spacing: -0.4pt; line-height: 1.25; }
+        .clinic-address { font-size: 9.5pt; color: #334155; padding-top: 2mm; }
+        .clinic-contact { font-size: 9.5pt; color: #0f172a; padding-top: 2mm; }
+        .clinic-contact span.lbl { color: #64748b; }
+
+        .doctor {
+            margin-top: 9mm; border: 1px solid #e2e8f0; border-left: 3px solid #0ea5e9;
+            background-color: #f8fafc; width: 100%;
+        }
+        .doctor td { padding: 6mm 7mm; }
+        .doc-label { font-size: 8pt; color: #64748b; padding-bottom: 1mm; }
+        .doc-name { font-size: 14pt; font-weight: bold; color: #0f172a; }
+        .doc-spec { font-size: 9.5pt; color: #334155; padding-top: 1mm; }
+        .doc-id { font-size: 9.5pt; color: #0ea5e9; font-weight: bold; }
+        .doc-sep { border-left: 1px solid #e2e8f0; }
+
+        .how { padding-top: 9mm; }
+        .how-title { font-size: 9pt; font-weight: bold; color: #0f172a; padding-bottom: 3mm; }
+        .how td { font-size: 9pt; color: #334155; padding-bottom: 2mm; }
+        .how-no {
+            width: 16px; height: 16px; background-color: #e0f2fe; color: #0ea5e9;
+            font-size: 8pt; font-weight: bold; text-align: center; vertical-align: middle;
             border-radius: 8px;
-            margin: 0 auto 25px;
-            width: 190px;
-            height: 190px;
-            border: 1px solid #e2e8f0;
-            position: relative;
-            z-index: 2;
         }
 
-        .qr-image {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .scan-instruction {
-            font-size: 16px;
-            line-height: 1.4;
-            color: #ffffff;
-            font-weight: 500;
-            position: relative;
-            z-index: 2;
-        }
-
-        .info-section {
-            width: 55%;
-            display: table-cell;
-            padding: 30px;
-            vertical-align: top;
-            background: white;
-        }
-
-        .company-header {
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #4f46e5;
-        }
-
-        .company-name {
-            font-size: 22px;
-            font-weight: bold;
-            color: #4f46e5;
-        }
-
-        .clinic-info {
-            margin-bottom: 20px;
-            display: table;
-            width: 100%;
-        }
-
-        .clinic-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            background: #4f46e5;
-            /* Solid color */
-            display: table-cell;
-            vertical-align: middle;
-            text-align: center;
-            color: white;
-            font-weight: bold;
-            font-size: 22px;
-            border: 2px solid #e0e7ff;
-        }
-
-        .clinic-details {
-            display: table-cell;
-            padding-left: 15px;
-            vertical-align: middle;
-        }
-
-        .clinic-details h2 {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1a202c;
-            margin: 0 0 8px 0;
-        }
-
-        .clinic-address {
-            font-size: 16px;
-            color: #4a5568;
-            margin: 0 0 8px 0;
-            line-height: 1.3;
-        }
-
-        .clinic-contact {
-            font-size: 16px;
-            color: #4f46e5;
-            font-weight: bold;
-        }
-
-        .doctor-info-section {
-            margin-bottom: 25px;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2d3748;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #4f46e5;
-            display: inline-block;
-        }
-
-        .doctor-row {
-            margin-bottom: 15px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border-left: 4px solid #4f46e5;
-            display: table;
-            width: 100%;
-            border: 1px solid #e2e8f0;
-        }
-
-        .doctor-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 8px;
-            background: #4f46e5;
-            display: table-cell;
-            vertical-align: middle;
-            text-align: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        .doctor-text {
-            display: table-cell;
-            vertical-align: middle;
-            padding-left: 15px;
-        }
-
-        .doctor-label {
-            font-size: 14px;
-            font-weight: bold;
-            color: #718096;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .doctor-value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #2d3748;
-        }
-
-        .doctor-id {
-            color: #4f46e5;
-        }
-
-        .card-footer {
-            padding-top: 15px;
-            border-top: 2px solid #e2e8f0;
-            display: table;
-            width: 100%;
-        }
-
-        .card-id,
-        .generation-date {
-            font-size: 14px;
-            color: #718096;
-            font-weight: bold;
-            display: table-cell;
-            vertical-align: middle;
-        }
-
-        .generation-date {
-            text-align: right;
-        }
-
-        /* Print-specific styles */
-        @media print {
-            body {
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-            }
-
-            .card-container {
-                border: 1px solid #ccc !important;
-                margin: 0 auto !important;
-                page-break-inside: avoid !important;
-            }
-
-            .qr-section {
-                background: #4f46e5 !important;
-            }
-
-            .qr-section::before {
-                display: none;
-                /* Hide pattern for print if it causes issues */
-            }
-        }
+        .card-foot { border-top: 1px solid #e2e8f0; margin-top: 9mm; padding-top: 4mm; width: 100%; }
+        .card-foot td { font-size: 8pt; color: #9AACB1; }
+        .card-foot .right { text-align: right; }
     </style>
 </head>
-
 <body>
-    <div class="card-container">
-        <div class="qr-section">
-            <h3 class="qr-title">Scan to Book Appointment</h3>
-            <div class="qr-code-container">
-                <img th:src="${qrCodeData}" alt="Scan to Book Appointment" class="qr-image" />
-            </div>
-            <div class="scan-instruction">
-                Use your phone camera to scan and book instantly
-            </div>
-        </div>
 
-        <div class="info-section">
-            <div class="company-header">
-                <div class="company-name" th:text="${companyName}">HPotion</div>
-            </div>
+<table class="sheet">
+    <tr>
+        <td>
 
-            <div class="clinic-info">
-                <div class="clinic-logo">
-                    <span th:text="${clinicInitial}">HC</span>
-                </div>
-                <div class="clinic-details">
-                    <h2 th:text="${clinicName}">Clinic</h2>
-                    <div class="clinic-address" th:text="${clinicAddress}">
-                        San Karo, 3rd street, Kolba, 4958930, Denmark
-                    </div>
-                    <div class="clinic-contact" th:text="'Email: ' + ${clinicEmail}">Email: clinic@example.com</div>
-                    <div class="clinic-contact" th:text="'Clinic: ' + ${clinicContactNumber}">Clinic: (123) 456-7890</div>
-                </div>
-            </div>
+            <table class="card" align="center">
+                <tr>
+                    <!-- Scan side -->
+                    <td class="panel">
+                        <table width="100%"><tr><td class="panel-pad">
+                            <div class="panel-kicker">No queue, no phone call</div>
+                            <div class="panel-title serif">Scan to book<br />an appointment</div>
 
-            <div class="doctor-info-section">
-                <div class="section-title">Doctor Information</div>
-                <div class="doctor-row">
-                    <div class="doctor-icon">👨‍⚕️</div>
-                    <div class="doctor-text">
-                        <div class="doctor-label">Doctor Name</div>
-                        <div class="doctor-value">
-                            <span th:text="${doctorName}">Dr. Alice Bob</span>
-                            <div style="font-size: 14px; color: #4b5563; margin-top: 4px; font-weight: normal;"
-                                th:text="${specialization}">Specialization</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="doctor-row">
-                    <div class="doctor-icon">🪪</div>
-                    <div class="doctor-text">
-                        <div class="doctor-label">Doctor ID</div>
-                        <div class="doctor-value doctor-id" th:text="${doctorId}">DOC-251213-1615-987</div>
-                    </div>
-                </div>
-            </div>
+                            <table align="center"><tr><td class="qr-tile">
+                                <img th:src="${qrCodeData}" src="" alt="Booking QR code" class="qr-image" />
+                            </td></tr></table>
 
-            <div class="card-footer">
-                <div class="card-id" th:text="'Card ID: ' + ${cardId}">Card ID: CARD-C954FA91</div>
-                <div class="generation-date" th:text="${generationDate}">Dec 26, 2025</div>
-            </div>
-        </div>
-    </div>
+                            <div class="panel-note">
+                                Open your phone camera, point it at the code,<br />
+                                then pick a time that suits you.
+                            </div>
+                        </td></tr></table>
+                    </td>
+
+                    <!-- Details side -->
+                    <td class="info">
+                        <table width="100%"><tr><td class="info-pad">
+
+                            <table width="100%" class="brandline">
+                                <tr>
+                                    <td width="46" style="width:46px;">
+                                        <table><tr><td class="monogram"
+                                            th:text="${clinicInitial} ?: 'HN'">HC</td></tr></table>
+                                    </td>
+                                    <td style="padding-left:9pt;" valign="middle">
+                                        <div class="brand-name" th:text="${companyName}">Heal Now</div>
+                                        <div class="brand-sub">Online appointment booking</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div class="clinic">
+                                <div class="clinic-name serif" th:text="${clinicName}">Lotus Family Clinic</div>
+                                <div class="clinic-address" th:text="${clinicAddress}">2nd floor, 14 Station Road, Begusarai 851101</div>
+                                <div class="clinic-contact">
+                                    <span class="lbl">Phone</span> <span th:text="${clinicContactNumber}">+91 6243 000 000</span>
+                                    &#160;&#160;<span class="lbl">Email</span> <span th:text="${clinicEmail}">hello@lotusclinic.in</span>
+                                </div>
+                            </div>
+
+                            <table class="doctor">
+                                <tr>
+                                    <td width="62%">
+                                        <div class="doc-label">Consulting practitioner</div>
+                                        <div class="doc-name" th:text="${doctorName}">Dr. Anita Rao</div>
+                                        <div class="doc-spec" th:text="${specialization}">Cardiology</div>
+                                    </td>
+                                    <td width="38%" class="doc-sep">
+                                        <div class="doc-label">Practitioner ID</div>
+                                        <div class="doc-id" th:text="${doctorId}">DOC-251213-1615-987</div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div class="how">
+                                <div class="how-title">How booking works</div>
+                                <table width="100%">
+                                    <tr>
+                                        <td width="24" style="width:24px;"><table><tr><td class="how-no">1</td></tr></table></td>
+                                        <td>Scan the code and choose a date and time from the open slots.</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="24" style="width:24px;"><table><tr><td class="how-no">2</td></tr></table></td>
+                                        <td>Enter your name and phone number, then confirm.</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="24" style="width:24px;"><table><tr><td class="how-no">3</td></tr></table></td>
+                                        <td>Keep the confirmation on your phone &#8212; show it at reception to check in.</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <table class="card-foot">
+                                <tr>
+                                    <td>Card <span th:text="${cardId}">CARD-C954FA91</span></td>
+                                    <td class="right">Issued <span th:text="${generationDate}">21 Sep 2026</span></td>
+                                </tr>
+                            </table>
+
+                        </td></tr></table>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+
 </body>
-
 </html>
