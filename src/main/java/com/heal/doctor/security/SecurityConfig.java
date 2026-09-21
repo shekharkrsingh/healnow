@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/send-test/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/ws-native/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/topic/**").authenticated()
                         .requestMatchers("/app/**").authenticated()
