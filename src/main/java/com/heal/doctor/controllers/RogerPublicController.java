@@ -4,6 +4,7 @@ import com.heal.doctor.dto.LoginResponseDTO;
 import com.heal.doctor.dto.RogerRegistrationDTO;
 import com.heal.doctor.services.IRogerService;
 import com.heal.doctor.utils.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ public class RogerPublicController {
     private final IRogerService rogerService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> registerRoger(@RequestBody RogerRegistrationDTO rogerRegistrationDTO) {
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> registerRoger(@Valid @RequestBody RogerRegistrationDTO rogerRegistrationDTO) {
         LoginResponseDTO loginResponseDTO = rogerService.registerRoger(rogerRegistrationDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Roger registered successfully", loginResponseDTO));
     }

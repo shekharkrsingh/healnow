@@ -125,7 +125,6 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<List<AppointmentDTO>>> searchAppointment(
             @RequestBody AppointmentSearchDTO appointmentSearchDTO
     ){
-        System.out.println(appointmentSearchDTO.toString());
         List<AppointmentDTO> appointments=appointmentSearchService.searchAppointment(appointmentSearchDTO);
         return ResponseEntity.ok(ApiResponse.<List<AppointmentDTO>>builder()
                 .success(true)

@@ -16,10 +16,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Existing SockJS endpoint — kept for backward compatibility / web clients
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
                 .addInterceptors(doctorHandshakeInterceptor)
                 .withSockJS();
+
+        // Native WebSocket endpoint for React Native mobile app (no SockJS overhead)
+        registry.addEndpoint("/ws-native")
+                .setAllowedOriginPatterns("*")
+                .addInterceptors(doctorHandshakeInterceptor);
     }
 
     @Override

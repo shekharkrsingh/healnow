@@ -222,7 +222,7 @@ public class DoctorServiceImpl implements IDoctorService {
         }
         
         if (search != null && !search.trim().isEmpty()) {
-            String regex = ".*" + search.trim() + ".*";
+            String regex = ".*" + java.util.regex.Pattern.quote(search.trim()) + ".*";
             query.addCriteria(new org.springframework.data.mongodb.core.query.Criteria().orOperator(
                 org.springframework.data.mongodb.core.query.Criteria.where("doctorId").regex(regex, "i"),
                 org.springframework.data.mongodb.core.query.Criteria.where("firstName").regex(regex, "i"),

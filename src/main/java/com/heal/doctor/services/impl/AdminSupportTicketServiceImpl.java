@@ -55,7 +55,7 @@ public class AdminSupportTicketServiceImpl implements IAdminSupportTicketService
         }
         
         if (search != null && !search.trim().isEmpty()) {
-            String regex = ".*" + search.trim() + ".*";
+            String regex = ".*" + java.util.regex.Pattern.quote(search.trim()) + ".*";
             query.addCriteria(new org.springframework.data.mongodb.core.query.Criteria().orOperator(
                 org.springframework.data.mongodb.core.query.Criteria.where("ticketId").regex(regex, "i"),
                 org.springframework.data.mongodb.core.query.Criteria.where("doctorEmail").regex(regex, "i"),

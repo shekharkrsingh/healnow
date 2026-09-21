@@ -25,6 +25,7 @@ import java.util.List;
 public class AppointmentSearchService implements IAppointmentSearchService {
 
     private static final Logger logger = LoggerFactory.getLogger(AppointmentSearchService.class);
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final AppointmentRepository appointmentRepository;
     private final ModelMapper modelMapper;
@@ -69,6 +70,8 @@ public class AppointmentSearchService implements IAppointmentSearchService {
 
         int page = appointmentSearchDTO.getPage() != null ? appointmentSearchDTO.getPage() : 0;
         int size = appointmentSearchDTO.getSize() != null ? appointmentSearchDTO.getSize() : 10;
+        // Cap page size to prevent Out-Of-Memory / database DoS attacks
+        size = Math.min(size, MAX_PAGE_SIZE);
 
         Sort sort = Sort.unsorted();
         if (StringUtils.hasText(appointmentSearchDTO.getSortBy())) {

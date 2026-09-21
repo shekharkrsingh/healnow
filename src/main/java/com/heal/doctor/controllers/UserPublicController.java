@@ -92,19 +92,19 @@ public class UserPublicController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<DoctorProfileDTO>> createDoctor(@RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
+    public ResponseEntity<ApiResponse<DoctorProfileDTO>> createDoctor(@Valid @RequestBody DoctorRegistrationDTO doctorRegistrationDTO) {
         DoctorProfileDTO doctorDTO = doctorService.createDoctor(doctorRegistrationDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Doctor created successfully", doctorDTO));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody ForgotPasswordDTO forgotPasswordDTO) {
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordDTO forgotPasswordDTO) {
         userService.forgotPassword(forgotPasswordDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Password reset successfully", null));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@RequestBody LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
         LoginResponseDTO loginResponseDTO = userService.login(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
         return ResponseEntity.ok(new ApiResponse<>(true, "login successfully", loginResponseDTO));
     }
@@ -128,7 +128,7 @@ public class UserPublicController {
     }
 
     @PostMapping("/appointments/book")
-    public ResponseEntity<ApiResponse<AppointmentDTO>> selfBookAppointment(@RequestBody PatientSelfBookingDTO requestDTO) {
+    public ResponseEntity<ApiResponse<AppointmentDTO>> selfBookAppointment(@Valid @RequestBody PatientSelfBookingDTO requestDTO) {
         AppointmentDTO appointmentDTO = appointmentService.selfBookAppointment(requestDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Appointment booked successfully", appointmentDTO));
     }

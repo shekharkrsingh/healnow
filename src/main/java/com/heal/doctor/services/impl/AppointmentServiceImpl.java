@@ -67,7 +67,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO bookAppointment(AppointmentRequestDTO requestDTO) {
         String doctorId = CurrentUserName.getCurrentDoctorId();
-        logger.info("Booking appointment for doctorId: {}, patientName: {}", doctorId, requestDTO.getPatientName());
+        logger.info("Booking appointment for doctorId: {}", doctorId);
 
         DoctorEntity doctor = doctorRepository.findByDoctorId(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
@@ -92,7 +92,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         }
 
         if (requestDTO.getContact() == null || requestDTO.getContact().trim().isEmpty()) {
-            logger.warn("Appointment booking failed: Contact is empty for doctorId: {}, patientName: {}", doctorId, requestDTO.getPatientName());
+            logger.warn("Appointment booking failed: Contact is empty for doctorId: {}", doctorId);
             throw new ValidationException("Contact number is required and cannot be empty.");
         }
 
@@ -133,8 +133,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 AppointmentStatus.ACCEPTED);
 
         if (exists) {
-            logger.warn("Appointment booking failed: Duplicate appointment exists for doctorId: {}, patientName: {}, contact: {}", 
-                    doctorId, requestDTO.getPatientName(), requestDTO.getContact());
+            logger.warn("Appointment booking failed: Duplicate appointment exists for doctorId: {}", doctorId);
             throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
         }
 
@@ -163,8 +162,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
             );
         }
 
-        logger.info("Appointment booked successfully: appointmentId: {}, doctorId: {}, patientName: {}", 
-                savedAppointment.getAppointmentId(), doctorId, requestDTO.getPatientName());
+        logger.info("Appointment booked successfully: appointmentId: {}, doctorId: {}",
+                savedAppointment.getAppointmentId(), doctorId);
 
         AppointmentDTO appointmentDTO = modelMapper.map(savedAppointment, AppointmentDTO.class);
 
@@ -184,7 +183,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     @Override
     public AppointmentDTO selfBookAppointment(PatientSelfBookingDTO requestDTO) {
         String doctorId = requestDTO.getDoctorId();
-        logger.info("Self-booking appointment for doctorId: {}, patientName: {}", doctorId, requestDTO.getPatientName());
+        logger.info("Self-booking appointment for doctorId: {}", doctorId);
 
 
         if (doctorId == null || doctorId.trim().isEmpty()) {
@@ -656,8 +655,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointmentEntity.setStatus(AppointmentStatus.CANCELLED);
 
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
-        logger.info("Appointment cancelled: appointmentId: {}, oldStatus: {}, doctorId: {}, patientName: {}", 
-                appointmentId, oldStatus, currentDoctorId, appointmentEntity.getPatientName());
+        logger.info("Appointment cancelled: appointmentId: {}, oldStatus: {}, doctorId: {}",
+                appointmentId, oldStatus, currentDoctorId);
 
         AppointmentDTO appointmentDTO = modelMapper.map(updatedAppointment, AppointmentDTO.class);
 
