@@ -5,9 +5,9 @@ import com.heal.doctor.Mail.impl.OtpServiceImpl;
 import com.heal.doctor.dto.*;
 import com.heal.doctor.models.DayAvailability;
 import com.heal.doctor.models.DoctorEntity;
+import com.heal.doctor.models.DoctorSettingsEntity;
 import com.heal.doctor.models.DoctorVerificationRequestEntity;
 import com.heal.doctor.models.NotificationEntity;
-import com.heal.doctor.models.enums.AvailableDayEnum;
 import com.heal.doctor.models.enums.NotificationRecipientType;
 import com.heal.doctor.models.enums.NotificationType;
 import com.heal.doctor.models.enums.RequestStatus;
@@ -15,8 +15,11 @@ import com.heal.doctor.models.enums.RolesEnum;
 import com.heal.doctor.models.enums.VerificationStatus;
 import com.heal.doctor.models.UserEntity;
 import com.heal.doctor.repositories.DoctorRepository;
+import com.heal.doctor.repositories.DoctorSettingsRepository;
 import com.heal.doctor.repositories.DoctorVerificationRequestRepository;
+import com.heal.doctor.repositories.DefaultDoctorSettingsRepository;
 import com.heal.doctor.repositories.UserRepository;
+import com.heal.doctor.models.DefaultDoctorSettingsEntity;
 import com.heal.doctor.services.IDoctorService;
 import com.heal.doctor.services.INotificationService;
 import com.heal.doctor.exception.ConflictException;
@@ -62,6 +65,8 @@ public class DoctorServiceImpl implements IDoctorService {
     private final IEmailService emailService;
     private final String companyName;
     private final DoctorVerificationRequestRepository doctorVerificationRequestRepository;
+    private final DoctorSettingsRepository doctorSettingsRepository;
+    private final DefaultDoctorSettingsRepository defaultDoctorSettingsRepository;
     private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
     public DoctorServiceImpl(DoctorRepository doctorRepository, 
@@ -74,6 +79,8 @@ public class DoctorServiceImpl implements IDoctorService {
                              IEmailService emailService,
                              @Value("${company.name}") String companyName,
                              DoctorVerificationRequestRepository doctorVerificationRequestRepository,
+                             DoctorSettingsRepository doctorSettingsRepository,
+                             DefaultDoctorSettingsRepository defaultDoctorSettingsRepository,
                              org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
@@ -85,6 +92,8 @@ public class DoctorServiceImpl implements IDoctorService {
         this.emailService = emailService;
         this.companyName = companyName;
         this.doctorVerificationRequestRepository = doctorVerificationRequestRepository;
+        this.doctorSettingsRepository = doctorSettingsRepository;
+        this.defaultDoctorSettingsRepository = defaultDoctorSettingsRepository;
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -139,6 +148,21 @@ public class DoctorServiceImpl implements IDoctorService {
         DoctorEntity savedDoctor = doctorRepository.save(doctor);
         logger.info("Doctor account created successfully: doctorId: {}, email: {}, firstName: {}", 
                 savedDoctor.getDoctorId(), savedUser.getEmail(), savedDoctor.getFirstName());
+
+        // Fetch defaults from database
+        DefaultDoctorSettingsEntity defaultDoctorSettings = defaultDoctorSettingsRepository.findById(DefaultDoctorSettingsEntity.SINGLETON_ID)
+                .orElse(new DefaultDoctorSettingsEntity());
+
+        // Create default settings for doctor
+        DoctorSettingsEntity defaultSettings = DoctorSettingsEntity.builder()
+                .doctorId(doctorId)
+                .publicBookingAllowed(defaultDoctorSettings.isPublicBookingAllowed())
+                .enableEmergencyFeature(defaultDoctorSettings.isEnableEmergencyFeature())
+                .updatedAt(new Date())
+                .build();
+        doctorSettingsRepository.save(defaultSettings);
+        logger.info("Default doctor settings created for doctorId: {}", doctorId);
+
         NotificationEntity notification=NotificationEntity.builder().
                 targetId(doctor.getDoctorId()).
                 recipientType(NotificationRecipientType.INDIVIDUAL).

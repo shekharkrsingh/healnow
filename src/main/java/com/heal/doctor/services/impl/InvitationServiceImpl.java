@@ -20,6 +20,10 @@ import com.heal.doctor.repositories.CollaboratorProfileRepository;
 import com.heal.doctor.repositories.DoctorRepository;
 import com.heal.doctor.repositories.InvitationRepository;
 import com.heal.doctor.repositories.UserRepository;
+import com.heal.doctor.repositories.CollaboratorSettingsRepository;
+import com.heal.doctor.repositories.DefaultCollaboratorSettingsRepository;
+import com.heal.doctor.models.CollaboratorSettingsEntity;
+import com.heal.doctor.models.DefaultCollaboratorSettingsEntity;
 import com.heal.doctor.services.IEmailService;
 import com.heal.doctor.services.IInvitationService;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +62,8 @@ public class InvitationServiceImpl implements IInvitationService {
     private final UserRepository userRepository;
     private final CollaboratorProfileRepository collaboratorProfileRepository;
     private final DoctorRepository doctorRepository;
+    private final CollaboratorSettingsRepository collaboratorSettingsRepository;
+    private final DefaultCollaboratorSettingsRepository defaultCollaboratorSettingsRepository;
     private final IEmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
@@ -346,6 +352,21 @@ public class InvitationServiceImpl implements IInvitationService {
         collaboratorProfileRepository.save(collaboratorProfile);
         logger.info("Collaborator profile created: collaboratorId: {}, doctorId: {}", 
                 collaboratorId, invitation.getDoctorId());
+
+        // Create default settings if not exists
+        if (collaboratorSettingsRepository.findByCollaboratorId(collaboratorId).isEmpty()) {
+            DefaultCollaboratorSettingsEntity defaultCollaboratorSettings = defaultCollaboratorSettingsRepository.findById(DefaultCollaboratorSettingsEntity.SINGLETON_ID)
+                    .orElse(new DefaultCollaboratorSettingsEntity());
+
+            CollaboratorSettingsEntity defaultSettings = CollaboratorSettingsEntity.builder()
+                    .collaboratorId(collaboratorId)
+                    .enableNotifications(defaultCollaboratorSettings.isEnableNotifications())
+                    .twoFactorAuthEnabled(defaultCollaboratorSettings.isTwoFactorAuthEnabled())
+                    .updatedAt(new Date())
+                    .build();
+            collaboratorSettingsRepository.save(defaultSettings);
+            logger.info("Default collaborator settings created for collaboratorId: {}", collaboratorId);
+        }
 
         // Update invitation status
         invitation.setStatus(InvitationStatus.ACCEPTED);
