@@ -20,11 +20,14 @@ import org.thymeleaf.context.Context;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 public class DoctorCardServiceImpl implements IDoctorCardService {
@@ -156,7 +159,8 @@ public class DoctorCardServiceImpl implements IDoctorCardService {
         variables.put("specialization", doctor.getSpecialization() != null ? doctor.getSpecialization() : "Medical Professional");
         variables.put("doctorId", doctor.getDoctorId());
         variables.put("cardId", generateCardId());
-        variables.put("generationDate", LocalDateTime.now().format(DATE_FORMATTER));
+        // Use IST so the generation timestamp on the card reflects India time.
+        variables.put("generationDate", LocalDateTime.now(DateUtils.IST).format(DATE_FORMATTER));
 
         return variables;
     }

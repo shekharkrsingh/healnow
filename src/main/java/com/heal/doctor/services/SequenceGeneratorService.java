@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
+import java.util.TimeZone;
 
 import static org.springframework.data.mongodb.core.FindAndModifyOptions.options;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 public class SequenceGeneratorService {
@@ -25,11 +28,15 @@ public class SequenceGeneratorService {
     }
 
     public String generateAppointmentId() {
-        // 1. Get today's date formatted as YYMMDD
+        // 1. Get today's date formatted as YYMMDD in IST.
+        //    Without an explicit timezone, SimpleDateFormat uses the JVM default,
+        //    which is UTC on most cloud/Docker servers. IDs generated between
+        //    18:30–00:00 UTC would get the previous day's date prefix in IST.
         SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
+        sdf.setTimeZone(DateUtils.IST_TIMEZONE);
         String datePrefix = sdf.format(new Date());
 
-        // 2. The sequence name is unique for each day
+        // 2. The sequence name is unique for each IST day
         String seqName = "appointment_seq_" + datePrefix;
 
         // 3. Atomically increment the sequence for today

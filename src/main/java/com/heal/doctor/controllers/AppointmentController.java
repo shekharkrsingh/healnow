@@ -10,8 +10,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import com.heal.doctor.utils.DateUtils;
+
 
 @RestController
 @RequestMapping("/api/v1/appointments")
@@ -51,7 +54,7 @@ public class AppointmentController {
         List<AppointmentDTO> appointments;
         if (date == null || date.trim().isEmpty()) {
             appointments = appointmentService
-                    .getAppointmentsByBookingDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+                    .getAppointmentsByBookingDate(LocalDate.now(DateUtils.IST).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         } else {
             appointments = appointmentService.getAppointmentsByBookingDate(date);
         }

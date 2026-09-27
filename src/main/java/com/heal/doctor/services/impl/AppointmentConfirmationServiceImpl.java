@@ -15,10 +15,15 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,11 @@ public class AppointmentConfirmationServiceImpl implements IAppointmentConfirmat
     private static final String TEMPLATE_NAME = "appointment-booking-confirmation-template";
     private static final String ATTACHMENT_FILENAME = "appointment-confirmation.pdf";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
+
+    /** IST timezone — all date/time displayed to users must use this zone. */
+    
+    private static final DateTimeFormatter IST_DISPLAY_FORMATTER =
+            DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
     private final TemplateEngine templateEngine;
     private final DoctorRepository doctorRepository;
@@ -72,8 +82,18 @@ public class AppointmentConfirmationServiceImpl implements IAppointmentConfirmat
                 // Appointment Info
                 variables.put("appointmentId", appointment.getAppointmentId());
                 variables.put("documentId", "CONF-" + appointment.getAppointmentId());
-                variables.put("appointmentDateTime", appointment.getAppointmentDateTime());
-                variables.put("generationDate", new Date());
+                // Format dates explicitly in IST so patients see the correct local time,
+                // not UTC (which would be 5h 30m behind IST).
+                String apptDateTimeIST = appointment.getAppointmentDateTime() != null
+                        ? appointment.getAppointmentDateTime().toInstant()
+                                      .atZone(DateUtils.IST)
+                                      .format(IST_DISPLAY_FORMATTER)
+                        : "N/A";
+                String generationDateIST = new Date().toInstant()
+                        .atZone(DateUtils.IST)
+                        .format(IST_DISPLAY_FORMATTER);
+                variables.put("appointmentDateTime", apptDateTimeIST);
+                variables.put("generationDate", generationDateIST);
                 variables.put("appointmentType", appointment.getAppointmentType() != null ? appointment.getAppointmentType().name() : "IN_PERSON");
                 variables.put("paymentStatus", appointment.getPaymentStatus() != null ? appointment.getPaymentStatus() : false);
                 variables.put("isEmergency", appointment.getIsEmergency() != null ? appointment.getIsEmergency() : false);

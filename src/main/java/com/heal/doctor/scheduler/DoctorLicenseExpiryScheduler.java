@@ -21,6 +21,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TimeZone;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 public class DoctorLicenseExpiryScheduler {
@@ -34,7 +37,7 @@ public class DoctorLicenseExpiryScheduler {
     private final String companyName;
 
     public DoctorLicenseExpiryScheduler(
-            DoctorRepository doctorRepository, 
+            DoctorRepository doctorRepository,
             INotificationService notificationService,
             UserRepository userRepository,
             IEmailService emailService,
@@ -46,8 +49,12 @@ public class DoctorLicenseExpiryScheduler {
         this.companyName = companyName;
     }
 
-    // Runs daily at 1:00 AM
-    @Scheduled(cron = "0 0 1 * * ?")
+    /**
+     * Runs daily at 1:00 AM IST.
+     * The zone is explicit so this always fires at 1 AM India time even when
+     * the server/JVM is running in UTC (e.g., Docker, AWS).
+     */
+    @Scheduled(cron = "0 0 1 * * ?", zone = "Asia/Kolkata")
     public void checkLicenseExpiry() {
         logger.info("Starting scheduled doctor license expiry check");
 
@@ -59,7 +66,7 @@ public class DoctorLicenseExpiryScheduler {
             logger.info("Found {} verified doctors with expired licenses", expiredVerifiedDoctors.size());
 
             for (DoctorEntity doctor : expiredVerifiedDoctors) {
-                logger.warn("Suspending doctor due to expired license: doctorId: {}, expiryDate: {}", 
+                logger.warn("Suspending doctor due to expired license: doctorId: {}, expiryDate: {}",
                         doctor.getDoctorId(), doctor.getLicenseExpiryDate());
 
                 doctor.setVerificationStatus(VerificationStatus.SUSPENDED);
@@ -72,13 +79,13 @@ public class DoctorLicenseExpiryScheduler {
                         .recipientType(NotificationRecipientType.INDIVIDUAL)
                         .type(NotificationType.SYSTEM)
                         .title("Practice Account Suspended")
-                        .message("Your medical license expired on " + doctor.getLicenseExpiryDate() + 
-                                 ". Your verified status has been suspended. Please update your licensing details to request re-verification.")
+                        .message("Your medical license expired on " + doctor.getLicenseExpiryDate() +
+                                ". Your verified status has been suspended. Please update your licensing details to request re-verification.")
                         .createdAt(now.toInstant())
                         .build();
 
                 notificationService.createNotificationAsync(notification).exceptionally(ex -> {
-                    logger.error("Failed to create license expiry suspension notification asynchronously for doctorId: {}, error: {}", 
+                    logger.error("Failed to create license expiry suspension notification asynchronously for doctorId: {}, error: {}",
                             doctor.getDoctorId(), ex.getMessage(), ex);
                     return null;
                 });
@@ -108,7 +115,7 @@ public class DoctorLicenseExpiryScheduler {
                                         "expiryDate", expiryDateStr
                                 )
                         ).exceptionally(ex -> {
-                            logger.error("Failed to send license suspension email to doctorId: {}, email: {}, error: {}", 
+                            logger.error("Failed to send license suspension email to doctorId: {}, email: {}, error: {}",
                                     doctor.getDoctorId(), toEmail, ex.getMessage());
                             return null;
                         });
@@ -131,17 +138,20 @@ public class DoctorLicenseExpiryScheduler {
     private void sendPreExpiryWarnings(int daysRemaining) {
         logger.info("Checking doctors with licenses expiring in {} days", daysRemaining);
         try {
-            Calendar cal = Calendar.getInstance();
+            // Use IST so "N days from now" boundary is computed in India Standard Time.
+            // On UTC servers, Calendar.getInstance() would produce midnight UTC (off by 5h 30m),
+            // causing the wrong set of doctors to receive warning notifications.
+            Calendar cal = Calendar.getInstance(DateUtils.IST_TIMEZONE);
             cal.add(Calendar.DAY_OF_YEAR, daysRemaining);
-            
-            // Start of target day
+
+            // Start of target day in IST
             cal.set(Calendar.HOUR_OF_DAY, 0);
             cal.set(Calendar.MINUTE, 0);
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
             Date start = cal.getTime();
-            
-            // End of target day
+
+            // End of target day in IST
             cal.set(Calendar.HOUR_OF_DAY, 23);
             cal.set(Calendar.MINUTE, 59);
             cal.set(Calendar.SECOND, 59);
@@ -160,13 +170,13 @@ public class DoctorLicenseExpiryScheduler {
                         .recipientType(NotificationRecipientType.INDIVIDUAL)
                         .type(NotificationType.SYSTEM)
                         .title("Medical License Expiring Soon")
-                        .message("Your medical license expires in " + daysRemaining + " days (on " + doctor.getLicenseExpiryDate() + 
-                                 "). Please update your licensing details as soon as possible to avoid automatic suspension of practice bookings.")
+                        .message("Your medical license expires in " + daysRemaining + " days (on " + doctor.getLicenseExpiryDate() +
+                                "). Please update your licensing details as soon as possible to avoid automatic suspension of practice bookings.")
                         .createdAt(java.time.Instant.now())
                         .build();
 
                 notificationService.createNotificationAsync(notification).exceptionally(ex -> {
-                    logger.error("Failed to create pre-expiry notification asynchronously for doctorId: {}, error: {}", 
+                    logger.error("Failed to create pre-expiry notification asynchronously for doctorId: {}, error: {}",
                             doctor.getDoctorId(), ex.getMessage(), ex);
                     return null;
                 });
@@ -197,7 +207,7 @@ public class DoctorLicenseExpiryScheduler {
                                         "daysRemaining", daysRemaining
                                 )
                         ).exceptionally(ex -> {
-                            logger.error("Failed to send pre-expiry warning email to doctorId: {}, email: {}, error: {}", 
+                            logger.error("Failed to send pre-expiry warning email to doctorId: {}, email: {}, error: {}",
                                     doctor.getDoctorId(), toEmail, ex.getMessage());
                             return null;
                         });

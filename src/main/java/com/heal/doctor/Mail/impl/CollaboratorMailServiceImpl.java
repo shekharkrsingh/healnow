@@ -7,9 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +23,13 @@ public class CollaboratorMailServiceImpl implements ICollaboratorMailService {
     @Value("${company.name:HealNow}")
     private String companyName;
 
+    /** IST zone for all user-facing date/time strings in emails. */
+    
+
     @Override
     public void sendActivationEmail(String doctorName, String doctorEmail, String collaboratorName, String collaboratorEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        // Use IST so email timestamps reflect India time, not the server's UTC.
+        LocalDateTime now = LocalDateTime.now(DateUtils.IST);
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
 
@@ -41,7 +48,7 @@ public class CollaboratorMailServiceImpl implements ICollaboratorMailService {
 
     @Override
     public void sendDeactivationEmail(String doctorName, String doctorEmail, String collaboratorName, String collaboratorEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(DateUtils.IST);
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
 
@@ -60,7 +67,7 @@ public class CollaboratorMailServiceImpl implements ICollaboratorMailService {
 
     @Override
     public void sendRemovalEmail(String doctorName, String doctorEmail, String collaboratorName, String collaboratorEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(DateUtils.IST);
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
 
@@ -77,3 +84,4 @@ public class CollaboratorMailServiceImpl implements ICollaboratorMailService {
 //        emailService.sendHtmlEmail(doctorEmail, subject, "collaborator-status-change.template.html", vars);
     }
 }
+

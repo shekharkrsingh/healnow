@@ -49,6 +49,8 @@ import java.util.concurrent.Executor;
 import com.heal.doctor.dto.LoginResponseDTO;
 import com.heal.doctor.models.RefreshTokenEntity;
 import com.heal.doctor.repositories.RefreshTokenRepository;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -163,12 +165,13 @@ public class UserServiceImpl implements IUserService {
         String rawToken = jwtUtil.generateRefreshToken();
         String tokenHash = jwtUtil.hashToken(rawToken);
 
-        Calendar cal = Calendar.getInstance();
+        // Use IST for calendar so token expiry boundaries are computed in India Standard Time.
+        Calendar cal = Calendar.getInstance(DateUtils.IST_TIMEZONE);
         cal.add(Calendar.DAY_OF_YEAR, refreshTokenExpiryDays);
         Date slidingExpiresAt = cal.getTime();
 
         if (absoluteExpiresAt == null) {
-            Calendar absCal = Calendar.getInstance();
+            Calendar absCal = Calendar.getInstance(DateUtils.IST_TIMEZONE);
             absCal.add(Calendar.DAY_OF_YEAR, refreshTokenAbsoluteExpiryDays);
             absoluteExpiresAt = absCal.getTime();
         }
@@ -241,7 +244,7 @@ public class UserServiceImpl implements IUserService {
         // Step 3: Revoke old token now that the new one is safely saved.
         // Set expiresAt to now + 24h so MongoDB TTL cleans it up quickly (not after 30 days).
         // Keep revoked=true so reuse detection still works within the 24h window.
-        Calendar revokedTtl = Calendar.getInstance();
+        Calendar revokedTtl = Calendar.getInstance(DateUtils.IST_TIMEZONE);
         revokedTtl.add(Calendar.HOUR_OF_DAY, 24);
         refreshTokenEntity.setRevoked(true);
         refreshTokenEntity.setExpiresAt(revokedTtl.getTime());

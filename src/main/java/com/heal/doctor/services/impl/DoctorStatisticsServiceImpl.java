@@ -12,12 +12,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+
 
 @Service
 public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
@@ -129,15 +129,17 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
     }
 
     private Date[] getStartAndEndOfLastWeek() {
-        LocalDate today = LocalDate.now();
+        // Use IST for today's date so the range is correct on UTC-deployed servers.
+        LocalDate today = LocalDate.now(DateUtils.IST);
         LocalDate startOfWeek = today.minusDays(DAYS_BACK_WEEK);
         LocalDate endOfYesterday = today.minusDays(1);
-        
-        Date[] startDates = DateUtils.getStartAndEndOfDay(java.util.Date.from(startOfWeek.atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        Date[] endDates = DateUtils.getStartAndEndOfDay(java.util.Date.from(endOfYesterday.atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        
+
+        Date[] startDates = DateUtils.getStartAndEndOfDay(Date.from(startOfWeek.atStartOfDay(DateUtils.IST).toInstant()));
+        Date[] endDates   = DateUtils.getStartAndEndOfDay(Date.from(endOfYesterday.atStartOfDay(DateUtils.IST).toInstant()));
+
         return new Date[]{startDates[0], endDates[1]};
     }
+
 
     private List<DailyTreatedPatients> getProcessedDailyTreatedPatients(Date startOfWeek, Date endOfYesterday, String doctorId) {
         List<DailyTreatedPatients> rawData = statisticsRepository.getDailyTreatedPatientsLastWeek(startOfWeek, endOfYesterday, doctorId);
@@ -147,9 +149,10 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
                 .collect(Collectors.toMap(DailyTreatedPatients::getDate, DailyTreatedPatients::getCount));
 
         List<DailyTreatedPatients> finalList = new ArrayList<>();
-        LocalDate startDate = startOfWeek.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate endDate = endOfYesterday.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        
+        // Convert using IST so that the date labels on the chart match IST dates.
+        LocalDate startDate = startOfWeek.toInstant().atZone(DateUtils.IST).toLocalDate();
+        LocalDate endDate   = endOfYesterday.toInstant().atZone(DateUtils.IST).toLocalDate();
+
         LocalDate currentDate = startDate;
         while (!currentDate.isAfter(endDate)) {
             String dateStr = currentDate.format(DATE_FORMATTER);
@@ -161,3 +164,4 @@ public class DoctorStatisticsServiceImpl implements IDoctorStatisticsService {
         return finalList;
     }
 }
+

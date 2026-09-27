@@ -7,8 +7,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +24,7 @@ public class UserAccountEmailServiceImpl implements IUserAccountEmailService {
 
     @Override
     public void passwordChangeMail(String doctorName, String email) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(DateUtils.IST);
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
 
@@ -41,7 +44,7 @@ public class UserAccountEmailServiceImpl implements IUserAccountEmailService {
 
     @Override
     public void loginEmailChangedMail(String receiverMail, String doctorName, String doctorOldEmail, String doctorNewEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(DateUtils.IST);
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String formattedTime = now.format(DateTimeFormatter.ofPattern("hh:mm a"));
 
