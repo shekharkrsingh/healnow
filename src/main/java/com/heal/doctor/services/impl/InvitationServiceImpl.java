@@ -39,8 +39,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 @RequiredArgsConstructor
@@ -186,7 +189,8 @@ public class InvitationServiceImpl implements IInvitationService {
             logger.warn("Failed to fetch doctor name for invitation email: {}", e.getMessage());
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        // Use IST for the email timestamp so it reflects India time.
+        LocalDateTime now = LocalDateTime.now(DateUtils.IST);
         String formattedDate = now.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
 
         // Send invitation email
@@ -441,14 +445,21 @@ public class InvitationServiceImpl implements IInvitationService {
     }
 
     private String generateInvitationId() {
-        String timestamp = new SimpleDateFormat(INVITATION_ID_DATE_FORMAT).format(new Date());
+        // Explicitly set IST so the date part of the ID is correct on UTC servers.
+        SimpleDateFormat sdf = new SimpleDateFormat(INVITATION_ID_DATE_FORMAT);
+        sdf.setTimeZone(DateUtils.IST_TIMEZONE);
+        String timestamp = sdf.format(new Date());
         String randomSuffix = String.format("%04d", new SecureRandom().nextInt(10000));
         return INVITATION_ID_PREFIX + timestamp + "-" + randomSuffix;
     }
 
     private String generateCollaboratorId() {
-        String timestamp = new SimpleDateFormat(INVITATION_ID_DATE_FORMAT).format(new Date());
+        // Explicitly set IST so the date part of the ID is correct on UTC servers.
+        SimpleDateFormat sdf = new SimpleDateFormat(INVITATION_ID_DATE_FORMAT);
+        sdf.setTimeZone(DateUtils.IST_TIMEZONE);
+        String timestamp = sdf.format(new Date());
         String randomSuffix = String.format("%06d", new SecureRandom().nextInt(1000000));
         return COLLABORATOR_ID_PREFIX + timestamp + "-" + randomSuffix;
     }
 }
+

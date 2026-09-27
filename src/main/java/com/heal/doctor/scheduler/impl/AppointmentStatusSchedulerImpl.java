@@ -4,6 +4,7 @@ import com.heal.doctor.models.AppointmentEntity;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.repositories.AppointmentRepository;
 import com.heal.doctor.scheduler.IAppointmentStatusScheduler;
+import com.heal.doctor.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -30,19 +30,24 @@ public class AppointmentStatusSchedulerImpl implements IAppointmentStatusSchedul
     }
 
     /**
-     * Daily job at 3:00 AM to mark past appointments as MISSED.
+     * Daily job at 3:00 AM IST to mark past appointments as MISSED.
+     * The cron zone is explicitly set to Asia/Kolkata so the job always fires at
+     * 3 AM IST regardless of the JVM / server timezone (e.g. UTC on cloud).
+     *
      * Logic:
      * 1. Fetch only appointmentIds of expired appointments (Optimization).
      * 2. Perform bulk update on these IDs.
      */
-    @Scheduled(cron = "0 0 3 * * ?") 
+    @Scheduled(cron = "0 0 3 * * ?", zone = "Asia/Kolkata")
     @Transactional
     public void markMissedAppointments() {
         logger.info("Starting scheduled task: Mark Missed Appointments");
 
         try {
-            LocalDate today = LocalDate.now();
-            Date startOfToday = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            // Use IST date so "today" is correct even when the server runs in UTC.
+            LocalDate today = LocalDate.now(DateUtils.IST);
+            // Start of today in IST → midnight 00:00:00 IST as UTC epoch millis.
+            Date startOfToday = Date.from(today.atStartOfDay(DateUtils.IST).toInstant());
 
             List<AppointmentStatus> targetStatuses = Arrays.asList(
                     AppointmentStatus.ACCEPTED,
@@ -80,3 +85,4 @@ public class AppointmentStatusSchedulerImpl implements IAppointmentStatusSchedul
         }
     }
 }
+

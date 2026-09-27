@@ -21,6 +21,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 @RequiredArgsConstructor
@@ -66,7 +68,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
 
         List<DailyTrendPoint> doctorTrend = buildTrend(doctors.stream()
                 .filter(d -> d.getCreatedAt() != null)
-                .map(d -> d.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+                .map(d -> d.getCreatedAt().toInstant().atZone(DateUtils.IST).toLocalDate())
                 .collect(Collectors.toList()), 365);
 
         // ---- APPOINTMENTS ----
@@ -86,7 +88,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
 
         List<DailyTrendPoint> appointmentTrend = buildTrend(appointments.stream()
                 .filter(a -> a.getBookingDateTime() != null)
-                .map(a -> a.getBookingDateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+                .map(a -> a.getBookingDateTime().toInstant().atZone(DateUtils.IST).toLocalDate())
                 .collect(Collectors.toList()), 365);
 
         // ---- SUPPORT TICKETS ----
@@ -106,7 +108,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
 
         List<DailyTrendPoint> ticketTrend = buildTrend(tickets.stream()
                 .filter(t -> t.getCreatedAt() != null)
-                .map(t -> t.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate())
+                .map(t -> t.getCreatedAt().atZone(DateUtils.IST).toLocalDate())
                 .collect(Collectors.toList()), 365);
 
         // ---- COLLABORATORS ----
@@ -118,7 +120,7 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
 
         List<DailyTrendPoint> collaboratorTrend = buildTrend(collaborators.stream()
                 .filter(c -> c.getCreatedAt() != null)
-                .map(c -> c.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+                .map(c -> c.getCreatedAt().toInstant().atZone(DateUtils.IST).toLocalDate())
                 .collect(Collectors.toList()), 365);
 
         // ---- ANALYTICS ----
@@ -200,7 +202,8 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
     }
 
     private List<DailyTrendPoint> buildTrend(List<LocalDate> dates, int daysBack) {
-        LocalDate today = LocalDate.now();
+        // Use IST for "today" so the chart window is correct on UTC servers.
+        LocalDate today = LocalDate.now(DateUtils.IST);
         LocalDate start = today.minusDays(daysBack - 1L);
 
         Map<String, Long> countByDate = dates.stream()
@@ -213,3 +216,4 @@ public class AdminDashboardServiceImpl implements IAdminDashboardService {
                 .collect(Collectors.toList());
     }
 }
+

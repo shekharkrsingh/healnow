@@ -39,7 +39,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.Comparator;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 public class DoctorServiceImpl implements IDoctorService {
@@ -450,7 +453,11 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     private String generateDoctorId() {
-        String timestamp = new SimpleDateFormat(DOCTOR_ID_DATE_FORMAT).format(new Date());
+        // Explicitly set IST timezone so doctor IDs get the correct IST date prefix,
+        // not the UTC date which differs by -5:30 on cloud/Docker servers.
+        SimpleDateFormat sdf = new SimpleDateFormat(DOCTOR_ID_DATE_FORMAT);
+        sdf.setTimeZone(DateUtils.IST_TIMEZONE);
+        String timestamp = sdf.format(new Date());
         String randomNumber = String.format(DOCTOR_ID_RANDOM_FORMAT, new Random().nextInt(DOCTOR_ID_RANDOM_RANGE));
         return String.format("%s-%s-%s", DOCTOR_ID_PREFIX, timestamp, randomNumber);
     }

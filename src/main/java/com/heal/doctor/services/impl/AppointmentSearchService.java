@@ -54,9 +54,7 @@ public class AppointmentSearchService implements IAppointmentSearchService {
 
         if (StringUtils.hasText(appointmentSearchDTO.getStatus())) {
             String statusStr = appointmentSearchDTO.getStatus().toUpperCase();
-            if ("TREATED".equals(statusStr)) {
-                treated = true;
-            } else if ("PENDING".equals(statusStr)) {
+            if ("PENDING".equals(statusStr)) {
                 status = AppointmentStatus.BOOKED;
             } else if (!"ALL".equals(statusStr)) {
                 try {

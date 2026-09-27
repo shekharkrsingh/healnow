@@ -19,6 +19,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+import com.heal.doctor.utils.DateUtils;
+
 
 @Service
 public class DoctorReportsImpl implements IDoctorReports {
@@ -93,10 +96,12 @@ public class DoctorReportsImpl implements IDoctorReports {
             variables.put("clinicContactNumber", doctor.getClinicContactNumber() != null ? doctor.getClinicContactNumber() : "N/A");
             variables.put("reportFromDate", LocalDate.parse(finalFromDate, FORMATTER).format(DISPLAY_FORMATTER));
             variables.put("reportToDate", LocalDate.parse(finalToDate, FORMATTER).format(DISPLAY_FORMATTER));
-            variables.put("reportGeneratedOn", LocalDate.now().format(DISPLAY_FORMATTER));
+            // Use IST for "today" so the report date is correct on UTC-deployed servers.
+            LocalDate todayIST = LocalDate.now(DateUtils.IST);
+            variables.put("reportGeneratedOn", todayIST.format(DISPLAY_FORMATTER));
             variables.put("appointments", appointments);
             variables.put("totalAppointments", appointments.size());
-            
+
             Map<String, Long> appointmentStats = appointments.parallelStream()
                     .collect(Collectors.groupingBy(
                             a -> {
@@ -106,7 +111,7 @@ public class DoctorReportsImpl implements IDoctorReports {
                             },
                             Collectors.counting()
                     ));
-            
+
             variables.put("treatedAppointments", appointmentStats.getOrDefault("treated", 0L));
             variables.put("cancelledAppointments", appointmentStats.getOrDefault("cancelled", 0L));
 
@@ -119,16 +124,17 @@ public class DoctorReportsImpl implements IDoctorReports {
 
             emailService.sendSimpleEmailWithAttachment(
                     currentUsername,
-                    "Doctor Appointment Report - " + LocalDate.now().format(DISPLAY_FORMATTER),
+                    "Doctor Appointment Report - " + todayIST.format(DISPLAY_FORMATTER),
                     "Please find your appointment report attached.",
                     pdfBytes,
-                    "appointment-report-" + LocalDate.now() + ".pdf",
+                    "appointment-report-" + todayIST + ".pdf",
                     "application/pdf"
             ).exceptionally(ex -> {
                 logger.error("Failed to send report email asynchronously: error: {}", ex.getMessage(), ex);
                 return null;
             });
             logger.info("Report email sending initiated asynchronously for: {}", currentUsername);
+
 
             return pdfBytes;
 
@@ -141,7 +147,8 @@ public class DoctorReportsImpl implements IDoctorReports {
 
     private String validateOrDefaultFromDate(String fromDate) {
         if (fromDate == null || fromDate.isBlank()) {
-            return LocalDate.now().withDayOfMonth(1).format(FORMATTER);
+            // Default to first day of current IST month.
+            return LocalDate.now(DateUtils.IST).withDayOfMonth(1).format(FORMATTER);
         }
         try {
             LocalDate.parse(fromDate, FORMATTER);
@@ -153,7 +160,8 @@ public class DoctorReportsImpl implements IDoctorReports {
 
     private String validateOrDefaultToDate(String toDate) {
         if (toDate == null || toDate.isBlank()) {
-            return LocalDate.now().minusDays(1).format(FORMATTER);
+            // Default to yesterday in IST.
+            return LocalDate.now(DateUtils.IST).minusDays(1).format(FORMATTER);
         }
         try {
             LocalDate.parse(toDate, FORMATTER);
@@ -163,3 +171,4 @@ public class DoctorReportsImpl implements IDoctorReports {
         }
     }
 }
+
