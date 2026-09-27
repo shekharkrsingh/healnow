@@ -9,6 +9,7 @@ import com.heal.doctor.utils.ApiResponse;
 import com.heal.doctor.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -128,6 +129,7 @@ public class UserPublicController {
     }
 
     @PostMapping("/appointments/book")
+    @PreAuthorize("hasRole('ROGER')")
     public ResponseEntity<ApiResponse<AppointmentDTO>> selfBookAppointment(@Valid @RequestBody PatientSelfBookingDTO requestDTO) {
         AppointmentDTO appointmentDTO = appointmentService.selfBookAppointment(requestDTO);
         return ResponseEntity.ok(new ApiResponse<>(true, "Appointment booked successfully", appointmentDTO));

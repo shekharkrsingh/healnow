@@ -8,6 +8,7 @@ import com.heal.doctor.models.NotificationEntity;
 import com.heal.doctor.models.TimeSlot;
 import com.heal.doctor.models.DayAvailability;
 import com.heal.doctor.models.enums.AvailableDayEnum;
+import com.heal.doctor.models.enums.RolesEnum;
 import com.heal.doctor.models.enums.VerificationStatus;
 import com.heal.doctor.models.enums.AppointmentStatus;
 import com.heal.doctor.models.enums.AppointmentType;
@@ -137,14 +138,23 @@ public class AppointmentServiceImpl implements IAppointmentService {
             throw new ConflictException("Appointment", "An appointment for this patient already exists on the selected date.");
         }
 
-        AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
-        appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
-        appointmentEntity.setAppointmentDateTime(appointmentDate);
-        appointmentEntity.setBookingDateTime(new Date());
-        appointmentEntity.setDoctorId(doctorId);
-        appointmentEntity.setAppointmentId(sequenceGeneratorService.generateAppointmentId());
-        appointmentEntity.setTreated(false);
-        appointmentEntity.setAppointmentType(AppointmentType.IN_PERSON);
+        AppointmentEntity appointmentEntity = AppointmentEntity.builder()
+                .patientName(requestDTO.getPatientName())
+                .contact(requestDTO.getContact())
+                .email(requestDTO.getEmail())
+                .description(requestDTO.getDescription())
+                .availableAtClinic(requestDTO.getAvailableAtClinic())
+                .paymentStatus(requestDTO.getPaymentStatus())
+                .isEmergency(requestDTO.getIsEmergency())
+                .status(AppointmentStatus.ACCEPTED)
+                .appointmentDateTime(appointmentDate)
+                .bookingDateTime(new Date())
+                .doctorId(doctorId)
+                .appointmentId(sequenceGeneratorService.generateAppointmentId())
+                .treated(false)
+                .appointmentType(AppointmentType.IN_PERSON)
+                .build();
+
         if (Boolean.TRUE.equals(requestDTO.getAvailableAtClinic())) {
             appointmentEntity.setAvailableAtClinicDateTime(new Date());
         }
@@ -188,9 +198,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         if (doctorId == null || doctorId.trim().isEmpty()) {
             throw new ValidationException("Doctor ID is mandatory.");
-        }
-        if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
-            throw new ValidationException("Patient name is mandatory.");
         }
         if (requestDTO.getPatientName() == null || requestDTO.getPatientName().trim().isEmpty()) {
             throw new ValidationException("Patient name is mandatory.");
@@ -252,34 +259,42 @@ public class AppointmentServiceImpl implements IAppointmentService {
         String patientEmail = null;
         try {
             String currentUserId = CurrentUserName.getCurrentUserId();
-            userRepository.findByUserId(currentUserId).ifPresent(u -> {
-                // Use final local variable workaround for lambda
-            });
-            // Better approach without lambda if we need the value
-            UserEntity currentUser = userRepository.findByUserId(currentUserId).orElse(null);
-            if (currentUser != null) {
-                patientEmail = currentUser.getEmail();
+            if (currentUserId == null || currentUserId.trim().isEmpty()) {
+                throw new ForbiddenException("Authentication is required for self-booking appointments.");
             }
+            UserEntity currentUser = userRepository.findByUserId(currentUserId)
+                    .orElseThrow(() -> new ForbiddenException("Authenticated user not found."));
+            
+            if (currentUser.getRolesEnum() != RolesEnum.ROGER) {
+                logger.warn("Non-ROGER user attempted to self-book: userId={}, role={}", currentUserId, currentUser.getRolesEnum());
+                throw new ForbiddenException("Only ROGER users are allowed to self-book appointments.");
+            }
+            
+            patientEmail = currentUser.getEmail();
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
-            logger.debug("No authenticated user found for self-booking, proceeding as public booking");
+            logger.error("Error authenticating user for self-booking", e);
+            throw new ForbiddenException("Authentication error during self-booking.");
         }
 
-        AppointmentEntity appointmentEntity = modelMapper.map(requestDTO, AppointmentEntity.class);
-        if (patientEmail != null) {
-            appointmentEntity.setEmail(patientEmail);
-        }
-        appointmentEntity.setAppointmentId(sequenceGeneratorService.generateAppointmentId());
-        appointmentEntity.setDoctorId(doctorId);
-        appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
-        appointmentEntity.setBookingDateTime(new Date());
-        appointmentEntity.setTreated(false);
-        appointmentEntity.setAppointmentType(AppointmentType.ONLINE);
-        
-        // STRICTOR Business Rules
-        appointmentEntity.setPaymentStatus(false);
-        appointmentEntity.setAvailableAtClinic(false);
-        appointmentEntity.setAvailableAtClinicDateTime(null);
-        appointmentEntity.setIsEmergency(false);
+        AppointmentEntity appointmentEntity = AppointmentEntity.builder()
+                .patientName(requestDTO.getPatientName())
+                .contact(requestDTO.getContact())
+                .description(requestDTO.getDescription())
+                .appointmentDateTime(requestDTO.getAppointmentDateTime())
+                .email(patientEmail)
+                .appointmentId(sequenceGeneratorService.generateAppointmentId())
+                .doctorId(doctorId)
+                .status(AppointmentStatus.ACCEPTED)
+                .bookingDateTime(new Date())
+                .treated(false)
+                .appointmentType(AppointmentType.ONLINE)
+                .paymentStatus(false)
+                .availableAtClinic(false)
+                .availableAtClinicDateTime(null)
+                .isEmergency(false)
+                .build();
 
         AppointmentEntity savedAppointment = appointmentRepository.save(appointmentEntity);
         logger.info("Self-booked appointment successfully: appointmentId: {}, doctorId: {}", 
@@ -514,6 +529,11 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Boolean oldTreatedStatus = appointmentEntity.getTreated();
         appointmentEntity.setTreatedDateTime(new Date());
         appointmentEntity.setTreated(treatedStatus);
+        if (Boolean.TRUE.equals(treatedStatus)) {
+            appointmentEntity.setStatus(AppointmentStatus.COMPLETED);
+        } else {
+            appointmentEntity.setStatus(AppointmentStatus.ACCEPTED);
+        }
 
         AppointmentEntity updatedAppointment = appointmentRepository.save(appointmentEntity);
         logger.info("Treated status updated: appointmentId: {}, oldStatus: {}, newStatus: {}, doctorId: {}", 
@@ -785,8 +805,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 AppointmentStatus.REACTIVATED, 1,
                 AppointmentStatus.ACCEPTED, 2,
                 AppointmentStatus.BOOKED, 3,
-                AppointmentStatus.MISSED, 4,
-                AppointmentStatus.CANCELLED, 5
+                AppointmentStatus.COMPLETED, 4,
+                AppointmentStatus.MISSED, 5,
+                AppointmentStatus.CANCELLED, 6
         );
         return Integer.compare(
                 priority.getOrDefault(a, 99),
